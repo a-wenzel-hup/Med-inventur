@@ -1,0 +1,1685 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Bestands- & Verfallsdatum-Prüfung</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --primary: #0d6efd;
+      --primary-hover: #0b5ed7;
+      --bg: #f1f5f9;
+      --card-bg: #ffffff;
+      --border: #cbd5e1;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --success: #16a34a;
+      --warning: #ea580c;
+      --danger: #dc2626;
+      --exclusive: #7c3aed;
+      --exclusive-bg: #f3e8ff;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 6px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+
+    .container {
+      background: var(--card-bg);
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+      width: 100%;
+      max-width: 680px;
+      padding: 12px 14px;
+      margin: 4px auto;
+    }
+
+    @media (min-width: 768px) {
+      body { padding: 20px; }
+      .container { padding: 20px 24px; }
+    }
+
+    /* Sperrbildschirm (PIN) */
+    .auth-card {
+      text-align: center;
+      padding: 35px 16px;
+    }
+    .auth-icon {
+      font-size: 42px;
+      margin-bottom: 10px;
+    }
+    .auth-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0 0 6px 0;
+    }
+    .auth-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin: 0 0 20px 0;
+    }
+    .pin-input-group {
+      max-width: 260px;
+      margin: 0 auto;
+    }
+    .input-pin {
+      width: 100%;
+      font-size: 24px !important;
+      text-align: center;
+      letter-spacing: 6px;
+      font-weight: 700;
+      padding: 8px 12px !important;
+      border: 2px solid var(--border) !important;
+      border-radius: 8px;
+      outline: none;
+      background: #f8fafc;
+      margin-bottom: 12px;
+    }
+    .input-pin:focus {
+      border-color: var(--primary) !important;
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+    }
+    .pin-error {
+      color: var(--danger);
+      font-size: 12px;
+      font-weight: 700;
+      margin-top: 8px;
+      min-height: 18px;
+    }
+
+    /* Start / Upload Screens */
+    .gsheet-card {
+      background: #f8faff;
+      border: 1px solid #d0e1fd;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .input-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    @media (min-width: 550px) {
+      .input-row { flex-direction: row; }
+      .input-row input { flex-grow: 1; }
+    }
+
+    .options-box {
+      margin-top: 8px;
+      padding: 8px 10px;
+      background: #ffffff;
+      border: 1px solid #dbeafe;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #1e3a8a;
+    }
+    .options-box input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      text-align: center;
+      margin: 12px 0;
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .divider:not(:empty)::before { margin-right: .8em; }
+    .divider:not(:empty)::after { margin-left: .8em; }
+
+    .upload-zone {
+      border: 2px dashed var(--primary);
+      background: #fafbfc;
+      border-radius: 10px;
+      padding: 18px 14px;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 4px;
+      background-color: #e2e8f0;
+      border-radius: 2px;
+      overflow: hidden;
+      margin: 6px 0 10px 0;
+    }
+    .progress-fill {
+      height: 100%;
+      background-color: var(--primary);
+      width: 0%;
+      transition: width 0.2s ease;
+    }
+
+    .nav-bar {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .nav-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: nowrap;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-action {
+      padding: 4px 8px;
+      min-height: 28px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+      background: #fff;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      white-space: nowrap;
+    }
+    .btn-home {
+      background: #f1f5f9;
+      color: #334155;
+    }
+    .btn-home:hover { background: #e2e8f0; }
+    .btn-sync {
+      background: #0f9d58;
+      color: white;
+      border-color: #0b8043;
+    }
+    .btn-sync:hover { background: #0b8043; }
+    .btn-reset-quantities {
+      color: #b91c1c;
+      border-color: #fca5a5;
+      background: #fef2f2;
+    }
+
+    .filter-toggle-container {
+      display: flex;
+      background: #e2e8f0;
+      padding: 2px;
+      border-radius: 6px;
+      width: 100%;
+      gap: 2px;
+    }
+    .filter-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 4px 6px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 5px;
+      cursor: pointer;
+      color: var(--text-muted);
+      text-align: center;
+      white-space: nowrap;
+    }
+    .filter-btn.active {
+      background: #ffffff;
+      color: var(--text);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    .filter-btn.active.btn-excl-active {
+      color: var(--exclusive);
+      font-weight: 700;
+    }
+
+    .card-box {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: #fff;
+      margin-bottom: 8px;
+    }
+
+    .product-header-block {
+      margin-bottom: 8px;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 6px;
+    }
+
+    .product-title-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .pos-badge {
+      background: #e0f2fe;
+      color: #0369a1;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 12px;
+    }
+    .exclusive-badge {
+      background: var(--exclusive-bg);
+      color: var(--exclusive);
+      border: 1px solid #d8b4fe;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      display: none;
+    }
+    .product-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 2px 0 0 0;
+      width: 100%;
+      color: #0f172a;
+      line-height: 1.25;
+      word-break: break-word;
+    }
+
+    .quick-info-bar {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+      flex-wrap: wrap;
+    }
+    .info-chip {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      color: #475569;
+    }
+    .info-chip strong { color: #0f172a; }
+
+    .order-qty-card {
+      background: #eff6ff;
+      border: 1.5px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+    }
+    .order-qty-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .order-qty-header label {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 700;
+      color: #1e3a8a;
+    }
+
+    .stepper-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .btn-step {
+      width: 44px;
+      height: 40px;
+      min-height: 40px;
+      border-radius: 6px;
+      font-size: 20px;
+      font-weight: 700;
+      background: #ffffff;
+      border: 1px solid #93c5fd;
+      color: #1d4ed8;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+    .btn-step:active { background: #dbeafe; }
+    
+    .input-qty-large {
+      flex-grow: 1;
+      text-align: center;
+      font-size: 22px !important;
+      font-weight: 800 !important;
+      color: #1e40af !important;
+      background: #ffffff !important;
+      border: 1.5px solid #60a5fa !important;
+      border-radius: 6px;
+      height: 40px;
+      padding: 0 !important;
+    }
+
+    .slider-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .qty-range-slider {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: #cbd5e1;
+      outline: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+    }
+    .qty-range-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+    .slider-scale-label {
+      font-size: 10px;
+      color: #64748b;
+      font-weight: 700;
+    }
+
+    .quick-chips-row {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .btn-chip {
+      background: #ffffff;
+      border: 1px solid #bfdbfe;
+      color: #1e3a8a;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 6px;
+      min-height: 28px;
+      border-radius: 4px;
+      cursor: pointer;
+      flex: 1;
+      text-align: center;
+    }
+    .btn-chip:active {
+      background: #2563eb;
+      color: #ffffff;
+    }
+    .btn-chip-plus {
+      background: #e0e7ff;
+      border-color: #c7d2fe;
+      color: #3730a3;
+    }
+
+    .mhd-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+    }
+    .mhd-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    .mhd-top-row label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #334155;
+      margin: 0;
+    }
+
+    .meldetext-card {
+      padding: 5px 8px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 11px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .status-ok { background-color: #dcfce7; color: #15803d; }
+    .status-orange { background-color: #ffedd5; color: #c2410c; }
+    .status-red { background-color: #fee2e2; color: #b91c1c; }
+    .status-none { background-color: #f1f5f9; color: #64748b; }
+
+    input[type="date"] {
+      width: 100%;
+      padding: 6px 8px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+      background: #ffffff;
+    }
+    input.border-mhd-ok { border: 2px solid var(--success) !important; background-color: #f0fdf4; }
+    input.border-mhd-orange { border: 2px solid var(--warning) !important; background-color: #fff7ed; }
+    input.border-mhd-red { border: 2px solid var(--danger) !important; background-color: #fef2f2; }
+
+    .details-accordion {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background: #ffffff;
+      margin-top: 4px;
+      overflow: hidden;
+    }
+    .details-summary {
+      font-size: 12px;
+      font-weight: 700;
+      color: #475569;
+      background: #f8fafc;
+      padding: 7px 10px;
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .details-summary::-webkit-details-marker { display: none; }
+    .details-summary::after {
+      content: "▾";
+      font-size: 14px;
+      transition: transform 0.2s;
+    }
+    details[open] .details-summary::after {
+      transform: rotate(180deg);
+    }
+    .details-content {
+      padding: 10px;
+      background: #ffffff;
+      border-top: 1px solid #f1f5f9;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .form-group-sm {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .form-group-sm label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #475569;
+    }
+    .form-group-sm input {
+      padding: 6px 8px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    .exclusive-toggle-sm {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #faf5ff;
+      border: 1px solid #f3e8ff;
+      padding: 6px 8px;
+      border-radius: 6px;
+    }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #cbd5e1;
+      transition: .2s;
+      border-radius: 22px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .2s;
+      border-radius: 50%;
+    }
+    input:checked + .slider { background-color: var(--exclusive); }
+    input:checked + .slider:before { transform: translateX(18px); }
+
+    .button-group {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+    }
+    button {
+      padding: 10px 14px;
+      min-height: 42px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn-main { background: var(--primary); color: white; flex-grow: 1; }
+    .btn-main:hover { background: var(--primary-hover); }
+    .btn-sub { background: #e2e8f0; color: var(--text); }
+    .btn-export { background: var(--success); color: white; width: 100%; padding: 12px; font-size: 15px; }
+    .btn-gsheet { background: #0f9d58; color: white; white-space: nowrap; }
+
+    .live-status-bar {
+      font-size: 11px;
+      font-weight: 700;
+      text-align: center;
+      margin-top: 6px;
+      padding: 4px;
+      border-radius: 4px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- 0. SPERRBILDSCHIRM (PIN-ABFRAGE) -->
+  <div id="screen-auth" class="auth-card">
+    <div class="auth-icon">🔒</div>
+    <h2 class="auth-title">Zugriff geschützt</h2>
+    <p class="auth-desc">Bitte PIN eingeben, um die Prüfung zu öffnen:</p>
+    <form onsubmit="event.preventDefault(); verifyPin();" class="pin-input-group">
+      <input type="password" id="input-pin" class="input-pin" inputmode="numeric" placeholder="••••••" maxlength="12" autofocus>
+      <button type="submit" class="btn-main" style="width: 100%; min-height: 44px; font-size: 16px;">Entsperren</button>
+      <div id="pin-error-msg" class="pin-error"></div>
+    </form>
+  </div>
+
+  <!-- 1. START / DATEI- UND LINK-AUSWAHL -->
+  <div id="screen-upload" style="display: none;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+      <h2 style="margin: 0; color: var(--primary); font-size: 18px;">Arzneimittel- & Bestandsprüfung</h2>
+      <button type="button" id="btn-return-wizard" class="btn-action" style="display: none;" onclick="returnToWizardFromUpload()">↩️ Zurück zur Prüfung</button>
+    </div>
+    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 12px;">
+      Tabelle über Google Sheets oder als lokale Datei einlesen:
+    </p>
+
+    <div class="gsheet-card">
+      <label for="gsheet-url" style="color: #0f9d58; display: flex; align-items: center; gap: 6px; font-size: 13px;">
+        <span>📊</span> <strong>Google Sheets Link (Lesen):</strong>
+      </label>
+      <div class="input-row">
+        <input type="text" id="gsheet-url" value="https://docs.google.com/spreadsheets/d/1T78HBf3lpsdhtrJPF1pXsui_gOE-vKF_KxMsJs9GhGM/edit?usp=sharing" style="padding: 7px 10px; font-size: 13px;">
+        <button type="button" class="btn-gsheet" id="btn-load-gsheet" onclick="loadFromGoogleSheet()">Abrufen</button>
+      </div>
+
+      <div style="margin-top: 10px;">
+        <label for="gsheet-api-url" style="color: #4338ca; display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 700;">
+          <span>☁️ Apps Script Web-App URL:</span>
+          <a href="javascript:void(0)" onclick="testConnection()" style="font-size: 11px; text-decoration: underline; color: #4338ca;">🔍 Verbindung testen</a>
+        </label>
+        <input type="text" id="gsheet-api-url" value="https://script.google.com/macros/s/AKfycbxVC5fA5ayaCIunFhVXmVgSa4vefoTq21X6hpAHA2BYDhuk0To24Vb1k6AJ5MYR7em-/exec" style="width: 100%; padding: 6px 10px; font-size: 12px; margin-top: 4px; border: 1px solid #c7d2fe; border-radius: 6px;">
+        <div id="api-test-status" style="font-size: 11px; font-weight: 700; margin-top: 4px;"></div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; flex-wrap: wrap;">
+        <label for="gsheet-tab-name" style="margin-bottom:0;">Blatt:</label>
+        <input type="text" id="gsheet-tab-name" value="Prüfung Verfallsdatum" style="max-width: 180px; padding: 4px 8px; font-size: 12px;">
+      </div>
+
+      <div class="options-box">
+        <input type="checkbox" id="chk-reset-on-load">
+        <label for="chk-reset-on-load" style="margin-bottom:0; cursor:pointer;">
+          Bestellmengen beim Laden direkt nullen (für neue Inventur)
+        </label>
+      </div>
+
+      <div id="gsheet-status" style="display: none; font-size: 12px; margin-top: 6px; color: var(--primary); font-weight: 600;">
+        ⏳ Lade Daten...
+      </div>
+    </div>
+
+    <div class="divider">ODER LOKALE DATEI</div>
+
+    <div class="upload-zone" onclick="document.getElementById('file-input').click()">
+      <div style="font-size: 22px; margin-bottom: 2px;">📂</div>
+      <strong style="font-size: 13px;">Excel- (.xlsx) oder CSV-Datei wählen</strong>
+      <p style="color: var(--text-muted); font-size: 11px; margin: 2px 0 0 0;">Tippen oder Datei hierher ziehen</p>
+      <input type="file" id="file-input" accept=".xlsx, .xls, .csv" style="display: none;" onchange="loadFile(this.files[0])">
+    </div>
+
+    <div id="sheet-picker-row" style="display: none; margin-top: 10px;">
+      <label for="sheet-select" style="font-size: 12px;">Tabellenblatt wählen:</label>
+      <select id="sheet-select" onchange="switchSheet(this.value)" style="width: 100%; padding: 6px;"></select>
+    </div>
+  </div>
+
+  <!-- 2. WIZARD: ULTRA-KOMPAKT FÜR SMARTPHONES -->
+  <div id="screen-wizard" style="display: none;">
+    <div class="nav-bar">
+      <div class="nav-top-row">
+        <span id="counter-label" style="font-weight: 700; font-size: 13px;">Pos 1 / 221</span>
+        <div class="nav-actions">
+          <select id="jump-select" style="max-width: 95px; padding: 3px 4px; font-size: 11px;" onchange="jumpToFiltered(Number(this.value))"></select>
+          <button type="button" class="btn-action btn-home" onclick="goToStartMenu()" title="Zum Startmenü / Tabellenauswahl">🏠 Menü</button>
+          <button type="button" id="btn-sync-top" class="btn-action btn-sync" onclick="syncToGoogleSheet()" title="Direkt in Google Sheet speichern">☁️ Sichern</button>
+          <button type="button" class="btn-action btn-reset-quantities" onclick="resetAllOrderQuantities()" title="Bestellmengen auf 0">🧹</button>
+          <button type="button" class="btn-action" onclick="exportExcel()" title="Tabelle als Datei herunterladen">📥</button>
+        </div>
+      </div>
+
+      <div class="filter-toggle-container">
+        <button type="button" class="filter-btn active" id="btn-flt-all" onclick="setFilter('all')">
+          Alle (<span id="cnt-all">0</span>)
+        </button>
+        <button type="button" class="filter-btn" id="btn-flt-excl" onclick="setFilter('excl')">
+          ⭐ Exklusiv (<span id="cnt-excl">0</span>)
+        </button>
+        <button type="button" class="filter-btn" id="btn-flt-std" onclick="setFilter('std')">
+          Standard (<span id="cnt-std">0</span>)
+        </button>
+      </div>
+    </div>
+
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-bar"></div>
+    </div>
+
+    <form id="wizard-form" onsubmit="event.preventDefault(); nextStep();">
+      <div class="card-box">
+        
+        <div class="product-header-block">
+          <div class="product-title-row">
+            <span class="pos-badge" id="val-pos">Pos 1</span>
+            <span class="exclusive-badge" id="val-badge-exclusive">⭐ EXKLUSIV</span>
+          </div>
+          <h3 class="product-title" id="val-name">Material/Produktname</h3>
+          
+          <div class="quick-info-bar">
+            <span class="info-chip">Soll: <strong id="val-chip-soll">0</strong></span>
+            <span class="info-chip">Ist: <strong id="val-chip-bestand">0</strong></span>
+            <span class="info-chip">Ort: <strong id="val-chip-lager">-</strong></span>
+          </div>
+        </div>
+
+        <!-- Bestellmenge -->
+        <div class="order-qty-card">
+          <div class="order-qty-header">
+            <label for="input-bestellmenge">Bestellmenge:</label>
+            <span id="val-soll-hint" style="font-size: 11px; color: #1e40af; font-weight: 700;">Soll: 0</span>
+          </div>
+
+          <div class="stepper-row">
+            <button type="button" class="btn-step" onclick="adjustBestellmenge(-1)">−</button>
+            <input type="number" id="input-bestellmenge" class="input-qty-large" min="0" step="1" inputmode="numeric" placeholder="0" oninput="onQtyInputChanged()">
+            <button type="button" class="btn-step" onclick="adjustBestellmenge(1)">+</button>
+          </div>
+
+          <div class="slider-container">
+            <span class="slider-scale-label">0</span>
+            <input type="range" id="range-bestellmenge" class="qty-range-slider" min="0" max="20" step="1" value="0" oninput="onQtySliderMoved(this.value)">
+            <span class="slider-scale-label">20</span>
+          </div>
+
+          <div class="quick-chips-row">
+            <button type="button" class="btn-chip" onclick="setBestellmengeExact(0)">0</button>
+            <button type="button" class="btn-chip" onclick="setBestellmengeExact(1)">1</button>
+            <button type="button" class="btn-chip" onclick="setBestellmengeExact(2)">2</button>
+            <button type="button" class="btn-chip" onclick="setBestellmengeExact(3)">3</button>
+            <button type="button" class="btn-chip" onclick="setBestellmengeExact(5)">5</button>
+            <button type="button" class="btn-chip" onclick="setBestellmengeExact(10)">10</button>
+            <button type="button" class="btn-chip" onclick="setBestellmengeExact(20)">20</button>
+            <button type="button" class="btn-chip btn-chip-plus" onclick="adjustBestellmenge(10)">+10</button>
+          </div>
+        </div>
+
+        <!-- MHD & Status -->
+        <div class="mhd-box">
+          <div class="mhd-top-row">
+            <label for="input-mhd">MHD / Verfall:</label>
+            <div id="box-meldetext" class="meldetext-card status-none">
+              <span id="meldetext-icon">ℹ️</span>
+              <span id="meldetext-display">Gültig</span>
+            </div>
+          </div>
+          <input type="date" id="input-mhd" oninput="calcLiveValues()">
+        </div>
+
+        <!-- Aufklappbereich -->
+        <details class="details-accordion" id="accordion-details">
+          <summary class="details-summary">
+            <span>⚙️ Details & Stammdaten anpassen</span>
+          </summary>
+          <div class="details-content">
+            <div class="form-grid-2">
+              <div class="form-group-sm">
+                <label for="input-soll">Sollbestand (Soll):</label>
+                <input type="number" id="input-soll" min="0" step="1" inputmode="numeric" oninput="calcLiveValues()">
+              </div>
+              <div class="form-group-sm">
+                <label for="input-min">Mindestbestand (Min):</label>
+                <input type="number" id="input-min" min="0" step="1" inputmode="numeric" oninput="calcLiveValues()">
+              </div>
+            </div>
+
+            <div class="form-grid-2">
+              <div class="form-group-sm">
+                <label for="input-lagerort">Lagerort:</label>
+                <input type="text" id="input-lagerort" placeholder="z. B. Schrank 3" oninput="calcLiveValues()">
+              </div>
+              <div class="form-group-sm">
+                <label>Berechnete Diff (Soll - Ist):</label>
+                <input type="text" id="val-diff-detail" readonly style="background: #f8fafc; font-weight: 700;" value="0">
+              </div>
+            </div>
+
+            <div class="exclusive-toggle-sm">
+              <div>
+                <strong style="font-size: 12px; color: #581c87;">Exklusiver Artikel:</strong>
+                <span id="txt-exklusiv-state" style="font-size: 12px; font-weight: 700; margin-left: 4px; color: #6b21a8;">Nein</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="input-exklusiv-toggle" onchange="onExklusivToggleChange()">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="form-group-sm">
+              <label for="input-bemerkung">Bemerkung:</label>
+              <input type="text" id="input-bemerkung" placeholder="Optionale Bemerkung">
+            </div>
+          </div>
+        </details>
+
+      </div>
+
+      <div class="button-group">
+        <button type="button" class="btn-sub" id="btn-prev" onclick="prevStep()">Zurück</button>
+        <button type="submit" class="btn-main" id="btn-next">Weiter ► (Enter)</button>
+      </div>
+      <div id="live-save-status" class="live-status-bar"></div>
+    </form>
+  </div>
+
+  <!-- 3. ABSCHLUSS -->
+  <div id="screen-export" style="display: none; text-align: center; padding: 15px 0;">
+    <h2 style="color: var(--success); margin-top: 0; font-size: 18px;">Prüfung abgeschlossen!</h2>
+    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">
+      Alle Positionen wurden erfasst.
+    </p>
+    <button type="button" id="btn-sync-bottom" class="btn-action btn-sync" style="width: 100%; padding: 12px; font-size: 15px; margin-bottom: 8px;" onclick="syncToGoogleSheet()">
+      ☁️ Direkt in Google Sheet speichern
+    </button>
+    <button class="btn-export" onclick="exportExcel()">📥 Lokale Excel-Datei speichern (.xlsx)</button>
+    <button class="btn-sub" style="width: 100%; margin-top: 10px;" onclick="returnToWizard()">Zurück zur Maske</button>
+  </div>
+
+</div>
+
+<script>
+  // SHA-256 Hash von "808301"
+  const AUTH_HASH = "4cf902947292a75664d9a6769017372f5d2d161501c869c33aa6ddae21a2be83";
+  const ACTIVE_APP_URL = "https://script.google.com/macros/s/AKfycbxVC5fA5ayaCIunFhVXmVgSa4vefoTq21X6hpAHA2BYDhuk0To24Vb1k6AJ5MYR7em-/exec";
+
+  let rawMatrix = [];
+  let workbook = null;
+  let activeSheetName = "Prüfung Verfallsdatum";
+  let activeSheet = null;
+  let allItems = [];
+  let currentFilteredList = [];
+  let currentFilteredIndex = 0;
+  let activeFilter = 'all';
+  let colMap = {};
+
+  // PIN-Prüfung
+  async function computeSha256(str) {
+    if (window.crypto && crypto.subtle) {
+      const buffer = new TextEncoder().encode(str);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+      return Array.from(new Uint8Array(hashBuffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+    }
+    return "";
+  }
+
+  async function verifyPin() {
+    const inputEl = document.getElementById('input-pin');
+    const errorEl = document.getElementById('pin-error-msg');
+    const entered = inputEl.value.trim();
+
+    if (!entered) {
+      errorEl.innerText = "Bitte PIN eingeben.";
+      return;
+    }
+
+    try {
+      const hash = await computeSha256(entered);
+      if (hash === AUTH_HASH || entered === "808301") {
+        document.getElementById('screen-auth').style.display = 'none';
+        document.getElementById('screen-upload').style.display = 'block';
+      } else {
+        errorEl.innerText = "Falsche PIN. Zugriff verweigert.";
+        inputEl.value = "";
+        inputEl.focus();
+      }
+    } catch (e) {
+      if (entered === "808301") {
+        document.getElementById('screen-auth').style.display = 'none';
+        document.getElementById('screen-upload').style.display = 'block';
+      } else {
+        errorEl.innerText = "Falsche PIN.";
+      }
+    }
+  }
+
+  // Navigation zwischen Wizard und Anfangsmenü
+  function goToStartMenu() {
+    saveStepInputs();
+    document.getElementById('screen-wizard').style.display = 'none';
+    document.getElementById('screen-export').style.display = 'none';
+    document.getElementById('screen-upload').style.display = 'block';
+    if (allItems.length > 0) {
+      document.getElementById('btn-return-wizard').style.display = 'inline-flex';
+    }
+  }
+
+  function returnToWizardFromUpload() {
+    document.getElementById('screen-upload').style.display = 'none';
+    document.getElementById('screen-wizard').style.display = 'block';
+    renderStep();
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    try {
+      const savedUrl = localStorage.getItem('saved_gsheet_url');
+      if (savedUrl) document.getElementById('gsheet-url').value = savedUrl;
+      
+      const savedApi = localStorage.getItem('saved_gsheet_api');
+      document.getElementById('gsheet-api-url').value = savedApi || ACTIVE_APP_URL;
+
+      const savedTab = localStorage.getItem('saved_gsheet_tab');
+      if (savedTab) document.getElementById('gsheet-tab-name').value = savedTab;
+    } catch(e) {}
+  });
+
+  async function testConnection() {
+    const statusEl = document.getElementById('api-test-status');
+    const apiUrl = document.getElementById('gsheet-api-url').value.trim() || ACTIVE_APP_URL;
+    statusEl.innerHTML = "<span style='color: var(--primary);'>⏳ Prüfe Verbindung...</span>";
+
+    try {
+      await fetch(apiUrl, { mode: 'no-cors' });
+      statusEl.innerHTML = "<span style='color: var(--success);'>✅ Verbindung erfolgreich! Web-App ist aktiv und erreichbar.</span>";
+    } catch (err) {
+      statusEl.innerHTML = "<span style='color: var(--danger);'>❌ Verbindungsfehler: " + err.message + "</span>";
+    }
+  }
+
+  async function syncToGoogleSheet() {
+    saveStepInputs();
+    const apiUrl = document.getElementById('gsheet-api-url').value.trim() || ACTIVE_APP_URL;
+
+    try {
+      localStorage.setItem('saved_gsheet_api', apiUrl);
+    } catch(e) {}
+
+    const payload = {
+      sheetName: activeSheetName || "Prüfung Verfallsdatum",
+      items: allItems.map(it => ({
+        row1Based: it.rowIdx + 1,
+        pos: it.pos,
+        name: it.name,
+        bestellmenge: it.bestellmenge,
+        lagerort: it.lagerort,
+        exklusiv: it.exklusiv,
+        bemerkung: it.bemerkung,
+        mhd: it.mhd,
+        min: it.min,
+        soll: it.soll
+      }))
+    };
+
+    const statusBanner = document.getElementById('live-save-status');
+    const btnTop = document.getElementById('btn-sync-top');
+    const btnBottom = document.getElementById('btn-sync-bottom');
+
+    if (btnTop) btnTop.innerText = "⏳...";
+    if (btnBottom) btnBottom.innerText = "⏳ Speichere Daten...";
+    if (statusBanner) {
+      statusBanner.style.display = "block";
+      statusBanner.style.background = "#e0f2fe";
+      statusBanner.style.color = "#0369a1";
+      statusBanner.innerText = "⏳ Sende Daten an Google Sheets...";
+    }
+
+    try {
+      await fetch(apiUrl, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      });
+
+      if (statusBanner) {
+        statusBanner.style.background = "#dcfce7";
+        statusBanner.style.color = "#15803d";
+        const now = new Date().toLocaleTimeString();
+        statusBanner.innerText = `✅ Um ${now} Uhr erfolgreich in Google Sheets gespeichert!`;
+        setTimeout(() => { statusBanner.style.display = "none"; }, 5000);
+      }
+      alert("Erfolgreich an Google Sheets übertragen! Die Daten sind jetzt live in der Tabelle aktualisiert.");
+    } catch (err) {
+      if (statusBanner) {
+        statusBanner.style.background = "#fee2e2";
+        statusBanner.style.color = "#b91c1c";
+        statusBanner.innerText = "❌ Übertragungsfehler: " + err.message;
+      }
+      alert("Fehler beim Übertragen: " + err.message);
+    } finally {
+      if (btnTop) btnTop.innerText = "☁️ Sichern";
+      if (btnBottom) btnBottom.innerText = "☁️ Direkt in Google Sheet speichern";
+    }
+  }
+
+  function resetAllOrderQuantities() {
+    if (!confirm("Möchten Sie wirklich alle Bestellmengen auf 0 zurücksetzen?")) return;
+    
+    allItems.forEach(it => {
+      it.bestellmenge = 0;
+      if (rawMatrix[it.rowIdx] && colMap.bestellmenge !== undefined) {
+        rawMatrix[it.rowIdx][colMap.bestellmenge] = 0;
+      }
+    });
+
+    setBestellmengeExact(0);
+    renderStep();
+  }
+
+  function adjustBestellmenge(delta) {
+    const input = document.getElementById('input-bestellmenge');
+    let cur = (input.value !== "" && !isNaN(input.value)) ? Number(input.value) : 0;
+    let next = Math.max(0, cur + delta);
+    setBestellmengeExact(next);
+  }
+
+  function setBestellmengeExact(val) {
+    const input = document.getElementById('input-bestellmenge');
+    const slider = document.getElementById('range-bestellmenge');
+    input.value = val;
+    slider.value = Math.min(Math.max(val, 0), 20);
+    calcLiveValues();
+  }
+
+  function onQtySliderMoved(val) {
+    const input = document.getElementById('input-bestellmenge');
+    input.value = val;
+    calcLiveValues();
+  }
+
+  function onQtyInputChanged() {
+    const input = document.getElementById('input-bestellmenge');
+    const slider = document.getElementById('range-bestellmenge');
+    const val = Number(input.value) || 0;
+    slider.value = Math.min(Math.max(val, 0), 20);
+    calcLiveValues();
+  }
+
+  function loadFromGoogleSheet() {
+    const input = document.getElementById('gsheet-url').value.trim();
+    const tabName = document.getElementById('gsheet-tab-name').value.trim() || "Prüfung Verfallsdatum";
+
+    if (!input) {
+      alert("Bitte geben Sie einen Google Sheets Link ein.");
+      return;
+    }
+    try {
+      localStorage.setItem('saved_gsheet_url', input);
+      localStorage.setItem('saved_gsheet_tab', tabName);
+    } catch(e) {}
+
+    const idMatch = input.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+    if (!idMatch) {
+      alert("Ungültiger Link. Die URL muss '/spreadsheets/d/...' enthalten.");
+      return;
+    }
+    const sheetId = idMatch[1];
+    const gidMatch = input.match(/[?&#]gid=([0-9]+)/);
+
+    const statusEl = document.getElementById('gsheet-status');
+    const btnLoad = document.getElementById('btn-load-gsheet');
+    statusEl.style.display = "block";
+    statusEl.innerText = `⏳ Lade "${tabName}"...`;
+    btnLoad.disabled = true;
+
+    const callbackName = 'gvizCallback_' + Date.now();
+
+    const timeoutId = setTimeout(() => {
+      cleanup();
+      alert("Zeitüberschreitung beim Laden. Bitte Freigabe der Tabelle prüfen.");
+    }, 10000);
+
+    function cleanup() {
+      clearTimeout(timeoutId);
+      btnLoad.disabled = false;
+      statusEl.style.display = "none";
+      delete window[callbackName];
+      const oldScript = document.getElementById('gviz-jsonp-script');
+      if (oldScript) oldScript.remove();
+    }
+
+    window[callbackName] = function(data) {
+      cleanup();
+
+      if (!data || data.status === 'error' || !data.table) {
+        alert("Google Sheets Fehler: Blatt konnte nicht geladen werden.");
+        return;
+      }
+
+      rawMatrix = [];
+      const colLabels = (data.table.cols || []).map(c => (c.label || c.id || "").trim());
+      rawMatrix.push(colLabels);
+
+      if (data.table.rows) {
+        data.table.rows.forEach(r => {
+          const rowVals = [];
+          if (r && r.c) {
+            r.c.forEach(cell => {
+              if (!cell) {
+                rowVals.push("");
+              } else {
+                if (typeof cell.v === 'string' && cell.v.startsWith('Date(')) {
+                  rowVals.push(parseGvizDate(cell.v, cell.f));
+                } else if (cell.v !== null && cell.v !== undefined) {
+                  rowVals.push(cell.v);
+                } else if (cell.f !== null && cell.f !== undefined) {
+                  rowVals.push(cell.f);
+                } else {
+                  rowVals.push("");
+                }
+              }
+            });
+          }
+          rawMatrix.push(rowVals);
+        });
+      }
+
+      const ws = XLSX.utils.aoa_to_sheet(rawMatrix);
+      workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, ws, tabName);
+      activeSheetName = tabName;
+      activeSheet = ws;
+
+      parseUnifiedMatrix(rawMatrix);
+    };
+
+    let gvizUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=responseHandler:${callbackName}`;
+    if (gidMatch && gidMatch[1]) {
+      gvizUrl += `&gid=${gidMatch[1]}`;
+    } else {
+      gvizUrl += `&sheet=${encodeURIComponent(tabName)}`;
+    }
+
+    const script = document.createElement('script');
+    script.id = 'gviz-jsonp-script';
+    script.src = gvizUrl;
+    script.onerror = function() {
+      cleanup();
+      alert("Netzwerkfehler: Zugriff verweigert. Bitte Freigabe prüfen.");
+    };
+    document.body.appendChild(script);
+  }
+
+  function parseGvizDate(valStr, formattedStr) {
+    const m = valStr.match(/Date\((\d+),\s*(\d+),\s*(\d+)/);
+    if (m) {
+      const y = m[1];
+      const mo = String(Number(m[2]) + 1).padStart(2, '0');
+      const d = String(Number(m[3])).padStart(2, '0');
+      return `${y}-${mo}-${d}`;
+    }
+    return toIsoDateString(formattedStr || valStr);
+  }
+
+  function loadFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const data = new Uint8Array(e.target.result);
+      workbook = XLSX.read(data, {
+        type: 'array',
+        cellDates: true,
+        cellNF: true,
+        cellStyles: true,
+        cellFormula: true
+      });
+
+      const sheetSelect = document.getElementById('sheet-select');
+      sheetSelect.innerHTML = "";
+      workbook.SheetNames.forEach(name => {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.innerText = name;
+        if (name.toLowerCase().includes("verfall")) opt.selected = true;
+        sheetSelect.appendChild(opt);
+      });
+
+      activeSheetName = sheetSelect.value || workbook.SheetNames[0];
+      if (workbook.SheetNames.length > 1) {
+        document.getElementById('sheet-picker-row').style.display = 'block';
+      }
+
+      switchSheet(activeSheetName);
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function switchSheet(sheetName) {
+    activeSheetName = sheetName;
+    activeSheet = workbook.Sheets[activeSheetName];
+    rawMatrix = XLSX.utils.sheet_to_json(activeSheet, { header: 1, defval: "" });
+    parseUnifiedMatrix(rawMatrix);
+  }
+
+  function parseUnifiedMatrix(matrix) {
+    allItems = [];
+
+    let headerRowIdx = -1;
+    let bestScore = 0;
+    let bestIdx = 0;
+    const keywords = ['pos', 'material', 'produkt', 'min', 'soll', 'max', 'bestand', 'bestell', 'lager', 'mhd', 'verfall', 'exklusiv'];
+
+    for (let r = 0; r < Math.min(15, matrix.length); r++) {
+      const row = (matrix[r] || []).map(c => String(c || "").toLowerCase().trim());
+      const score = row.reduce((acc, c) => acc + (keywords.some(kw => c.includes(kw)) ? 1 : 0), 0);
+      if (score > bestScore) {
+        bestScore = score;
+        bestIdx = r;
+      }
+      const hasPos = row.some(c => c === 'pos');
+      const hasName = row.some(c => c.includes('material') || c.includes('produkt'));
+      if (hasPos && hasName) {
+        headerRowIdx = r;
+        break;
+      }
+    }
+
+    if (headerRowIdx === -1 && bestScore >= 3) {
+      headerRowIdx = bestIdx;
+    } else if (headerRowIdx === -1) {
+      headerRowIdx = 0;
+    }
+
+    const headerRow = (matrix[headerRowIdx] || []).map(c => String(c || "").toLowerCase().trim());
+
+    colMap = {};
+    headerRow.forEach((val, i) => {
+      if (val.includes('liste')) return;
+      if (val === 'pos') colMap.pos = i;
+      else if (val.includes('material') || val.includes('produkt') || val.includes('artikel')) {
+        if (!val.includes('exklusiv')) colMap.name = i;
+      }
+      else if (val === 'min') colMap.min = i;
+      else if (val === 'soll' || val === 'max') colMap.soll = i;
+      else if (val === 'bestand') colMap.bestand = i;
+      else if (val.includes('bestell')) colMap.bestellmenge = i;
+      else if (val.includes('lager') || val.includes('ort')) colMap.lagerort = i;
+      else if (val.includes('exklusiv')) colMap.exklusiv = i;
+      else if (val.includes('bemerk')) colMap.bemerkung = i;
+      else if (val.includes('mhd') || val.includes('verfall')) colMap.mhd = i;
+      else if (val.includes('melde')) colMap.meldetext = i;
+      else if (val.includes('diff')) colMap.diff = i;
+    });
+
+    const offset = (colMap.name === 2 || colMap.pos === 1) ? 1 : 0;
+    const defaults = {
+      pos: 0 + offset, name: 1 + offset, min: 2 + offset, soll: 3 + offset,
+      bestand: 4 + offset, bestellmenge: 5 + offset, lagerort: 6 + offset,
+      exklusiv: 7 + offset, bemerkung: 8 + offset, mhd: 9 + offset,
+      meldetext: 10 + offset, diff: 11 + offset
+    };
+    for (const k in defaults) {
+      if (colMap[k] === undefined) colMap[k] = defaults[k];
+    }
+
+    const shouldResetQuantities = document.getElementById('chk-reset-on-load').checked;
+
+    for (let r = headerRowIdx + 1; r < matrix.length; r++) {
+      const row = matrix[r];
+      if (!row || row.length === 0) continue;
+
+      function getC(key, defVal = "") {
+        const idx = colMap[key];
+        if (idx !== undefined && idx < row.length) {
+          const v = row[idx];
+          if (v !== undefined && v !== null && String(v).toLowerCase() !== 'nan' && String(v).toLowerCase() !== 'none') {
+            return v;
+          }
+        }
+        return defVal;
+      }
+
+      const nameVal = String(getC('name')).trim();
+      if (!nameVal) continue;
+
+      const posVal = getC('pos', allItems.length + 1);
+      const minVal = getC('min', 0);
+      const sollVal = getC('soll', 0);
+      const bestandVal = getC('bestand', 0);
+      let bestellVal = getC('bestellmenge', "");
+      const lagerVal = String(getC('lagerort', "")).trim();
+      const exklVal = String(getC('exklusiv', "Nein")).trim();
+      const bemerkVal = String(getC('bemerkung', "")).trim();
+      const mhdRaw = getC('mhd', "");
+
+      if (shouldResetQuantities) {
+        bestellVal = 0;
+      }
+
+      const isExkl = exklVal.toLowerCase() === 'ja' || exklVal.toLowerCase() === 'true' || exklVal === '1';
+
+      allItems.push({
+        rowIdx: r,
+        pos: posVal,
+        name: nameVal,
+        min: !isNaN(minVal) && minVal !== "" ? Number(minVal) : 0,
+        soll: !isNaN(sollVal) && sollVal !== "" ? Number(sollVal) : 0,
+        bestand: !isNaN(bestandVal) && bestandVal !== "" ? Number(bestandVal) : 0,
+        bestellmenge: (!isNaN(bestellVal) && bestellVal !== "") ? Number(bestellVal) : "",
+        lagerort: lagerVal,
+        exklusiv: isExkl,
+        bemerkung: bemerkVal,
+        mhd: toIsoDateString(mhdRaw),
+        meldetext: ""
+      });
+    }
+
+    if (allItems.length === 0) {
+      alert("Es konnten keine Artikelzeilen gefunden werden.");
+      return;
+    }
+
+    updateFilterCounts();
+    setFilter('all');
+    startWizard();
+  }
+
+  function updateFilterCounts() {
+    const total = allItems.length;
+    const exclCount = allItems.filter(it => it.exklusiv).length;
+    const stdCount = total - exclCount;
+
+    document.getElementById('cnt-all').innerText = total;
+    document.getElementById('cnt-excl').innerText = exclCount;
+    document.getElementById('cnt-std').innerText = stdCount;
+  }
+
+  function setFilter(flt) {
+    saveStepInputs();
+    activeFilter = flt;
+    document.getElementById('btn-flt-all').className = 'filter-btn' + (flt === 'all' ? ' active' : '');
+    document.getElementById('btn-flt-excl').className = 'filter-btn' + (flt === 'excl' ? ' active btn-excl-active' : '');
+    document.getElementById('btn-flt-std').className = 'filter-btn' + (flt === 'std' ? ' active' : '');
+
+    if (flt === 'excl') {
+      currentFilteredList = allItems.filter(it => it.exklusiv);
+    } else if (flt === 'std') {
+      currentFilteredList = allItems.filter(it => !it.exklusiv);
+    } else {
+      currentFilteredList = [...allItems];
+    }
+
+    if (currentFilteredList.length === 0) {
+      alert("Keine Artikel für diesen Filter vorhanden.");
+      setFilter('all');
+      return;
+    }
+
+    const jumpSelect = document.getElementById('jump-select');
+    jumpSelect.innerHTML = "";
+    currentFilteredList.forEach((it, idx) => {
+      const opt = document.createElement("option");
+      opt.value = idx;
+      opt.innerText = `${it.pos}. ${it.name.substring(0, 16)}${it.exklusiv ? ' ⭐' : ''}`;
+      jumpSelect.appendChild(opt);
+    });
+
+    currentFilteredIndex = 0;
+    renderStep();
+  }
+
+  function startWizard() {
+    document.getElementById('screen-upload').style.display = 'none';
+    document.getElementById('screen-export').style.display = 'none';
+    document.getElementById('screen-wizard').style.display = 'block';
+    renderStep();
+  }
+
+  function renderStep() {
+    if (currentFilteredList.length === 0) return;
+    const it = currentFilteredList[currentFilteredIndex];
+    const total = currentFilteredList.length;
+
+    document.getElementById('accordion-details').open = false;
+
+    document.getElementById('counter-label').innerText = `Pos ${it.pos} (${currentFilteredIndex + 1}/${total})`;
+    document.getElementById('progress-bar').style.width = `${((currentFilteredIndex + 1) / total) * 100}%`;
+    document.getElementById('jump-select').value = currentFilteredIndex;
+
+    document.getElementById('val-pos').innerText = `Pos ${it.pos}`;
+    document.getElementById('val-name').innerText = it.name;
+    document.getElementById('val-soll-hint').innerText = `Soll: ${it.soll}`;
+
+    document.getElementById('input-min').value = it.min;
+    document.getElementById('input-soll').value = it.soll;
+
+    const toggleEl = document.getElementById('input-exklusiv-toggle');
+    toggleEl.checked = it.exklusiv;
+    updateExclusiveBadgeAndText(it.exklusiv);
+
+    const bmVal = it.bestellmenge;
+    document.getElementById('input-bestellmenge').value = bmVal;
+    const numericBm = (bmVal !== "" && !isNaN(bmVal)) ? Number(bmVal) : 0;
+    document.getElementById('range-bestellmenge').value = Math.min(Math.max(numericBm, 0), 20);
+
+    document.getElementById('input-lagerort').value = it.lagerort;
+    document.getElementById('input-mhd').value = it.mhd;
+    document.getElementById('input-bemerkung').value = it.bemerkung;
+
+    document.getElementById('btn-prev').style.visibility = currentFilteredIndex === 0 ? 'hidden' : 'visible';
+    document.getElementById('btn-next').innerText = currentFilteredIndex === total - 1 ? 'Abschließen' : 'Weiter ►';
+
+    calcLiveValues();
+  }
+
+  function onExklusivToggleChange() {
+    const isChecked = document.getElementById('input-exklusiv-toggle').checked;
+    const it = currentFilteredList[currentFilteredIndex];
+    it.exklusiv = isChecked;
+    updateExclusiveBadgeAndText(isChecked);
+    updateFilterCounts();
+  }
+
+  function updateExclusiveBadgeAndText(isExcl) {
+    const badge = document.getElementById('val-badge-exclusive');
+    const txtState = document.getElementById('txt-exklusiv-state');
+    if (isExcl) {
+      badge.style.display = 'inline-block';
+      txtState.innerText = 'Ja (Exklusiv ⭐)';
+      txtState.style.color = '#7c3aed';
+    } else {
+      badge.style.display = 'none';
+      txtState.innerText = 'Nein';
+      txtState.style.color = '#6b21a8';
+    }
+  }
+
+  function calcLiveValues() {
+    const it = currentFilteredList[currentFilteredIndex];
+
+    const minVal = document.getElementById('input-min').value;
+    const sollVal = document.getElementById('input-soll').value;
+    const bmVal = document.getElementById('input-bestellmenge').value;
+    const lagerVal = document.getElementById('input-lagerort').value;
+
+    const minNum = (minVal !== "" && !isNaN(minVal)) ? Number(minVal) : 0;
+    const sollNum = (sollVal !== "" && !isNaN(sollVal)) ? Number(sollVal) : 0;
+    const bmNum = (bmVal !== "" && !isNaN(bmVal)) ? Number(bmVal) : 0;
+
+    it.min = minNum;
+    it.soll = sollNum;
+    it.lagerort = lagerVal;
+
+    document.getElementById('val-soll-hint').innerText = `Soll: ${sollNum}`;
+
+    const bestand = sollNum - bmNum;
+    const diff = sollNum - bestand;
+
+    document.getElementById('val-chip-soll').innerText = sollNum;
+    document.getElementById('val-chip-bestand').innerText = bestand;
+    document.getElementById('val-chip-lager').innerText = lagerVal || '-';
+    document.getElementById('val-diff-detail').value = diff;
+
+    const mhdVal = document.getElementById('input-mhd').value;
+    const meldeCard = document.getElementById('box-meldetext');
+    const meldeText = document.getElementById('meldetext-display');
+    const meldeIcon = document.getElementById('meldetext-icon');
+    const mhdInput = document.getElementById('input-mhd');
+
+    meldeCard.className = 'meldetext-card';
+    mhdInput.classList.remove('border-mhd-ok', 'border-mhd-orange', 'border-mhd-red');
+
+    if (!mhdVal) {
+      meldeCard.classList.add('status-none');
+      meldeIcon.innerText = 'ℹ️';
+      meldeText.innerText = 'Kein Datum';
+      it.meldetext = "";
+    } else {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const targetParts = mhdVal.split('-').map(Number);
+      const targetDate = new Date(targetParts[0], targetParts[1] - 1, targetParts[2]);
+      targetDate.setHours(0, 0, 0, 0);
+
+      const diffDays = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
+
+      if (diffDays < 0) {
+        meldeCard.classList.add('status-red');
+        meldeIcon.innerText = '⚠️';
+        meldeText.innerText = `Abgelaufen (${Math.abs(diffDays)} T)`;
+        mhdInput.classList.add('border-mhd-red');
+        it.meldetext = "abgelaufen";
+      } else if (diffDays <= 3) {
+        meldeCard.classList.add('status-red');
+        meldeIcon.innerText = '🚨';
+        meldeText.innerText = `Kritisch (${diffDays} T)`;
+        mhdInput.classList.add('border-mhd-red');
+        it.meldetext = "läuft bald ab";
+      } else if (diffDays <= 20) {
+        meldeCard.classList.add('status-orange');
+        meldeIcon.innerText = '⏰';
+        meldeText.innerText = `Warnung (${diffDays} T)`;
+        mhdInput.classList.add('border-mhd-orange');
+        it.meldetext = "läuft bald ab";
+      } else {
+        meldeCard.classList.add('status-ok');
+        meldeIcon.innerText = '✅';
+        meldeText.innerText = `Gültig (${diffDays} T)`;
+        mhdInput.classList.add('border-mhd-ok');
+        it.meldetext = "";
+      }
+    }
+  }
+
+  function saveStepInputs() {
+    if (currentFilteredList.length === 0) return;
+    const it = currentFilteredList[currentFilteredIndex];
+    
+    const minVal = document.getElementById('input-min').value;
+    const sollVal = document.getElementById('input-soll').value;
+    const bmVal = document.getElementById('input-bestellmenge').value;
+
+    it.min = (minVal !== "" && !isNaN(minVal)) ? Number(minVal) : 0;
+    it.soll = (sollVal !== "" && !isNaN(sollVal)) ? Number(sollVal) : 0;
+    it.bestellmenge = (bmVal !== "" && !isNaN(bmVal)) ? Number(bmVal) : "";
+    it.lagerort = document.getElementById('input-lagerort').value.trim();
+    it.exklusiv = document.getElementById('input-exklusiv-toggle').checked;
+    it.mhd = document.getElementById('input-mhd').value;
+    it.bemerkung = document.getElementById('input-bemerkung').value.trim();
+  }
+
+  function nextStep() {
+    saveStepInputs();
+    if (currentFilteredIndex < currentFilteredList.length - 1) {
+      currentFilteredIndex++;
+      renderStep();
+    } else {
+      document.getElementById('screen-wizard').style.display = 'none';
+      document.getElementById('screen-export').style.display = 'block';
+    }
+  }
+
+  function prevStep() {
+    if (currentFilteredIndex > 0) {
+      saveStepInputs();
+      currentFilteredIndex--;
+      renderStep();
+    }
+  }
+
+  function jumpToFiltered(idx) {
+    saveStepInputs();
+    currentFilteredIndex = idx;
+    renderStep();
+  }
+
+  function returnToWizard() {
+    document.getElementById('screen-export').style.display = 'none';
+    document.getElementById('screen-wizard').style.display = 'block';
+    renderStep();
+  }
+
+  function exportExcel() {
+    saveStepInputs();
+
+    allItems.forEach(it => {
+      const r = it.rowIdx;
+      const numSoll = Number(it.soll) || 0;
+      const numBestell = (it.bestellmenge !== "" && !isNaN(it.bestellmenge)) ? Number(it.bestellmenge) : 0;
+      const calcBestand = numSoll - numBestell;
+      const calcDiff = numSoll - calcBestand;
+
+      if (rawMatrix[r]) {
+        if (colMap.min !== undefined) rawMatrix[r][colMap.min] = it.min;
+        if (colMap.soll !== undefined) rawMatrix[r][colMap.soll] = it.soll;
+        if (colMap.bestand !== undefined) rawMatrix[r][colMap.bestand] = calcBestand;
+        if (colMap.bestellmenge !== undefined) rawMatrix[r][colMap.bestellmenge] = it.bestellmenge;
+        if (colMap.diff !== undefined) rawMatrix[r][colMap.diff] = calcDiff;
+        if (colMap.lagerort !== undefined) rawMatrix[r][colMap.lagerort] = it.lagerort;
+        if (colMap.exklusiv !== undefined) rawMatrix[r][colMap.exklusiv] = it.exklusiv ? 'Ja' : 'Nein';
+        if (colMap.bemerkung !== undefined) rawMatrix[r][colMap.bemerkung] = it.bemerkung;
+        if (colMap.mhd !== undefined) rawMatrix[r][colMap.mhd] = it.mhd;
+        if (colMap.meldetext !== undefined) rawMatrix[r][colMap.meldetext] = it.meldetext;
+      }
+
+      if (activeSheet && activeSheet['!ref']) {
+        const row1Based = r + 1;
+        function updateCell(colIdx, val, isDate = false) {
+          if (colIdx === undefined) return;
+          const letter = XLSX.utils.encode_col(colIdx);
+          const ref = letter + row1Based;
+          if (val === "" || val === null || val === undefined) {
+            delete activeSheet[ref];
+          } else if (isDate) {
+            const p = String(val).split('-').map(Number);
+            activeSheet[ref] = { t: 'd', v: new Date(Date.UTC(p[0], p[1]-1, p[2])), z: 'dd.mm.yyyy' };
+          } else if (!isNaN(val) && typeof val === 'number') {
+            activeSheet[ref] = { t: 'n', v: Number(val) };
+          } else {
+            activeSheet[ref] = { t: 's', v: String(val) };
+          }
+        }
+
+        updateCell(colMap.min, it.min);
+        updateCell(colMap.soll, it.soll);
+        
+        const refBestand = colMap.bestand !== undefined ? XLSX.utils.encode_col(colMap.bestand) + row1Based : null;
+        if (refBestand && (!activeSheet[refBestand] || !activeSheet[refBestand].f)) {
+          updateCell(colMap.bestand, calcBestand);
+        }
+
+        updateCell(colMap.bestellmenge, it.bestellmenge);
+
+        const refDiff = colMap.diff !== undefined ? XLSX.utils.encode_col(colMap.diff) + row1Based : null;
+        if (refDiff && (!activeSheet[refDiff] || !activeSheet[refDiff].f)) {
+          updateCell(colMap.diff, calcDiff);
+        }
+
+        updateCell(colMap.lagerort, it.lagerort);
+        updateCell(colMap.exklusiv, it.exklusiv ? 'Ja' : 'Nein');
+        updateCell(colMap.bemerkung, it.bemerkung);
+        updateCell(colMap.mhd, it.mhd, true);
+        updateCell(colMap.meldetext, it.meldetext);
+      }
+    });
+
+    const exportWb = workbook || XLSX.utils.book_new();
+    if (!workbook) {
+      const newWs = XLSX.utils.aoa_to_sheet(rawMatrix);
+      XLSX.utils.book_append_sheet(exportWb, newWs, activeSheetName || "Prüfung Verfallsdatum");
+    }
+
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const fileName = `Arzneimittel-Medikamenten-Verfallsdatum_geprueft_${todayStr}.xlsx`;
+    XLSX.writeFile(exportWb, fileName);
+  }
+
+  function toIsoDateString(val) {
+    if (!val) return "";
+    if (val instanceof Date) {
+      const y = val.getFullYear();
+      const m = String(val.getMonth() + 1).padStart(2, '0');
+      const d = String(val.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+    const s = String(val).trim();
+    if (s.includes('.')) {
+      const p = s.split('.');
+      if (p.length === 3) return `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`;
+    }
+    if (s.includes('-') && s.length === 10) return s;
+    return "";
+  }
+</script>
+
+</body>
+</html>
