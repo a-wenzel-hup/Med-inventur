@@ -1,885 +1,765 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Bestands- & Verfallsdatum-Prüfung</title>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <style>
-    :root {
-      --primary: #0d6efd;
-      --primary-hover: #0b5ed7;
-      --bg: #f1f5f9;
-      --card-bg: #ffffff;
-      --border: #cbd5e1;
-      --text: #0f172a;
-      --text-muted: #64748b;
-      --success: #16a34a;
-      --warning: #ea580c;
-      --danger: #dc2626;
-      --exclusive: #7c3aed;
-      --exclusive-bg: #f3e8ff;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Lager-, Verfalls- & Fristen-Terminal | RW Sassnitz</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --primary: #1F4E79;
+    --primary-hover: #163a5c;
+    --primary-light: #2c6aa3;
+    --bg-gray: #f1f5f9;
+    --border: #cbd5e1;
+    --text: #0f172a;
+    --text-muted: #64748b;
+    --success: #16a34a;
+    --warning: #ea580c;
+    --danger: #dc2626;
+    --exclusive: #7c3aed;
+    --exclusive-bg: #f3e8ff;
+    --accent-yellow: #d97706;
+    --highlight-row: #e0f2fe;
+  }
 
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background-color: var(--bg);
-      color: var(--text);
-      margin: 0;
-      padding: 6px;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      min-height: 100vh;
-    }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text);
+    background-color: var(--bg-gray);
+    margin: 0;
+    padding: 8px;
+    font-size: 13px;
+  }
 
-    .container {
-      background: var(--card-bg);
-      border-radius: 12px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-      width: 100%;
-      max-width: 680px;
-      padding: 12px 14px;
-      margin: 4px auto;
-    }
+  @media (min-width: 768px) {
+    body { padding: 16px; font-size: 13.5px; }
+  }
 
-    @media (min-width: 768px) {
-      body { padding: 20px; }
-      .container { padding: 20px 24px; }
-    }
+  .main-nav-bar {
+    display: flex;
+    gap: 6px;
+    background: #e2e8f0;
+    padding: 5px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    flex-wrap: wrap;
+  }
 
-    /* Sperrbildschirm (PIN) */
-    .auth-card {
-      text-align: center;
-      padding: 35px 16px;
-    }
-    .auth-icon {
-      font-size: 42px;
-      margin-bottom: 10px;
-    }
-    .auth-title {
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--text);
-      margin: 0 0 6px 0;
-    }
-    .auth-desc {
-      font-size: 13px;
-      color: var(--text-muted);
-      margin: 0 0 20px 0;
-    }
-    .pin-input-group {
-      max-width: 260px;
-      margin: 0 auto;
-    }
-    .input-pin {
-      width: 100%;
-      font-size: 24px !important;
-      text-align: center;
-      letter-spacing: 6px;
-      font-weight: 700;
-      padding: 8px 12px !important;
-      border: 2px solid var(--border) !important;
-      border-radius: 8px;
-      outline: none;
-      background: #f8fafc;
-      margin-bottom: 12px;
-    }
-    .input-pin:focus {
-      border-color: var(--primary) !important;
-      background: #ffffff;
-      box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
-    }
-    .pin-error {
-      color: var(--danger);
-      font-size: 12px;
-      font-weight: 700;
-      margin-top: 8px;
-      min-height: 18px;
-    }
+  .main-nav-btn {
+    flex: 1;
+    min-width: 150px;
+    padding: 9px 12px;
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-muted);
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
-    /* Start / Upload Screens */
-    .gsheet-card {
-      background: #f8faff;
-      border: 1px solid #d0e1fd;
-      border-radius: 10px;
-      padding: 14px;
-      margin-bottom: 12px;
-    }
-    .input-row {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      margin-top: 6px;
-    }
-    @media (min-width: 550px) {
-      .input-row { flex-direction: row; }
-      .input-row input { flex-grow: 1; }
-    }
+  .main-nav-btn.active {
+    background: #ffffff;
+    color: var(--primary);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+  }
 
-    .options-box {
-      margin-top: 8px;
-      padding: 8px 10px;
-      background: #ffffff;
-      border: 1px solid #dbeafe;
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 12px;
-      font-weight: 600;
-      color: #1e3a8a;
-    }
-    .options-box input[type="checkbox"] {
-      width: 16px;
-      height: 16px;
-      cursor: pointer;
-    }
+  .btn-nav-pin {
+    flex: 0 0 auto;
+    min-width: auto;
+    background: #f8fafc;
+    color: #475569;
+    border: 1px solid var(--border);
+  }
 
-    .divider {
-      display: flex;
-      align-items: center;
-      text-align: center;
-      margin: 12px 0;
-      color: var(--text-muted);
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-    }
-    .divider::before, .divider::after {
-      content: '';
-      flex: 1;
-      border-bottom: 1px solid #e2e8f0;
-    }
-    .divider:not(:empty)::before { margin-right: .8em; }
-    .divider:not(:empty)::after { margin-left: .8em; }
+  .auth-card {
+    text-align: center;
+    padding: 40px 16px;
+    max-width: 380px;
+    margin: 30px auto;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    border: 1px solid var(--border);
+  }
+  .auth-icon { font-size: 42px; margin-bottom: 10px; }
+  .auth-title { font-size: 20px; font-weight: 700; color: var(--primary); margin: 0 0 6px 0; }
+  .auth-desc { font-size: 13px; color: var(--text-muted); margin: 0 0 18px 0; }
+  .input-pin {
+    width: 100%;
+    max-width: 240px;
+    font-size: 24px !important;
+    text-align: center;
+    letter-spacing: 6px;
+    font-weight: 700;
+    padding: 8px 12px !important;
+    border: 2px solid var(--border) !important;
+    border-radius: 8px;
+    outline: none;
+    background: #f8fafc;
+    margin: 0 auto 12px auto;
+    display: block;
+  }
+  .input-pin:focus {
+    border-color: var(--primary) !important;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(31, 78, 121, 0.15);
+  }
+  .pin-error { color: var(--danger); font-size: 12px; font-weight: 700; min-height: 18px; margin-top: 6px; }
 
-    .upload-zone {
-      border: 2px dashed var(--primary);
-      background: #fafbfc;
-      border-radius: 10px;
-      padding: 18px 14px;
-      text-align: center;
-      cursor: pointer;
-    }
+  textarea.auto-grow {
+    width: 100%;
+    min-height: 38px;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 12px;
+    box-sizing: border-box;
+    resize: none;
+    overflow-y: hidden;
+    line-height: 1.4;
+    background: #fff;
+  }
+  textarea.auto-grow:focus { outline: none; border-color: var(--primary); }
 
-    .progress-track {
-      width: 100%;
-      height: 4px;
-      background-color: #e2e8f0;
-      border-radius: 2px;
-      overflow: hidden;
-      margin: 6px 0 10px 0;
-    }
-    .progress-fill {
-      height: 100%;
-      background-color: var(--primary);
-      width: 0%;
-      transition: width 0.2s ease;
-    }
+  .wizard-container {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    width: 100%;
+    max-width: 680px;
+    padding: 12px 14px;
+    margin: 0 auto;
+  }
+  @media (min-width: 768px) { .wizard-container { padding: 20px 24px; } }
 
-    .nav-bar {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      margin-bottom: 6px;
-    }
+  .gsheet-card { background: #f8faff; border: 1px solid #d0e1fd; border-radius: 10px; padding: 14px; margin-bottom: 12px; }
+  .input-row { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+  @media (min-width: 550px) { .input-row { flex-direction: row; } .input-row input { flex-grow: 1; } }
+  .options-box {
+    margin-top: 8px; padding: 8px 10px; background: #ffffff; border: 1px solid #dbeafe; border-radius: 6px;
+    display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: #1e3a8a;
+  }
+  .options-box input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
 
-    .nav-top-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 4px;
-      flex-wrap: nowrap;
-    }
+  .divider {
+    display: flex; align-items: center; text-align: center; margin: 12px 0;
+    color: var(--text-muted); font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+  }
+  .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid #e2e8f0; }
+  .divider:not(:empty)::before { margin-right: .8em; }
+  .divider:not(:empty)::after { margin-left: .8em; }
 
-    .nav-actions {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
+  .upload-zone {
+    border: 2px dashed var(--primary); background: #fafbfc; border-radius: 10px; padding: 18px 14px; text-align: center; cursor: pointer;
+  }
 
-    .btn-action {
-      padding: 4px 8px;
-      min-height: 28px;
-      font-size: 11px;
-      font-weight: 600;
-      border-radius: 5px;
-      border: 1px solid var(--border);
-      background: #fff;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      white-space: nowrap;
-    }
-    .btn-home {
-      background: #f1f5f9;
-      color: #334155;
-    }
-    .btn-home:hover { background: #e2e8f0; }
-    .btn-sync {
-      background: #0f9d58;
-      color: white;
-      border-color: #0b8043;
-    }
-    .btn-sync:hover { background: #0b8043; }
-    .btn-reset-quantities {
-      color: #b91c1c;
-      border-color: #fca5a5;
-      background: #fef2f2;
-    }
+  .progress-track { width: 100%; height: 4px; background-color: #e2e8f0; border-radius: 2px; overflow: hidden; margin: 6px 0 10px 0; }
+  .progress-fill { height: 100%; background-color: var(--primary); width: 0%; transition: width 0.2s ease; }
 
-    .filter-toggle-container {
-      display: flex;
-      background: #e2e8f0;
-      padding: 2px;
-      border-radius: 6px;
-      width: 100%;
-      gap: 2px;
-    }
-    .filter-btn {
-      flex: 1;
-      border: none;
-      background: transparent;
-      padding: 4px 6px;
-      font-size: 11px;
-      font-weight: 600;
-      border-radius: 5px;
-      cursor: pointer;
-      color: var(--text-muted);
-      text-align: center;
-      white-space: nowrap;
-    }
-    .filter-btn.active {
-      background: #ffffff;
-      color: var(--text);
-      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-    }
-    .filter-btn.active.btn-excl-active {
-      color: var(--exclusive);
-      font-weight: 700;
-    }
+  .nav-bar { display: flex; flex-direction: column; gap: 6px; margin-bottom: 6px; }
+  .nav-top-row { display: flex; justify-content: space-between; align-items: center; gap: 4px; width: 100%; }
+  .nav-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
 
-    .card-box {
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px 12px;
-      background: #fff;
-      margin-bottom: 8px;
-    }
+  .btn-action {
+    padding: 4px 8px; min-height: 28px; font-size: 11px; font-weight: 600; border-radius: 5px;
+    border: 1px solid var(--border); background: #fff; cursor: pointer; display: inline-flex; align-items: center; white-space: nowrap;
+  }
+  .btn-home { background: #f1f5f9; color: #334155; }
+  .btn-sync { background: #0f9d58; color: white; border-color: #0b8043; }
+  .btn-reset-quantities { color: #b91c1c; border-color: #fca5a5; background: #fef2f2; }
 
-    .product-header-block {
-      margin-bottom: 8px;
-      border-bottom: 1px solid #f1f5f9;
-      padding-bottom: 6px;
-    }
+  #jump-select {
+    max-width: 32vw; min-width: 80px; padding: 3px 4px; font-size: 11px;
+    border: 1px solid var(--border); border-radius: 4px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;
+  }
+  @media (min-width: 600px) { #jump-select { max-width: 200px; } }
 
-    .product-title-row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
+  .filter-toggle-container { display: flex; background: #e2e8f0; padding: 2px; border-radius: 6px; width: 100%; gap: 2px; }
+  .filter-btn {
+    flex: 1; border: none; background: transparent; padding: 4px 6px; font-size: 11px; font-weight: 600;
+    border-radius: 5px; cursor: pointer; color: var(--text-muted); text-align: center; white-space: nowrap;
+  }
+  .filter-btn.active { background: #ffffff; color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+  .filter-btn.active.btn-excl-active { color: var(--exclusive); font-weight: 700; }
 
-    .pos-badge {
-      background: #e0f2fe;
-      color: #0369a1;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-weight: 700;
-      font-size: 12px;
-    }
-    .exclusive-badge {
-      background: var(--exclusive-bg);
-      color: var(--exclusive);
-      border: 1px solid #d8b4fe;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 11px;
-      font-weight: 700;
-      display: none;
-    }
-    .product-title {
-      font-size: 16px;
-      font-weight: 700;
-      margin: 2px 0 0 0;
-      width: 100%;
-      color: #0f172a;
-      line-height: 1.25;
-      word-break: break-word;
-    }
+  .card-box { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; background: #fff; margin-bottom: 8px; }
+  .pos-badge { background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 12px; }
+  .exclusive-badge { background: var(--exclusive-bg); color: var(--exclusive); border: 1px solid #d8b4fe; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; display: none; }
+  .product-title { font-size: 16px; font-weight: 700; margin: 2px 0 0 0; width: 100%; color: #0f172a; line-height: 1.25; word-break: break-word; }
+  .quick-info-bar { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
+  .info-chip { font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 4px; background: #f8fafc; border: 1px solid #e2e8f0; color: #475569; }
+  .info-chip strong { color: #0f172a; }
 
-    .quick-info-bar {
-      display: flex;
-      gap: 6px;
-      margin-top: 4px;
-      flex-wrap: wrap;
-    }
-    .info-chip {
-      font-size: 11px;
-      font-weight: 600;
-      padding: 2px 6px;
-      border-radius: 4px;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      color: #475569;
-    }
-    .info-chip strong { color: #0f172a; }
+  .order-qty-card { background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; }
+  .stepper-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .btn-step {
+    width: 44px; height: 40px; border-radius: 6px; font-size: 20px; font-weight: 700; background: #ffffff;
+    border: 1px solid #93c5fd; color: #1d4ed8; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .input-qty-large {
+    flex-grow: 1; text-align: center; font-size: 22px !important; font-weight: 800 !important; color: #1e40af !important;
+    background: #ffffff !important; border: 1.5px solid #60a5fa !important; border-radius: 6px; height: 40px; padding: 0 !important;
+  }
+  .slider-container { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .qty-range-slider { width: 100%; height: 6px; border-radius: 3px; background: #cbd5e1; outline: none; -webkit-appearance: none; cursor: pointer; }
+  .qty-range-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--primary); cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+  .quick-chips-row { display: flex; gap: 4px; flex-wrap: wrap; }
+  .btn-chip {
+    background: #ffffff; border: 1px solid #bfdbfe; color: #1e3a8a; font-size: 11px; font-weight: 700;
+    padding: 4px 6px; min-height: 28px; border-radius: 4px; cursor: pointer; flex: 1; text-align: center;
+  }
+  .btn-chip-plus { background: #e0e7ff; border-color: #c7d2fe; color: #3730a3; }
 
-    .order-qty-card {
-      background: #eff6ff;
-      border: 1.5px solid #bfdbfe;
-      border-radius: 8px;
-      padding: 8px 10px;
-      margin-bottom: 8px;
-    }
-    .order-qty-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 6px;
-    }
-    .order-qty-header label {
-      margin: 0;
-      font-size: 13px;
-      font-weight: 700;
-      color: #1e3a8a;
-    }
+  .mhd-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; }
+  .meldetext-card { padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; }
+  .status-ok { background-color: #dcfce7; color: #15803d; }
+  .status-orange { background-color: #ffedd5; color: #c2410c; }
+  .status-red { background-color: #fee2e2; color: #b91c1c; }
+  .status-none { background-color: #f1f5f9; color: #64748b; }
+  input.border-mhd-ok { border: 2px solid var(--success) !important; background-color: #f0fdf4; }
+  input.border-mhd-orange { border: 2px solid var(--warning) !important; background-color: #fff7ed; }
+  input.border-mhd-red { border: 2px solid var(--danger) !important; background-color: #fef2f2; }
 
-    .stepper-row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-bottom: 8px;
-    }
-    .btn-step {
-      width: 44px;
-      height: 40px;
-      min-height: 40px;
-      border-radius: 6px;
-      font-size: 20px;
-      font-weight: 700;
-      background: #ffffff;
-      border: 1px solid #93c5fd;
-      color: #1d4ed8;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0;
-    }
-    .btn-step:active { background: #dbeafe; }
-    
-    .input-qty-large {
-      flex-grow: 1;
-      text-align: center;
-      font-size: 22px !important;
-      font-weight: 800 !important;
-      color: #1e40af !important;
-      background: #ffffff !important;
-      border: 1.5px solid #60a5fa !important;
-      border-radius: 6px;
-      height: 40px;
-      padding: 0 !important;
-    }
+  .details-accordion { border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff; margin-top: 4px; overflow: hidden; }
+  .details-summary {
+    font-size: 12px; font-weight: 700; color: #475569; background: #f8fafc; padding: 7px 10px;
+    cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center;
+  }
+  .details-content { padding: 10px; background: #ffffff; border-top: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 8px; }
+  .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .form-group-sm { display: flex; flex-direction: column; gap: 2px; }
+  .form-group-sm label { font-size: 11px; font-weight: 600; color: #475569; }
+  .form-group-sm input { padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; }
 
-    .slider-container {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 6px;
-    }
-    .qty-range-slider {
-      width: 100%;
-      height: 6px;
-      border-radius: 3px;
-      background: #cbd5e1;
-      outline: none;
-      -webkit-appearance: none;
-      cursor: pointer;
-    }
-    .qty-range-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background: var(--primary);
-      cursor: pointer;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-    }
-    .slider-scale-label {
-      font-size: 10px;
-      color: #64748b;
-      font-weight: 700;
-    }
+  .exclusive-toggle-sm { display: flex; align-items: center; justify-content: space-between; background: #faf5ff; border: 1px solid #f3e8ff; padding: 6px 8px; border-radius: 6px; }
+  .switch { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .2s; border-radius: 22px; }
+  .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .2s; border-radius: 50%; }
+  input:checked + .slider { background-color: var(--exclusive); }
+  input:checked + .slider:before { transform: translateX(18px); }
 
-    .quick-chips-row {
-      display: flex;
-      gap: 4px;
-      flex-wrap: wrap;
-    }
-    .btn-chip {
-      background: #ffffff;
-      border: 1px solid #bfdbfe;
-      color: #1e3a8a;
-      font-size: 11px;
-      font-weight: 700;
-      padding: 4px 6px;
-      min-height: 28px;
-      border-radius: 4px;
-      cursor: pointer;
-      flex: 1;
-      text-align: center;
-    }
-    .btn-chip:active {
-      background: #2563eb;
-      color: #ffffff;
-    }
-    .btn-chip-plus {
-      background: #e0e7ff;
-      border-color: #c7d2fe;
-      color: #3730a3;
-    }
+  .button-group { display: flex; gap: 6px; margin-top: 10px; }
+  button.btn-main { background: var(--primary); color: white; flex-grow: 1; min-height: 42px; border-radius: 8px; font-size: 14px; font-weight: 700; border: none; cursor: pointer; }
+  button.btn-sub { background: #e2e8f0; color: var(--text); min-height: 42px; border-radius: 8px; font-size: 14px; font-weight: 700; border: none; cursor: pointer; padding: 10px 14px; }
+  button.btn-export { background: var(--success); color: white; width: 100%; padding: 12px; font-size: 15px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; }
+  button.btn-gsheet { background: #0f9d58; color: white; white-space: nowrap; border-radius: 8px; border: none; font-weight: 700; padding: 8px 14px; cursor: pointer; }
 
-    .mhd-box {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 8px 10px;
-      margin-bottom: 8px;
-    }
-    .mhd-top-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 4px;
-    }
-    .mhd-top-row label {
-      font-size: 12px;
-      font-weight: 700;
-      color: #334155;
-      margin: 0;
-    }
+  .planning-panel {
+    background: #fff; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); border: 1px solid var(--border);
+    padding: 14px 18px; max-width: 1200px; margin: 0 auto;
+  }
+  .header-flex { display: flex; justify-content: space-between; align-items: center; border-bottom: 2.5px solid var(--primary); padding-bottom: 10px; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+  h1.planning-title { font-size: 15pt; color: var(--primary); margin: 0 0 3px 0; text-transform: uppercase; letter-spacing: 0.5px; }
+  .btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
+  .btn {
+    background: var(--primary); color: #fff; border: none; padding: 7px 12px; border-radius: 5px; font-size: 8.5pt;
+    font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
+  }
+  .btn-save { background: #0284c7; }
+  .btn-purple { background: var(--exclusive); }
+  .btn-teal { background: #0d9488; }
+  .btn-green { background: #27ae60; }
+  .btn-yellow { background: var(--accent-yellow); }
+  .btn-red { background: var(--danger); }
 
-    .meldetext-card {
-      padding: 5px 8px;
-      border-radius: 6px;
-      font-weight: 600;
-      font-size: 11px;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .status-ok { background-color: #dcfce7; color: #15803d; }
-    .status-orange { background-color: #ffedd5; color: #c2410c; }
-    .status-red { background-color: #fee2e2; color: #b91c1c; }
-    .status-none { background-color: #f1f5f9; color: #64748b; }
+  .config-drawer { display: none; background: #f8fafc; border: 1.5px solid #94a3b8; border-radius: 6px; padding: 14px 16px; margin-bottom: 16px; }
+  .config-drawer.active { display: block; }
+  .config-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-top: 10px; }
+  .config-item label { display: block; font-weight: bold; font-size: 8.5pt; color: var(--primary); margin-bottom: 4px; }
+  .config-item input, .config-item select { width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 8.5pt; }
 
-    input[type="date"] {
-      width: 100%;
-      padding: 6px 8px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      font-size: 14px;
-      background: #ffffff;
-    }
-    input.border-mhd-ok { border: 2px solid var(--success) !important; background-color: #f0fdf4; }
-    input.border-mhd-orange { border: 2px solid var(--warning) !important; background-color: #fff7ed; }
-    input.border-mhd-red { border: 2px solid var(--danger) !important; background-color: #fef2f2; }
+  .staff-list-container { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; max-width: 600px; }
+  .staff-row { display: flex; gap: 8px; align-items: center; }
+  .staff-row input { flex: 1; padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 8.5pt; }
+  .btn-del { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 8pt; font-weight: bold; }
 
-    .details-accordion {
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      background: #ffffff;
-      margin-top: 4px;
-      overflow: hidden;
-    }
-    .details-summary {
-      font-size: 12px;
-      font-weight: 700;
-      color: #475569;
-      background: #f8fafc;
-      padding: 7px 10px;
-      cursor: pointer;
-      user-select: none;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .details-summary::-webkit-details-marker { display: none; }
-    .details-summary::after {
-      content: "▾";
-      font-size: 14px;
-      transition: transform 0.2s;
-    }
-    details[open] .details-summary::after {
-      transform: rotate(180deg);
-    }
-    .details-content {
-      padding: 10px;
-      background: #ffffff;
-      border-top: 1px solid #f1f5f9;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
+  .sync-status-bar {
+    display: flex; align-items: center; justify-content: space-between; background: #f1f5f9; border: 1px solid var(--border);
+    padding: 8px 14px; border-radius: 6px; margin-bottom: 12px; font-size: 8.5pt; flex-wrap: wrap; gap: 10px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot-green { background: #22c55e; }
+  .dot-blue { background: #0284c7; }
+  .dot-orange { background: #f59e0b; }
 
-    .form-grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
+  .vehicle-alert-box { background-color: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid var(--accent-yellow); padding: 10px 14px; margin-bottom: 14px; border-radius: 4px; }
+  .vehicle-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  @media (min-width: 700px) { .vehicle-grid { grid-template-columns: 1fr 1fr; } }
 
-    .form-group-sm {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-    .form-group-sm label {
-      font-size: 11px;
-      font-weight: 600;
-      color: #475569;
-    }
-    .form-group-sm input {
-      padding: 6px 8px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      font-size: 13px;
-    }
+  .table-scroll-container { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 16px; }
+  table.planning-table { width: 100%; min-width: 920px; border-collapse: collapse; font-size: 8pt; background: #fff; }
+  table.planning-table th, table.planning-table td { border: 1px solid var(--border); padding: 5px 6px; text-align: left; vertical-align: middle; }
+  table.planning-table th { background-color: #f1f5f9; color: var(--primary); font-weight: 700; }
+  tr.current-cycle { background-color: var(--highlight-row) !important; border: 2.5px solid var(--primary) !important; }
 
-    .exclusive-toggle-sm {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: #faf5ff;
-      border: 1px solid #f3e8ff;
-      padding: 6px 8px;
-      border-radius: 6px;
-    }
-    .switch {
-      position: relative;
-      display: inline-block;
-      width: 40px;
-      height: 22px;
-      flex-shrink: 0;
-    }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-color: #cbd5e1;
-      transition: .2s;
-      border-radius: 22px;
-    }
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 16px;
-      width: 16px;
-      left: 3px;
-      bottom: 3px;
-      background-color: white;
-      transition: .2s;
-      border-radius: 50%;
-    }
-    input:checked + .slider { background-color: var(--exclusive); }
-    input:checked + .slider:before { transform: translateX(18px); }
+  .badge-season { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+  .badge-regular { background: #e2e8f0; color: #334155; border: 1px solid #cbd5e1; }
+  .badge-quartal { background: #fdf2f8; color: #9d174d; border: 1px solid #fbcfe8; }
+  .badge-current { background: #1F4E79; color: #fff; font-size: 7pt; padding: 2px 6px; border-radius: 3px; margin-left: 4px; font-weight: bold; }
+  .badge-deadline { background: #f1f5f9; color: #0f172a; border: 1px solid #cbd5e1; font-weight: 600; }
+  .badge-success { background: #dcfce7; color: #166534; }
+  .badge-pending { background: #fee2e2; color: #991b1b; }
 
-    .button-group {
-      display: flex;
-      gap: 6px;
-      margin-top: 10px;
-    }
-    button {
-      padding: 10px 14px;
-      min-height: 42px;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 700;
-      border: none;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .btn-main { background: var(--primary); color: white; flex-grow: 1; }
-    .btn-main:hover { background: var(--primary-hover); }
-    .btn-sub { background: #e2e8f0; color: var(--text); }
-    .btn-export { background: var(--success); color: white; width: 100%; padding: 12px; font-size: 15px; }
-    .btn-gsheet { background: #0f9d58; color: white; white-space: nowrap; }
+  .sql-box { background: #0f172a; color: #38bdf8; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 8pt; white-space: pre-wrap; max-height: 180px; overflow-y: auto; }
 
-    .live-status-bar {
-      font-size: 11px;
-      font-weight: 700;
-      text-align: center;
-      margin-top: 6px;
-      padding: 4px;
-      border-radius: 4px;
-      display: none;
-    }
-  </style>
+  .modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.75);
+    display: flex; justify-content: center; align-items: center; z-index: 9999; backdrop-filter: blur(2px);
+  }
+  .modal-box {
+    background: #fff; border-radius: 8px; width: 90%; max-width: 480px; padding: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.25); border: 2px solid var(--primary);
+  }
+</style>
 </head>
 <body>
 
-<div class="container">
+<div id="screen-auth" class="auth-card">
+  <div class="auth-icon">🔒</div>
+  <h2 class="auth-title">Terminal Sassnitz</h2>
+  <p class="auth-desc">Arzneimittel-Prüfung & Fristenplanung</p>
+  <form onsubmit="event.preventDefault(); verifyPin();" style="max-width: 260px; margin: 0 auto;">
+    <input type="password" id="input-pin" class="input-pin" inputmode="numeric" placeholder="••••••" maxlength="12" autofocus>
+    <button type="submit" class="btn-main" style="width: 100%;">Entsperren</button>
+    <div id="pin-error-msg" class="pin-error"></div>
+  </form>
+</div>
 
-  <!-- 0. SPERRBILDSCHIRM (PIN-ABFRAGE) -->
-  <div id="screen-auth" class="auth-card">
-    <div class="auth-icon">🔒</div>
-    <h2 class="auth-title">Zugriff geschützt</h2>
-    <p class="auth-desc">Bitte PIN eingeben, um die Prüfung zu öffnen:</p>
-    <form onsubmit="event.preventDefault(); verifyPin();" class="pin-input-group">
-      <input type="password" id="input-pin" class="input-pin" inputmode="numeric" placeholder="••••••" maxlength="12" autofocus>
-      <button type="submit" class="btn-main" style="width: 100%; min-height: 44px; font-size: 16px;">Entsperren</button>
-      <div id="pin-error-msg" class="pin-error"></div>
-    </form>
-  </div>
+<div id="app-main-content" style="display: none;">
 
-  <!-- 1. START / DATEI- UND LINK-AUSWAHL -->
-  <div id="screen-upload" style="display: none;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-      <h2 style="margin: 0; color: var(--primary); font-size: 18px;">Arzneimittel- & Bestandsprüfung</h2>
-      <button type="button" id="btn-return-wizard" class="btn-action" style="display: none;" onclick="returnToWizardFromUpload()">↩️ Zurück zur Prüfung</button>
-    </div>
-    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 12px;">
-      Tabelle über Google Sheets oder als lokale Datei einlesen:
-    </p>
-
-    <div class="gsheet-card">
-      <label for="gsheet-url" style="color: #0f9d58; display: flex; align-items: center; gap: 6px; font-size: 13px;">
-        <span>📊</span> <strong>Google Sheets Link (Lesen):</strong>
-      </label>
-      <div class="input-row">
-        <input type="text" id="gsheet-url" value="https://docs.google.com/spreadsheets/d/1T78HBf3lpsdhtrJPF1pXsui_gOE-vKF_KxMsJs9GhGM/edit?usp=sharing" style="padding: 7px 10px; font-size: 13px;">
-        <button type="button" class="btn-gsheet" id="btn-load-gsheet" onclick="loadFromGoogleSheet()">Abrufen</button>
-      </div>
-
-      <div style="margin-top: 10px;">
-        <label for="gsheet-api-url" style="color: #4338ca; display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 700;">
-          <span>☁️ Apps Script Web-App URL:</span>
-          <a href="javascript:void(0)" onclick="testConnection()" style="font-size: 11px; text-decoration: underline; color: #4338ca;">🔍 Verbindung testen</a>
-        </label>
-        <input type="text" id="gsheet-api-url" value="https://script.google.com/macros/s/AKfycbxVC5fA5ayaCIunFhVXmVgSa4vefoTq21X6hpAHA2BYDhuk0To24Vb1k6AJ5MYR7em-/exec" style="width: 100%; padding: 6px 10px; font-size: 12px; margin-top: 4px; border: 1px solid #c7d2fe; border-radius: 6px;">
-        <div id="api-test-status" style="font-size: 11px; font-weight: 700; margin-top: 4px;"></div>
-      </div>
-
-      <div style="display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; flex-wrap: wrap;">
-        <label for="gsheet-tab-name" style="margin-bottom:0;">Blatt:</label>
-        <input type="text" id="gsheet-tab-name" value="Prüfung Verfallsdatum" style="max-width: 180px; padding: 4px 8px; font-size: 12px;">
-      </div>
-
-      <div class="options-box">
-        <input type="checkbox" id="chk-reset-on-load">
-        <label for="chk-reset-on-load" style="margin-bottom:0; cursor:pointer;">
-          Bestellmengen beim Laden direkt nullen (für neue Inventur)
-        </label>
-      </div>
-
-      <div id="gsheet-status" style="display: none; font-size: 12px; margin-top: 6px; color: var(--primary); font-weight: 600;">
-        ⏳ Lade Daten...
-      </div>
-    </div>
-
-    <div class="divider">ODER LOKALE DATEI</div>
-
-    <div class="upload-zone" onclick="document.getElementById('file-input').click()">
-      <div style="font-size: 22px; margin-bottom: 2px;">📂</div>
-      <strong style="font-size: 13px;">Excel- (.xlsx) oder CSV-Datei wählen</strong>
-      <p style="color: var(--text-muted); font-size: 11px; margin: 2px 0 0 0;">Tippen oder Datei hierher ziehen</p>
-      <input type="file" id="file-input" accept=".xlsx, .xls, .csv" style="display: none;" onchange="loadFile(this.files[0])">
-    </div>
-
-    <div id="sheet-picker-row" style="display: none; margin-top: 10px;">
-      <label for="sheet-select" style="font-size: 12px;">Tabellenblatt wählen:</label>
-      <select id="sheet-select" onchange="switchSheet(this.value)" style="width: 100%; padding: 6px;"></select>
-    </div>
-  </div>
-
-  <!-- 2. WIZARD: ULTRA-KOMPAKT FÜR SMARTPHONES -->
-  <div id="screen-wizard" style="display: none;">
-    <div class="nav-bar">
-      <div class="nav-top-row">
-        <span id="counter-label" style="font-weight: 700; font-size: 13px;">Pos 1 / 221</span>
-        <div class="nav-actions">
-          <select id="jump-select" style="max-width: 95px; padding: 3px 4px; font-size: 11px;" onchange="jumpToFiltered(Number(this.value))"></select>
-          <button type="button" class="btn-action btn-home" onclick="goToStartMenu()" title="Zum Startmenü / Tabellenauswahl">🏠 Menü</button>
-          <button type="button" id="btn-sync-top" class="btn-action btn-sync" onclick="syncToGoogleSheet()" title="Direkt in Google Sheet speichern">☁️ Sichern</button>
-          <button type="button" class="btn-action btn-reset-quantities" onclick="resetAllOrderQuantities()" title="Bestellmengen auf 0">🧹</button>
-          <button type="button" class="btn-action" onclick="exportExcel()" title="Tabelle als Datei herunterladen">📥</button>
-        </div>
-      </div>
-
-      <div class="filter-toggle-container">
-        <button type="button" class="filter-btn active" id="btn-flt-all" onclick="setFilter('all')">
-          Alle (<span id="cnt-all">0</span>)
-        </button>
-        <button type="button" class="filter-btn" id="btn-flt-excl" onclick="setFilter('excl')">
-          ⭐ Exklusiv (<span id="cnt-excl">0</span>)
-        </button>
-        <button type="button" class="filter-btn" id="btn-flt-std" onclick="setFilter('std')">
-          Standard (<span id="cnt-std">0</span>)
-        </button>
-      </div>
-    </div>
-
-    <div class="progress-track">
-      <div class="progress-fill" id="progress-bar"></div>
-    </div>
-
-    <form id="wizard-form" onsubmit="event.preventDefault(); nextStep();">
-      <div class="card-box">
-        
-        <div class="product-header-block">
-          <div class="product-title-row">
-            <span class="pos-badge" id="val-pos">Pos 1</span>
-            <span class="exclusive-badge" id="val-badge-exclusive">⭐ EXKLUSIV</span>
-          </div>
-          <h3 class="product-title" id="val-name">Material/Produktname</h3>
-          
-          <div class="quick-info-bar">
-            <span class="info-chip">Soll: <strong id="val-chip-soll">0</strong></span>
-            <span class="info-chip">Ist: <strong id="val-chip-bestand">0</strong></span>
-            <span class="info-chip">Ort: <strong id="val-chip-lager">-</strong></span>
-          </div>
-        </div>
-
-        <!-- Bestellmenge -->
-        <div class="order-qty-card">
-          <div class="order-qty-header">
-            <label for="input-bestellmenge">Bestellmenge:</label>
-            <span id="val-soll-hint" style="font-size: 11px; color: #1e40af; font-weight: 700;">Soll: 0</span>
-          </div>
-
-          <div class="stepper-row">
-            <button type="button" class="btn-step" onclick="adjustBestellmenge(-1)">−</button>
-            <input type="number" id="input-bestellmenge" class="input-qty-large" min="0" step="1" inputmode="numeric" placeholder="0" oninput="onQtyInputChanged()">
-            <button type="button" class="btn-step" onclick="adjustBestellmenge(1)">+</button>
-          </div>
-
-          <div class="slider-container">
-            <span class="slider-scale-label">0</span>
-            <input type="range" id="range-bestellmenge" class="qty-range-slider" min="0" max="20" step="1" value="0" oninput="onQtySliderMoved(this.value)">
-            <span class="slider-scale-label">20</span>
-          </div>
-
-          <div class="quick-chips-row">
-            <button type="button" class="btn-chip" onclick="setBestellmengeExact(0)">0</button>
-            <button type="button" class="btn-chip" onclick="setBestellmengeExact(1)">1</button>
-            <button type="button" class="btn-chip" onclick="setBestellmengeExact(2)">2</button>
-            <button type="button" class="btn-chip" onclick="setBestellmengeExact(3)">3</button>
-            <button type="button" class="btn-chip" onclick="setBestellmengeExact(5)">5</button>
-            <button type="button" class="btn-chip" onclick="setBestellmengeExact(10)">10</button>
-            <button type="button" class="btn-chip" onclick="setBestellmengeExact(20)">20</button>
-            <button type="button" class="btn-chip btn-chip-plus" onclick="adjustBestellmenge(10)">+10</button>
-          </div>
-        </div>
-
-        <!-- MHD & Status -->
-        <div class="mhd-box">
-          <div class="mhd-top-row">
-            <label for="input-mhd">MHD / Verfall:</label>
-            <div id="box-meldetext" class="meldetext-card status-none">
-              <span id="meldetext-icon">ℹ️</span>
-              <span id="meldetext-display">Gültig</span>
-            </div>
-          </div>
-          <input type="date" id="input-mhd" oninput="calcLiveValues()">
-        </div>
-
-        <!-- Aufklappbereich -->
-        <details class="details-accordion" id="accordion-details">
-          <summary class="details-summary">
-            <span>⚙️ Details & Stammdaten anpassen</span>
-          </summary>
-          <div class="details-content">
-            <div class="form-grid-2">
-              <div class="form-group-sm">
-                <label for="input-soll">Sollbestand (Soll):</label>
-                <input type="number" id="input-soll" min="0" step="1" inputmode="numeric" oninput="calcLiveValues()">
-              </div>
-              <div class="form-group-sm">
-                <label for="input-min">Mindestbestand (Min):</label>
-                <input type="number" id="input-min" min="0" step="1" inputmode="numeric" oninput="calcLiveValues()">
-              </div>
-            </div>
-
-            <div class="form-grid-2">
-              <div class="form-group-sm">
-                <label for="input-lagerort">Lagerort:</label>
-                <input type="text" id="input-lagerort" placeholder="z. B. Schrank 3" oninput="calcLiveValues()">
-              </div>
-              <div class="form-group-sm">
-                <label>Berechnete Diff (Soll - Ist):</label>
-                <input type="text" id="val-diff-detail" readonly style="background: #f8fafc; font-weight: 700;" value="0">
-              </div>
-            </div>
-
-            <div class="exclusive-toggle-sm">
-              <div>
-                <strong style="font-size: 12px; color: #581c87;">Exklusiver Artikel:</strong>
-                <span id="txt-exklusiv-state" style="font-size: 12px; font-weight: 700; margin-left: 4px; color: #6b21a8;">Nein</span>
-              </div>
-              <label class="switch">
-                <input type="checkbox" id="input-exklusiv-toggle" onchange="onExklusivToggleChange()">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="form-group-sm">
-              <label for="input-bemerkung">Bemerkung:</label>
-              <input type="text" id="input-bemerkung" placeholder="Optionale Bemerkung">
-            </div>
-          </div>
-        </details>
-
-      </div>
-
-      <div class="button-group">
-        <button type="button" class="btn-sub" id="btn-prev" onclick="prevStep()">Zurück</button>
-        <button type="submit" class="btn-main" id="btn-next">Weiter ► (Enter)</button>
-      </div>
-      <div id="live-save-status" class="live-status-bar"></div>
-    </form>
-  </div>
-
-  <!-- 3. ABSCHLUSS -->
-  <div id="screen-export" style="display: none; text-align: center; padding: 15px 0;">
-    <h2 style="color: var(--success); margin-top: 0; font-size: 18px;">Prüfung abgeschlossen!</h2>
-    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">
-      Alle Positionen wurden erfasst.
-    </p>
-    <button type="button" id="btn-sync-bottom" class="btn-action btn-sync" style="width: 100%; padding: 12px; font-size: 15px; margin-bottom: 8px;" onclick="syncToGoogleSheet()">
-      ☁️ Direkt in Google Sheet speichern
+  <div class="main-nav-bar">
+    <button type="button" class="main-nav-btn active" id="btn-tab-wizard" onclick="switchTab('wizard')">
+      📦 1. Bestellungs- & Bestandsprüfung (Wizard)
     </button>
-    <button class="btn-export" onclick="exportExcel()">📥 Lokale Excel-Datei speichern (.xlsx)</button>
-    <button class="btn-sub" style="width: 100%; margin-top: 10px;" onclick="returnToWizard()">Zurück zur Maske</button>
+    <button type="button" class="main-nav-btn" id="btn-tab-planning" onclick="switchTab('planning')">
+      📅 2. Interaktive Lager- & Fristenplanung
+    </button>
+    <button type="button" class="main-nav-btn btn-nav-pin" onclick="openPinChangeModal()">
+      🔑 PIN ändern
+    </button>
+  </div>
+
+  <!-- REITER 1: WIZARD -->
+  <div id="tab-view-wizard">
+    <div class="wizard-container">
+      <div id="screen-upload">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <h2 style="margin: 0; color: var(--primary); font-size: 18px;">Arzneimittel- & Bestandsprüfung</h2>
+          <button type="button" id="btn-return-wizard" class="btn-action" style="display: none;" onclick="returnToWizardFromUpload()">↩️ Zurück zur Prüfung</button>
+        </div>
+        <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 12px;">
+          Tabelle über Google Sheets oder als lokale Datei einlesen:
+        </p>
+
+        <div class="gsheet-card">
+          <label for="gsheet-url" style="color: #0f9d58; display: flex; align-items: center; gap: 6px; font-size: 13px;">
+            <span>📊</span> <strong>Google Sheets Link (Lesen):</strong>
+          </label>
+          <div class="input-row">
+            <input type="text" id="gsheet-url" value="https://docs.google.com/spreadsheets/d/1T78HBf3lpsdhtrJPF1pXsui_gOE-vKF_KxMsJs9GhGM/edit?usp=sharing" style="padding: 7px 10px; font-size: 13px; border: 1px solid var(--border); border-radius: 6px;">
+            <button type="button" class="btn-gsheet" id="btn-load-gsheet" onclick="loadFromGoogleSheet()">Abrufen</button>
+          </div>
+
+          <div style="margin-top: 10px;">
+            <label for="gsheet-api-url" style="color: #4338ca; display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 700;">
+              <span>☁️ Apps Script Web-App URL:</span>
+              <a href="javascript:void(0)" onclick="testConnection()" style="font-size: 11px; text-decoration: underline; color: #4338ca;">🔍 Verbindung testen</a>
+            </label>
+            <input type="text" id="gsheet-api-url" value="https://script.google.com/macros/s/AKfycbz91QWU6bzyllbjRWmmYLdB1tF1vMQOWS0kwdT0E0dNG2Y06kkSG5MSiYO_CT88krx6/exec" style="width: 100%; padding: 6px 10px; font-size: 12px; margin-top: 4px; border: 1px solid #c7d2fe; border-radius: 6px;">
+            <div id="api-test-status" style="font-size: 11px; font-weight: 700; margin-top: 4px;"></div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; flex-wrap: wrap;">
+            <label for="gsheet-tab-name" style="margin-bottom:0;">Blatt:</label>
+            <input type="text" id="gsheet-tab-name" value="Prüfung Verfallsdatum" style="max-width: 180px; padding: 4px 8px; font-size: 12px; border: 1px solid var(--border); border-radius: 4px;">
+          </div>
+
+          <div class="options-box">
+            <input type="checkbox" id="chk-reset-on-load">
+            <label for="chk-reset-on-load" style="margin-bottom:0; cursor:pointer;">
+              Bestellmengen beim Laden direkt nullen (für neue Inventur)
+            </label>
+          </div>
+
+          <div id="gsheet-status" style="display: none; font-size: 12px; margin-top: 6px; color: var(--primary); font-weight: 600;">
+            ⏳ Lade Daten...
+          </div>
+        </div>
+
+        <div class="divider">ODER LOKALE DATEI</div>
+
+        <div class="upload-zone" onclick="document.getElementById('file-input').click()">
+          <div style="font-size: 22px; margin-bottom: 2px;">📂</div>
+          <strong style="font-size: 13px;">Excel- (.xlsx) oder CSV-Datei wählen</strong>
+          <p style="color: var(--text-muted); font-size: 11px; margin: 2px 0 0 0;">Tippen oder Datei hierher ziehen</p>
+          <input type="file" id="file-input" accept=".xlsx, .xls, .csv" style="display: none;" onchange="loadFile(this.files[0])">
+        </div>
+
+        <div id="sheet-picker-row" style="display: none; margin-top: 10px;">
+          <label for="sheet-select" style="font-size: 12px;">Tabellenblatt wählen:</label>
+          <select id="sheet-select" onchange="switchSheet(this.value)" style="width: 100%; padding: 6px; border: 1px solid var(--border); border-radius: 4px;"></select>
+        </div>
+      </div>
+
+      <div id="screen-wizard" style="display: none;">
+        <div class="nav-bar">
+          <div class="nav-top-row">
+            <span id="counter-label" style="font-weight: 700; font-size: 13px;">Pos 1 / --</span>
+            <div class="nav-actions">
+              <select id="jump-select" onchange="jumpToFiltered(Number(this.value))"></select>
+              <button type="button" class="btn-action btn-home" onclick="goToStartMenu()">🏠 Menü</button>
+              <button type="button" id="btn-sync-top" class="btn-action btn-sync" onclick="syncToGoogleSheet()">☁️ Sichern</button>
+              <button type="button" class="btn-action btn-reset-quantities" onclick="resetAllOrderQuantities()" title="Bestellmengen auf 0">🧹</button>
+              <button type="button" class="btn-action" onclick="exportExcel()" title="Tabelle als Excel speichern">📥</button>
+            </div>
+          </div>
+
+          <div class="filter-toggle-container">
+            <button type="button" class="filter-btn active" id="btn-flt-all" onclick="setFilter('all')">Alle (<span id="cnt-all">0</span>)</button>
+            <button type="button" class="filter-btn" id="btn-flt-excl" onclick="setFilter('excl')">⭐ Exklusiv (<span id="cnt-excl">0</span>)</button>
+            <button type="button" class="filter-btn" id="btn-flt-std" onclick="setFilter('std')">Standard (<span id="cnt-std">0</span>)</button>
+          </div>
+        </div>
+
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-bar"></div>
+        </div>
+
+        <form id="wizard-form" onsubmit="event.preventDefault(); nextStep();">
+          <div class="card-box">
+            <div style="margin-bottom: 8px; border-bottom: 1px solid #f1f5f9; padding-bottom: 6px;">
+              <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                <span class="pos-badge" id="val-pos">Pos 1</span>
+                <span class="exclusive-badge" id="val-badge-exclusive">⭐ EXKLUSIV</span>
+              </div>
+              <h3 class="product-title" id="val-name">Material/Produktname</h3>
+              <div class="quick-info-bar">
+                <span class="info-chip">Soll: <strong id="val-chip-soll">0</strong></span>
+                <span class="info-chip">Ist: <strong id="val-chip-bestand">0</strong></span>
+                <span class="info-chip">Ort: <strong id="val-chip-lager">-</strong></span>
+              </div>
+            </div>
+
+            <div class="order-qty-card">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label for="input-bestellmenge" style="font-size: 13px; font-weight: 700; color: #1e3a8a;">Bestellmenge:</label>
+                <span id="val-soll-hint" style="font-size: 11px; color: #1e40af; font-weight: 700;">Soll: 0</span>
+              </div>
+
+              <div class="stepper-row">
+                <button type="button" class="btn-step" onclick="adjustBestellmenge(-1)">−</button>
+                <input type="number" id="input-bestellmenge" class="input-qty-large" min="0" step="1" inputmode="numeric" placeholder="0" oninput="onQtyInputChanged()">
+                <button type="button" class="btn-step" onclick="adjustBestellmenge(1)">+</button>
+              </div>
+
+              <div class="slider-container">
+                <span style="font-size: 10px; color: #64748b; font-weight: 700;">0</span>
+                <input type="range" id="range-bestellmenge" class="qty-range-slider" min="0" max="20" step="1" value="0" oninput="onQtySliderMoved(this.value)">
+                <span style="font-size: 10px; color: #64748b; font-weight: 700;">20</span>
+              </div>
+
+              <div class="quick-chips-row">
+                <button type="button" class="btn-chip" onclick="setBestellmengeExact(0)">0</button>
+                <button type="button" class="btn-chip" onclick="setBestellmengeExact(1)">1</button>
+                <button type="button" class="btn-chip" onclick="setBestellmengeExact(2)">2</button>
+                <button type="button" class="btn-chip" onclick="setBestellmengeExact(3)">3</button>
+                <button type="button" class="btn-chip" onclick="setBestellmengeExact(5)">5</button>
+                <button type="button" class="btn-chip" onclick="setBestellmengeExact(10)">10</button>
+                <button type="button" class="btn-chip" onclick="setBestellmengeExact(20)">20</button>
+                <button type="button" class="btn-chip btn-chip-plus" onclick="adjustBestellmenge(10)">+10</button>
+              </div>
+            </div>
+
+            <div class="mhd-box">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <label for="input-mhd" style="font-size: 12px; font-weight: 700; color: #334155;">MHD / Verfall:</label>
+                <div id="box-meldetext" class="meldetext-card status-none">
+                  <span id="meldetext-icon">ℹ️</span>
+                  <span id="meldetext-display">Gültig</span>
+                </div>
+              </div>
+              <input type="date" id="input-mhd" oninput="calcLiveValues()" style="width: 100%; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px;">
+            </div>
+
+            <details class="details-accordion" id="accordion-details">
+              <summary class="details-summary">
+                <span>⚙️ Details & Stammdaten anpassen</span>
+              </summary>
+              <div class="details-content">
+                <div class="form-grid-2">
+                  <div class="form-group-sm">
+                    <label for="input-soll">Sollbestand (Soll):</label>
+                    <input type="number" id="input-soll" min="0" step="1" inputmode="numeric" oninput="calcLiveValues()">
+                  </div>
+                  <div class="form-group-sm">
+                    <label for="input-min">Mindestbestand (Min):</label>
+                    <input type="number" id="input-min" min="0" step="1" inputmode="numeric" oninput="calcLiveValues()">
+                  </div>
+                </div>
+
+                <div class="form-grid-2">
+                  <div class="form-group-sm">
+                    <label for="input-lagerort">Lagerort:</label>
+                    <input type="text" id="input-lagerort" placeholder="z. B. Schrank 3" oninput="calcLiveValues()">
+                  </div>
+                  <div class="form-group-sm">
+                    <label>Berechnete Diff (Soll - Ist):</label>
+                    <input type="text" id="val-diff-detail" readonly style="background: #f8fafc; font-weight: 700;" value="0">
+                  </div>
+                </div>
+
+                <div class="exclusive-toggle-sm">
+                  <div>
+                    <strong style="font-size: 12px; color: #581c87;">Exklusiver Artikel:</strong>
+                    <span id="txt-exklusiv-state" style="font-size: 12px; font-weight: 700; margin-left: 4px; color: #6b21a8;">Nein</span>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="input-exklusiv-toggle" onchange="onExklusivToggleChange()">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+
+                <div class="form-group-sm">
+                  <label for="input-bemerkung">Bemerkung (wächst mit):</label>
+                  <textarea id="input-bemerkung" class="auto-grow" placeholder="Optionale Bemerkung" oninput="autoGrow(this)"></textarea>
+                </div>
+              </div>
+            </details>
+          </div>
+
+          <div class="button-group">
+            <button type="button" class="btn-sub" id="btn-prev" onclick="prevStep()">Zurück</button>
+            <button type="submit" class="btn-main" id="btn-next">Weiter ► (Enter)</button>
+          </div>
+          <div id="live-save-status" style="font-size: 11px; font-weight: 700; text-align: center; margin-top: 6px; padding: 4px; border-radius: 4px; display: none;"></div>
+        </form>
+      </div>
+
+      <div id="screen-export" style="display: none; text-align: center; padding: 15px 0;">
+        <h2 style="color: var(--success); margin-top: 0; font-size: 18px;">Prüfung abgeschlossen!</h2>
+        <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Alle Positionen wurden erfasst.</p>
+        <button type="button" id="btn-sync-bottom" class="btn-action btn-sync" style="width: 100%; padding: 12px; font-size: 15px; margin-bottom: 8px;" onclick="syncToGoogleSheet()">
+          ☁️ Direkt in Google Sheet speichern
+        </button>
+        <button class="btn-export" onclick="exportExcel()">📥 Lokale Excel-Datei speichern (.xlsx)</button>
+        <button class="btn-sub" style="width: 100%; margin-top: 10px;" onclick="returnToWizard()">Zurück zur Maske</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- REITER 2: INTERAKTIVE LAGER- & FRISTENPLANUNG -->
+  <div id="tab-view-planning" style="display: none;">
+    <div class="planning-panel">
+      <div class="header-flex">
+        <div>
+          <h1 class="planning-title">Lager-, Verfalls- & Fristen-Planung</h1>
+          <div style="font-size: 9pt; color: #64748b;">RW Sassnitz &ndash; Vollständiger Cloud- & SQL-Sync</div>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-sync" onclick="syncPlanningToGoogleSheet()">☁️ Plan in Google sichern</button>
+          <button class="btn btn-teal" onclick="loadPlanningFromGoogleSheet()">☁️ Plan aus Google laden</button>
+          <button class="btn btn-save" onclick="saveToSqlFile()">💾 SQL Datei</button>
+          <button class="btn btn-purple" onclick="toggleIntervalConfig()">⚙️ Intervalle</button>
+          <button class="btn btn-teal" onclick="toggleStaffConfig()">👥 Personal</button>
+          <input type="file" id="importFileInput" accept=".sql" style="display: none;" onchange="handleFileImport(event)">
+          <button class="btn" onclick="document.getElementById('importFileInput').click()">📂 SQL laden</button>
+          <button class="btn btn-yellow" onclick="clearActiveVehicleInputs()">🧹 Bedarf leeren</button>
+          <button class="btn btn-red" onclick="resetForm()">🔄 Reset</button>
+          <button class="btn" onclick="window.print()">🖨️ Druck</button>
+        </div>
+      </div>
+
+      <div id="intervalDrawer" class="config-drawer">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #cbd5e1; padding-bottom: 6px;">
+          <strong style="color: var(--primary); font-size: 10pt;">⚙️ Stichtag-Regeln & Fristen:</strong>
+          <button class="btn btn-green" style="padding: 4px 10px; font-size: 8pt;" onclick="saveIntervalConfig()">Übernehmen & Aktualisieren</button>
+        </div>
+        <div class="config-grid">
+          <div class="config-item">
+            <label>Nebensaison Stichtag-Regel (Okt &ndash; Apr):</label>
+            <select id="cfg_rule_nebensaison">
+              <option value="thursday_penultimate">Vorletzter Donnerstag im Monat (Standard)</option>
+              <option value="thursday_last">Letzter Donnerstag im Monat</option>
+              <option value="fixed_15">Fester 15. des Monats</option>
+              <option value="fixed_20">Fester 20. des Monats</option>
+              <option value="fixed_25">Fester 25. des Monats</option>
+              <option value="end_minus_7">7 Tage vor Monatsende</option>
+            </select>
+          </div>
+          <div class="config-item">
+            <label>Sommersaison T1 (Monatsanfang):</label>
+            <select id="cfg_rule_saison_t1">
+              <option value="thursday_first">1. Donnerstag im Monat (Standard)</option>
+              <option value="fixed_05">Fester 05. des Monats</option>
+              <option value="fixed_07">Fester 07. des Monats</option>
+            </select>
+          </div>
+          <div class="config-item">
+            <label>Sommersaison T2 (Monatsmitte):</label>
+            <select id="cfg_rule_saison_t2">
+              <option value="thursday_penultimate">Vorletzter Donnerstag im Monat (Standard)</option>
+              <option value="fixed_20">Fester 20. des Monats</option>
+              <option value="end_minus_7">7 Tage vor Monatsende</option>
+            </select>
+          </div>
+          <div class="config-item">
+            <label>Dezember-Sonderregel:</label>
+            <select id="cfg_rule_december">
+              <option value="minus_3">Stichtag 3 Tage vorziehen (Standard)</option>
+              <option value="minus_5">Stichtag 5 Tage vorziehen</option>
+              <option value="fixed_15">Fester Stichtag: 15. Dezember</option>
+              <option value="none">Keine Vorziehung</option>
+            </select>
+          </div>
+          <div class="config-item">
+            <label>Quartals-Audit Rhythmus:</label>
+            <select id="cfg_quartal_intervall">
+              <option value="90">Vierteljährlich (alle 3 Monate: Mrz, Jun, Sep, Dez)</option>
+              <option value="60">Zweimonatlich</option>
+              <option value="30">Monatlich</option>
+            </select>
+          </div>
+          <div class="config-item">
+            <label>Vorlaufzeit Verfallskontrolle (Tage):</label>
+            <input type="number" id="cfg_vorlauf_tage" value="45">
+          </div>
+        </div>
+      </div>
+
+      <div id="staffDrawer" class="config-drawer">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #cbd5e1; padding-bottom: 6px;">
+          <strong style="color: var(--primary); font-size: 10pt;">👥 Zuständige verwalten:</strong>
+          <div style="display: gap: 6px;">
+            <button class="btn btn-purple" style="padding: 4px 10px; font-size: 8pt;" onclick="addStaffRow()">➕ Person hinzufügen</button>
+            <button class="btn btn-teal" style="padding: 4px 10px; font-size: 8pt;" onclick="saveStaffConfig()">Zuständige speichern</button>
+          </div>
+        </div>
+        <div class="staff-list-container" id="staffListContainer"></div>
+      </div>
+
+      <div class="sync-status-bar">
+        <div style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600;">
+          <span class="dot dot-green" id="syncDot"></span>
+          <span id="syncText">System aktiv & betriebsbereit</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <label for="yearSelectTrigger" style="font-weight: bold; color: var(--primary);">📅 Kalenderjahr:</label>
+          <select id="yearSelectTrigger" onchange="changeYearSelection()" style="padding: 3px 8px; font-weight: bold; border-radius: 4px; border: 1px solid #cbd5e1;">
+            <option value="AUTO">🔄 Live-Automatik (Systemzeit)</option>
+            <option value="2025">Jahr 2025 (Archiv)</option>
+            <option value="2026">Jahr 2026</option>
+            <option value="2027">Jahr 2027</option>
+            <option value="2028">Jahr 2028</option>
+            <option value="2029">Jahr 2029</option>
+            <option value="ALL">📋 Alle Jahre fortlaufend</option>
+          </select>
+        </div>
+        <div style="color: #64748b; font-size: 8pt;" id="systemTimeDisplay">Erkannte Systemzeit: --</div>
+      </div>
+
+      <div class="vehicle-alert-box">
+        <h3 style="margin: 0 0 6px 0; color: #92400e; font-size: 10pt; display: flex; justify-content: space-between; align-items: center;">
+          <span>🚑 🚐 Schnellerfassung: Akuter Fahrzeugbedarf vor anstehender Bestellung</span>
+          <span style="font-size: 8pt; font-weight: normal; color: #78350f;">(Schreibt direkt in aktiven Monat)</span>
+        </h3>
+        <div class="vehicle-grid">
+          <div>
+            <label for="quick_rtw" style="display: block; font-weight: 700; font-size: 8.5pt; color: #78350f; margin-bottom: 3px;">
+              Fahrzeug RTW (7SZ) &ndash; Verfallende Artikel OHNE Lagerbestand:
+            </label>
+            <textarea id="quick_rtw" class="auto-grow" placeholder="z. B. 2x Heparin 5000 IE (Exp. 30.10.)..." oninput="autoGrow(this); syncQuickToActive();"></textarea>
+          </div>
+          <div>
+            <label for="quick_nef" style="display: block; font-weight: 700; font-size: 8.5pt; color: #78350f; margin-bottom: 3px;">
+              Fahrzeug NEF (NSZ) &ndash; Verfallende Artikel OHNE Lagerbestand:
+            </label>
+            <textarea id="quick_nef" class="auto-grow" placeholder="z. B. 1x BTM-Ampulle Fentanyl (Exp. 31.10.)..." oninput="autoGrow(this); syncQuickToActive();"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-scroll-container">
+        <table class="planning-table" id="matrixTable">
+          <thead>
+            <tr>
+              <th style="width: 5%;">Nr.</th>
+              <th style="width: 11%;">Zyklus</th>
+              <th style="width: 16%;">Prüfungszeitraum & Stichtag</th>
+              <th style="width: 8%;">Typ</th>
+              <th style="width: 10%;">Zuständig</th>
+              <th style="width: 8%;">Erledigt am</th>
+              <th style="width: 10%;">Verfallsdaten OK</th>
+              <th style="width: 12%;">RTW-Bedarf</th>
+              <th style="width: 12%;">NEF-Bedarf</th>
+              <th style="width: 4%;">Handz.</th>
+              <th style="width: 4%;">Status</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+
+      <div style="margin-top: 16px;">
+        <h3 style="margin: 0 0 6px 0; color: var(--primary); font-size: 10pt;">Live synchronisierter SQLite-Dump:</h3>
+        <div class="sql-box" id="sqlOutput">-- SQL Dump wird generiert...</div>
+      </div>
+    </div>
   </div>
 
 </div>
 
+<!-- MODAL: PIN ÄNDERN -->
+<div id="pinChangeModal" class="modal-overlay" style="display: none;">
+  <div class="modal-box">
+    <h3 style="margin: 0 0 8px 0; color: var(--primary); font-size: 13pt;">🔑 PIN-Passwort ändern</h3>
+    <p style="font-size: 9pt; color: #475569; margin: 0 0 14px 0;">Vergib eine neue PIN für dieses Terminal:</p>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div>
+        <label style="font-size: 8.5pt; font-weight: bold; color: var(--primary);">Neue PIN:</label>
+        <input type="password" id="modal-new-pin" class="input-pin" inputmode="numeric" placeholder="••••••" maxlength="12" style="font-size: 18px !important; margin: 4px 0 0 0;">
+      </div>
+      <div>
+        <label style="font-size: 8.5pt; font-weight: bold; color: var(--primary);">Neue PIN bestätigen:</label>
+        <input type="password" id="modal-confirm-pin" class="input-pin" inputmode="numeric" placeholder="••••••" maxlength="12" style="font-size: 18px !important; margin: 4px 0 0 0;">
+      </div>
+      <div id="modal-pin-status" style="font-size: 8.5pt; font-weight: bold; min-height: 16px;"></div>
+      <div style="display: flex; justify-content: flex-end; gap: 6px; margin-top: 10px;">
+        <button type="button" class="btn-sub" style="min-height: 34px; padding: 6px 12px; font-size: 9pt;" onclick="closePinChangeModal()">Abbrechen</button>
+        <button type="button" class="btn-main" style="min-height: 34px; padding: 6px 14px; font-size: 9pt;" onclick="executeSaveNewPin()">PIN speichern</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
-  // SHA-256 Hash von "808301"
+  // =========================================================================
+  // PIN- & REITER-STEUERUNG
+  // =========================================================================
   const AUTH_HASH = "4cf902947292a75664d9a6769017372f5d2d161501c869c33aa6ddae21a2be83";
-  const ACTIVE_APP_URL = "https://script.google.com/macros/s/AKfycbxVC5fA5ayaCIunFhVXmVgSa4vefoTq21X6hpAHA2BYDhuk0To24Vb1k6AJ5MYR7em-/exec";
+  const ACTIVE_APP_URL = "https://script.google.com/macros/s/AKfycbz91QWU6bzyllbjRWmmYLdB1tF1vMQOWS0kwdT0E0dNG2Y06kkSG5MSiYO_CT88krx6/exec";
 
-  let rawMatrix = [];
-  let workbook = null;
-  let activeSheetName = "Prüfung Verfallsdatum";
-  let activeSheet = null;
-  let allItems = [];
-  let currentFilteredList = [];
-  let currentFilteredIndex = 0;
-  let activeFilter = 'all';
-  let colMap = {};
+  function autoGrow(element) {
+    if (!element) return;
+    element.style.height = "auto";
+    element.style.height = (element.scrollHeight) + "px";
+  }
 
-  // PIN-Prüfung
   async function computeSha256(str) {
     if (window.crypto && crypto.subtle) {
       const buffer = new TextEncoder().encode(str);
@@ -895,17 +775,15 @@
     const inputEl = document.getElementById('input-pin');
     const errorEl = document.getElementById('pin-error-msg');
     const entered = inputEl.value.trim();
+    if (!entered) { errorEl.innerText = "Bitte PIN eingeben."; return; }
 
-    if (!entered) {
-      errorEl.innerText = "Bitte PIN eingeben.";
-      return;
-    }
-
+    const currentSavedHash = localStorage.getItem('rw_sassnitz_custom_pin_hash') || AUTH_HASH;
     try {
       const hash = await computeSha256(entered);
-      if (hash === AUTH_HASH || entered === "808301") {
+      if (hash === currentSavedHash || entered === "808301") {
         document.getElementById('screen-auth').style.display = 'none';
-        document.getElementById('screen-upload').style.display = 'block';
+        document.getElementById('app-main-content').style.display = 'block';
+        initTable();
       } else {
         errorEl.innerText = "Falsche PIN. Zugriff verweigert.";
         inputEl.value = "";
@@ -914,14 +792,81 @@
     } catch (e) {
       if (entered === "808301") {
         document.getElementById('screen-auth').style.display = 'none';
-        document.getElementById('screen-upload').style.display = 'block';
+        document.getElementById('app-main-content').style.display = 'block';
+        initTable();
       } else {
         errorEl.innerText = "Falsche PIN.";
       }
     }
   }
 
-  // Navigation zwischen Wizard und Anfangsmenü
+  function openPinChangeModal() {
+    document.getElementById('pinChangeModal').style.display = 'flex';
+    document.getElementById('modal-new-pin').value = '';
+    document.getElementById('modal-confirm-pin').value = '';
+    document.getElementById('modal-pin-status').innerText = '';
+  }
+
+  function closePinChangeModal() {
+    document.getElementById('pinChangeModal').style.display = 'none';
+  }
+
+  async function executeSaveNewPin() {
+    const p1 = document.getElementById('modal-new-pin').value.trim();
+    const p2 = document.getElementById('modal-confirm-pin').value.trim();
+    const status = document.getElementById('modal-pin-status');
+
+    if (p1.length < 4) {
+      status.style.color = "var(--danger)";
+      status.innerText = "Die PIN muss mindestens 4 Ziffern lang sein.";
+      return;
+    }
+    if (p1 !== p2) {
+      status.style.color = "var(--danger)";
+      status.innerText = "Die PINs stimmen nicht überein.";
+      return;
+    }
+
+    const newHash = await computeSha256(p1);
+    localStorage.setItem('rw_sassnitz_custom_pin_hash', newHash);
+    status.style.color = "var(--success)";
+    status.innerText = "✅ Neue PIN erfolgreich gespeichert!";
+    setTimeout(() => { closePinChangeModal(); }, 1200);
+  }
+
+  function switchTab(tab) {
+    const btnW = document.getElementById('btn-tab-wizard');
+    const btnP = document.getElementById('btn-tab-planning');
+    const viewW = document.getElementById('tab-view-wizard');
+    const viewP = document.getElementById('tab-view-planning');
+
+    if (tab === 'wizard') {
+      btnW.classList.add('active');
+      btnP.classList.remove('active');
+      viewW.style.display = 'block';
+      viewP.style.display = 'none';
+    } else {
+      btnP.classList.add('active');
+      btnW.classList.remove('active');
+      viewP.style.display = 'block';
+      viewW.style.display = 'none';
+      initTable();
+    }
+  }
+
+  // =========================================================================
+  // REITER 1: BESTELLUNGS- & BESTANDSPRÜFUNG
+  // =========================================================================
+  let rawMatrix = [];
+  let workbook = null;
+  let activeSheetName = "Prüfung Verfallsdatum";
+  let activeSheet = null;
+  let allItems = [];
+  let currentFilteredList = [];
+  let currentFilteredIndex = 0;
+  let activeFilter = 'all';
+  let colMap = {};
+
   function goToStartMenu() {
     saveStepInputs();
     document.getElementById('screen-wizard').style.display = 'none';
@@ -942,10 +887,8 @@
     try {
       const savedUrl = localStorage.getItem('saved_gsheet_url');
       if (savedUrl) document.getElementById('gsheet-url').value = savedUrl;
-      
       const savedApi = localStorage.getItem('saved_gsheet_api');
       document.getElementById('gsheet-api-url').value = savedApi || ACTIVE_APP_URL;
-
       const savedTab = localStorage.getItem('saved_gsheet_tab');
       if (savedTab) document.getElementById('gsheet-tab-name').value = savedTab;
     } catch(e) {}
@@ -955,10 +898,9 @@
     const statusEl = document.getElementById('api-test-status');
     const apiUrl = document.getElementById('gsheet-api-url').value.trim() || ACTIVE_APP_URL;
     statusEl.innerHTML = "<span style='color: var(--primary);'>⏳ Prüfe Verbindung...</span>";
-
     try {
       await fetch(apiUrl, { mode: 'no-cors' });
-      statusEl.innerHTML = "<span style='color: var(--success);'>✅ Verbindung erfolgreich! Web-App ist aktiv und erreichbar.</span>";
+      statusEl.innerHTML = "<span style='color: var(--success);'>✅ Verbindung erfolgreich! Web-App ist aktiv.</span>";
     } catch (err) {
       statusEl.innerHTML = "<span style='color: var(--danger);'>❌ Verbindungsfehler: " + err.message + "</span>";
     }
@@ -967,10 +909,7 @@
   async function syncToGoogleSheet() {
     saveStepInputs();
     const apiUrl = document.getElementById('gsheet-api-url').value.trim() || ACTIVE_APP_URL;
-
-    try {
-      localStorage.setItem('saved_gsheet_api', apiUrl);
-    } catch(e) {}
+    try { localStorage.setItem('saved_gsheet_api', apiUrl); } catch(e) {}
 
     const payload = {
       sheetName: activeSheetName || "Prüfung Verfallsdatum",
@@ -1008,12 +947,10 @@
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(payload)
       });
-
       if (statusBanner) {
         statusBanner.style.background = "#dcfce7";
         statusBanner.style.color = "#15803d";
-        const now = new Date().toLocaleTimeString();
-        statusBanner.innerText = `✅ Um ${now} Uhr erfolgreich in Google Sheets gespeichert!`;
+        statusBanner.innerText = `✅ Um ${new Date().toLocaleTimeString()} Uhr erfolgreich in Google Sheets gespeichert!`;
         setTimeout(() => { statusBanner.style.display = "none"; }, 5000);
       }
       alert("Erfolgreich an Google Sheets übertragen! Die Daten sind jetzt live in der Tabelle aktualisiert.");
@@ -1032,14 +969,12 @@
 
   function resetAllOrderQuantities() {
     if (!confirm("Möchten Sie wirklich alle Bestellmengen auf 0 zurücksetzen?")) return;
-    
     allItems.forEach(it => {
       it.bestellmenge = 0;
       if (rawMatrix[it.rowIdx] && colMap.bestellmenge !== undefined) {
         rawMatrix[it.rowIdx][colMap.bestellmenge] = 0;
       }
     });
-
     setBestellmengeExact(0);
     renderStep();
   }
@@ -1047,8 +982,7 @@
   function adjustBestellmenge(delta) {
     const input = document.getElementById('input-bestellmenge');
     let cur = (input.value !== "" && !isNaN(input.value)) ? Number(input.value) : 0;
-    let next = Math.max(0, cur + delta);
-    setBestellmengeExact(next);
+    setBestellmengeExact(Math.max(0, cur + delta));
   }
 
   function setBestellmengeExact(val) {
@@ -1060,8 +994,7 @@
   }
 
   function onQtySliderMoved(val) {
-    const input = document.getElementById('input-bestellmenge');
-    input.value = val;
+    document.getElementById('input-bestellmenge').value = val;
     calcLiveValues();
   }
 
@@ -1076,21 +1009,14 @@
   function loadFromGoogleSheet() {
     const input = document.getElementById('gsheet-url').value.trim();
     const tabName = document.getElementById('gsheet-tab-name').value.trim() || "Prüfung Verfallsdatum";
-
-    if (!input) {
-      alert("Bitte geben Sie einen Google Sheets Link ein.");
-      return;
-    }
+    if (!input) { alert("Bitte geben Sie einen Google Sheets Link ein."); return; }
     try {
       localStorage.setItem('saved_gsheet_url', input);
       localStorage.setItem('saved_gsheet_tab', tabName);
     } catch(e) {}
 
     const idMatch = input.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-    if (!idMatch) {
-      alert("Ungültiger Link. Die URL muss '/spreadsheets/d/...' enthalten.");
-      return;
-    }
+    if (!idMatch) { alert("Ungültiger Link. Die URL muss '/spreadsheets/d/...' enthalten."); return; }
     const sheetId = idMatch[1];
     const gidMatch = input.match(/[?&#]gid=([0-9]+)/);
 
@@ -1101,7 +1027,6 @@
     btnLoad.disabled = true;
 
     const callbackName = 'gvizCallback_' + Date.now();
-
     const timeoutId = setTimeout(() => {
       cleanup();
       alert("Zeitüberschreitung beim Laden. Bitte Freigabe der Tabelle prüfen.");
@@ -1118,12 +1043,10 @@
 
     window[callbackName] = function(data) {
       cleanup();
-
       if (!data || data.status === 'error' || !data.table) {
         alert("Google Sheets Fehler: Blatt konnte nicht geladen werden.");
         return;
       }
-
       rawMatrix = [];
       const colLabels = (data.table.cols || []).map(c => (c.label || c.id || "").trim());
       rawMatrix.push(colLabels);
@@ -1157,7 +1080,6 @@
       XLSX.utils.book_append_sheet(workbook, ws, tabName);
       activeSheetName = tabName;
       activeSheet = ws;
-
       parseUnifiedMatrix(rawMatrix);
     };
 
@@ -1179,7 +1101,8 @@
   }
 
   function parseGvizDate(valStr, formattedStr) {
-    const m = valStr.match(/Date\((\d+),\s*(\d+),\s*(\d+)/);
+    if (!valStr && !formattedStr) return "";
+    const m = String(valStr || "").match(/Date\((\d+),\s*(\d+),\s*(\d+)/);
     if (m) {
       const y = m[1];
       const mo = String(Number(m[2]) + 1).padStart(2, '0');
@@ -1201,7 +1124,6 @@
         cellStyles: true,
         cellFormula: true
       });
-
       const sheetSelect = document.getElementById('sheet-select');
       sheetSelect.innerHTML = "";
       workbook.SheetNames.forEach(name => {
@@ -1211,12 +1133,10 @@
         if (name.toLowerCase().includes("verfall")) opt.selected = true;
         sheetSelect.appendChild(opt);
       });
-
       activeSheetName = sheetSelect.value || workbook.SheetNames[0];
       if (workbook.SheetNames.length > 1) {
         document.getElementById('sheet-picker-row').style.display = 'block';
       }
-
       switchSheet(activeSheetName);
     };
     reader.readAsArrayBuffer(file);
@@ -1231,7 +1151,6 @@
 
   function parseUnifiedMatrix(matrix) {
     allItems = [];
-
     let headerRowIdx = -1;
     let bestScore = 0;
     let bestIdx = 0;
@@ -1240,26 +1159,16 @@
     for (let r = 0; r < Math.min(15, matrix.length); r++) {
       const row = (matrix[r] || []).map(c => String(c || "").toLowerCase().trim());
       const score = row.reduce((acc, c) => acc + (keywords.some(kw => c.includes(kw)) ? 1 : 0), 0);
-      if (score > bestScore) {
-        bestScore = score;
-        bestIdx = r;
-      }
+      if (score > bestScore) { bestScore = score; bestIdx = r; }
       const hasPos = row.some(c => c === 'pos');
       const hasName = row.some(c => c.includes('material') || c.includes('produkt'));
-      if (hasPos && hasName) {
-        headerRowIdx = r;
-        break;
-      }
+      if (hasPos && hasName) { headerRowIdx = r; break; }
     }
 
-    if (headerRowIdx === -1 && bestScore >= 3) {
-      headerRowIdx = bestIdx;
-    } else if (headerRowIdx === -1) {
-      headerRowIdx = 0;
-    }
+    if (headerRowIdx === -1 && bestScore >= 3) headerRowIdx = bestIdx;
+    else if (headerRowIdx === -1) headerRowIdx = 0;
 
     const headerRow = (matrix[headerRowIdx] || []).map(c => String(c || "").toLowerCase().trim());
-
     colMap = {};
     headerRow.forEach((val, i) => {
       if (val.includes('liste')) return;
@@ -1320,10 +1229,7 @@
       const bemerkVal = String(getC('bemerkung', "")).trim();
       const mhdRaw = getC('mhd', "");
 
-      if (shouldResetQuantities) {
-        bestellVal = 0;
-      }
-
+      if (shouldResetQuantities) bestellVal = 0;
       const isExkl = exklVal.toLowerCase() === 'ja' || exklVal.toLowerCase() === 'true' || exklVal === '1';
 
       allItems.push({
@@ -1342,11 +1248,7 @@
       });
     }
 
-    if (allItems.length === 0) {
-      alert("Es konnten keine Artikelzeilen gefunden werden.");
-      return;
-    }
-
+    if (allItems.length === 0) { alert("Es konnten keine Artikelzeilen gefunden werden."); return; }
     updateFilterCounts();
     setFilter('all');
     startWizard();
@@ -1356,7 +1258,6 @@
     const total = allItems.length;
     const exclCount = allItems.filter(it => it.exklusiv).length;
     const stdCount = total - exclCount;
-
     document.getElementById('cnt-all').innerText = total;
     document.getElementById('cnt-excl').innerText = exclCount;
     document.getElementById('cnt-std').innerText = stdCount;
@@ -1369,13 +1270,9 @@
     document.getElementById('btn-flt-excl').className = 'filter-btn' + (flt === 'excl' ? ' active btn-excl-active' : '');
     document.getElementById('btn-flt-std').className = 'filter-btn' + (flt === 'std' ? ' active' : '');
 
-    if (flt === 'excl') {
-      currentFilteredList = allItems.filter(it => it.exklusiv);
-    } else if (flt === 'std') {
-      currentFilteredList = allItems.filter(it => !it.exklusiv);
-    } else {
-      currentFilteredList = [...allItems];
-    }
+    if (flt === 'excl') currentFilteredList = allItems.filter(it => it.exklusiv);
+    else if (flt === 'std') currentFilteredList = allItems.filter(it => !it.exklusiv);
+    else currentFilteredList = [...allItems];
 
     if (currentFilteredList.length === 0) {
       alert("Keine Artikel für diesen Filter vorhanden.");
@@ -1409,7 +1306,6 @@
     const total = currentFilteredList.length;
 
     document.getElementById('accordion-details').open = false;
-
     document.getElementById('counter-label').innerText = `Pos ${it.pos} (${currentFilteredIndex + 1}/${total})`;
     document.getElementById('progress-bar').style.width = `${((currentFilteredIndex + 1) / total) * 100}%`;
     document.getElementById('jump-select').value = currentFilteredIndex;
@@ -1432,11 +1328,13 @@
 
     document.getElementById('input-lagerort').value = it.lagerort;
     document.getElementById('input-mhd').value = it.mhd;
-    document.getElementById('input-bemerkung').value = it.bemerkung;
+
+    const bemerkungEl = document.getElementById('input-bemerkung');
+    bemerkungEl.value = it.bemerkung;
+    autoGrow(bemerkungEl);
 
     document.getElementById('btn-prev').style.visibility = currentFilteredIndex === 0 ? 'hidden' : 'visible';
     document.getElementById('btn-next').innerText = currentFilteredIndex === total - 1 ? 'Abschließen' : 'Weiter ►';
-
     calcLiveValues();
   }
 
@@ -1464,7 +1362,6 @@
 
   function calcLiveValues() {
     const it = currentFilteredList[currentFilteredIndex];
-
     const minVal = document.getElementById('input-min').value;
     const sollVal = document.getElementById('input-soll').value;
     const bmVal = document.getElementById('input-bestellmenge').value;
@@ -1477,12 +1374,10 @@
     it.min = minNum;
     it.soll = sollNum;
     it.lagerort = lagerVal;
-
     document.getElementById('val-soll-hint').innerText = `Soll: ${sollNum}`;
 
     const bestand = sollNum - bmNum;
     const diff = sollNum - bestand;
-
     document.getElementById('val-chip-soll').innerText = sollNum;
     document.getElementById('val-chip-bestand').innerText = bestand;
     document.getElementById('val-chip-lager').innerText = lagerVal || '-';
@@ -1503,13 +1398,10 @@
       meldeText.innerText = 'Kein Datum';
       it.meldetext = "";
     } else {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
+      const today = new Date(); today.setHours(0, 0, 0, 0);
       const targetParts = mhdVal.split('-').map(Number);
       const targetDate = new Date(targetParts[0], targetParts[1] - 1, targetParts[2]);
       targetDate.setHours(0, 0, 0, 0);
-
       const diffDays = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
 
       if (diffDays < 0) {
@@ -1543,7 +1435,6 @@
   function saveStepInputs() {
     if (currentFilteredList.length === 0) return;
     const it = currentFilteredList[currentFilteredIndex];
-    
     const minVal = document.getElementById('input-min').value;
     const sollVal = document.getElementById('input-soll').value;
     const bmVal = document.getElementById('input-bestellmenge').value;
@@ -1590,7 +1481,6 @@
 
   function exportExcel() {
     saveStepInputs();
-
     allItems.forEach(it => {
       const r = it.rowIdx;
       const numSoll = Number(it.soll) || 0;
@@ -1628,22 +1518,17 @@
             activeSheet[ref] = { t: 's', v: String(val) };
           }
         }
-
         updateCell(colMap.min, it.min);
         updateCell(colMap.soll, it.soll);
-        
         const refBestand = colMap.bestand !== undefined ? XLSX.utils.encode_col(colMap.bestand) + row1Based : null;
         if (refBestand && (!activeSheet[refBestand] || !activeSheet[refBestand].f)) {
           updateCell(colMap.bestand, calcBestand);
         }
-
         updateCell(colMap.bestellmenge, it.bestellmenge);
-
         const refDiff = colMap.diff !== undefined ? XLSX.utils.encode_col(colMap.diff) + row1Based : null;
         if (refDiff && (!activeSheet[refDiff] || !activeSheet[refDiff].f)) {
           updateCell(colMap.diff, calcDiff);
         }
-
         updateCell(colMap.lagerort, it.lagerort);
         updateCell(colMap.exklusiv, it.exklusiv ? 'Ja' : 'Nein');
         updateCell(colMap.bemerkung, it.bemerkung);
@@ -1657,10 +1542,8 @@
       const newWs = XLSX.utils.aoa_to_sheet(rawMatrix);
       XLSX.utils.book_append_sheet(exportWb, newWs, activeSheetName || "Prüfung Verfallsdatum");
     }
-
     const todayStr = new Date().toISOString().slice(0, 10);
-    const fileName = `Arzneimittel-Medikamenten-Verfallsdatum_geprueft_${todayStr}.xlsx`;
-    XLSX.writeFile(exportWb, fileName);
+    XLSX.writeFile(exportWb, `Arzneimittel-Medikamenten-Verfallsdatum_geprueft_${todayStr}.xlsx`);
   }
 
   function toIsoDateString(val) {
@@ -1678,6 +1561,683 @@
     }
     if (s.includes('-') && s.length === 10) return s;
     return "";
+  }
+
+  // =========================================================================
+  // REITER 2: INTERAKTIVE LAGERPLANUNG (MIT VOLLSTÄNDIGEM GOOGLE-SYNC)
+  // =========================================================================
+  let runtimeAuditState = {};
+  let runtimeConfig = {
+    rule_nebensaison: "thursday_penultimate",
+    rule_saison_t1: "thursday_first",
+    rule_saison_t2: "thursday_penultimate",
+    rule_december: "minus_3",
+    quartal_tage: "90",
+    vorlauf_tage: 45,
+    selected_year: "AUTO"
+  };
+  let runtimeStaffList = [
+    "Alexander Wenzel",
+    "Marc Dransch",
+    "Wachenleitung (Puffer)",
+    "Wachenleitung Sassnitz",
+    "Stellv. Wachenleitung"
+  ];
+
+  function generateYearCycles(year) {
+    return [
+      { key: `${year}_01`, year: year, monthIdx: 0, cyclePart: null, orderNum: "#01", month: `Januar ${year}`, cat: "nebensaison", type: "Hauptbestellung", badge: "badge-regular", isQuarterly: false, defaultPerson: (year % 2 === 0 ? "Marc Dransch" : "Alexander Wenzel") },
+      { key: `${year}_02`, year: year, monthIdx: 1, cyclePart: null, orderNum: "#02", month: `Februar ${year}`, cat: "nebensaison", type: "Hauptbestellung", badge: "badge-regular", isQuarterly: false, defaultPerson: (year % 2 === 0 ? "Alexander Wenzel" : "Marc Dransch") },
+      { key: `${year}_03`, year: year, monthIdx: 2, cyclePart: null, orderNum: "#03", month: `März ${year}`, cat: "nebensaison", type: "Hauptbestellung", badge: "badge-regular", isQuarterly: true, defaultPerson: (year % 2 === 0 ? "Marc Dransch" : "Alexander Wenzel") },
+      { key: `${year}_04`, year: year, monthIdx: 3, cyclePart: null, orderNum: "#04", month: `April ${year}`, cat: "nebensaison", type: "Hauptbestellung", badge: "badge-regular", isQuarterly: false, defaultPerson: (year % 2 === 0 ? "Alexander Wenzel" : "Marc Dransch") },
+      { key: `${year}_05_T1`, year: year, monthIdx: 4, cyclePart: "T1", orderNum: "#05", month: `Mai ${year} - T1`, cat: "saison_t1", type: "Saison-Zwischenbest.", badge: "badge-season", isQuarterly: false, defaultPerson: "Marc Dransch" },
+      { key: `${year}_05_T2`, year: year, monthIdx: 4, cyclePart: "T2", orderNum: "#06", month: `Mai ${year} - T2`, cat: "saison_t2", type: "Saison-Hauptbest.", badge: "badge-season", isQuarterly: false, defaultPerson: "Alexander Wenzel" },
+      { key: `${year}_06_T1`, year: year, monthIdx: 5, cyclePart: "T1", orderNum: "#07", month: `Juni ${year} - T1`, cat: "saison_t1", type: "Saison-Zwischenbest.", badge: "badge-season", isQuarterly: true, defaultPerson: "Alexander Wenzel" },
+      { key: `${year}_06_T2`, year: year, monthIdx: 5, cyclePart: "T2", orderNum: "#08", month: `Juni ${year} - T2`, cat: "saison_t2", type: "Saison-Hauptbest.", badge: "badge-season", isQuarterly: false, defaultPerson: "Marc Dransch" },
+      { key: `${year}_07_T1`, year: year, monthIdx: 6, cyclePart: "T1", orderNum: "#09", month: `Juli ${year} - T1`, cat: "saison_t1", type: "Saison-Zwischenbest.", badge: "badge-season", isQuarterly: false, defaultPerson: "Marc Dransch" },
+      { key: `${year}_07_T2`, year: year, monthIdx: 6, cyclePart: "T2", orderNum: "#10", month: `Juli ${year} - T2`, cat: "saison_t2", type: "Saison-Hauptbest.", badge: "badge-season", isQuarterly: false, defaultPerson: "Alexander Wenzel" },
+      { key: `${year}_08_T1`, year: year, monthIdx: 7, cyclePart: "T1", orderNum: "#11", month: `August ${year} - T1`, cat: "saison_t1", type: "Saison-Zwischenbest.", badge: "badge-season", isQuarterly: false, defaultPerson: "Alexander Wenzel" },
+      { key: `${year}_08_T2`, year: year, monthIdx: 7, cyclePart: "T2", orderNum: "#12", month: `August ${year} - T2`, cat: "saison_t2", type: "Saison-Hauptbest.", badge: "badge-season", isQuarterly: false, defaultPerson: "Marc Dransch" },
+      { key: `${year}_09_T1`, year: year, monthIdx: 8, cyclePart: "T1", orderNum: "#13", month: `September ${year} - T1`, cat: "saison_t1", type: "Saison-Zwischenbest.", badge: "badge-season", isQuarterly: true, defaultPerson: "Marc Dransch" },
+      { key: `${year}_09_T2`, year: year, monthIdx: 8, cyclePart: "T2", orderNum: "#14", month: `September ${year} - T2`, cat: "saison_t2", type: "Saison-Hauptbest.", badge: "badge-season", isQuarterly: false, defaultPerson: "Alexander Wenzel" },
+      { key: `${year}_10`, year: year, monthIdx: 9, cyclePart: null, orderNum: "#15", month: `Oktober ${year}`, cat: "nebensaison", type: "Hauptbestellung", badge: "badge-regular", isQuarterly: false, defaultPerson: (year % 2 === 0 ? "Alexander Wenzel" : "Marc Dransch") },
+      { key: `${year}_11`, year: year, monthIdx: 10, cyclePart: null, orderNum: "#16", month: `November ${year}`, cat: "nebensaison", type: "Hauptbestellung", badge: "badge-regular", isQuarterly: false, defaultPerson: (year % 2 === 0 ? "Marc Dransch" : "Alexander Wenzel") },
+      { key: `${year}_12`, year: year, monthIdx: 11, cyclePart: null, orderNum: "#17", month: `Dezember ${year}`, cat: "nebensaison", type: "Hauptbestellung", badge: "badge-regular", isQuarterly: true, defaultPerson: (year % 2 === 0 ? "Alexander Wenzel" : "Marc Dransch"), isSpecialDec: true }
+    ];
+  }
+
+  const allScheduleData = [
+    ...generateYearCycles(2025),
+    ...generateYearCycles(2026),
+    ...generateYearCycles(2027),
+    ...generateYearCycles(2028),
+    ...generateYearCycles(2029)
+  ];
+
+  function calculateExactDeadlineDate(year, monthIdx, cat, isSpecialDec, config) {
+    const month = monthIdx + 1;
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const thursdays = [];
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dt = new Date(year, monthIdx, d);
+      if (dt.getDay() === 4) thursdays.push(d);
+    }
+
+    let rule = "thursday_penultimate";
+    if (cat === "nebensaison") rule = config.rule_nebensaison || "thursday_penultimate";
+    else if (cat === "saison_t1") rule = config.rule_saison_t1 || "thursday_first";
+    else if (cat === "saison_t2") rule = config.rule_saison_t2 || "thursday_penultimate";
+
+    let chosenDay = 20;
+    if (rule === "thursday_first") chosenDay = thursdays.length > 0 ? thursdays[0] : 7;
+    else if (rule === "thursday_last") chosenDay = thursdays.length > 0 ? thursdays[thursdays.length - 1] : 28;
+    else if (rule === "thursday_penultimate") {
+      if (thursdays.length >= 2) chosenDay = thursdays[thursdays.length - 2];
+      else if (thursdays.length === 1) chosenDay = thursdays[0];
+      else chosenDay = 20;
+    } else if (rule === "fixed_05") chosenDay = 5;
+    else if (rule === "fixed_07") chosenDay = 7;
+    else if (rule === "fixed_15") chosenDay = 15;
+    else if (rule === "fixed_20") chosenDay = 20;
+    else if (rule === "end_minus_7") chosenDay = Math.max(1, daysInMonth - 7);
+
+    if (isSpecialDec) {
+      const decRule = config.rule_december || "minus_3";
+      if (decRule === "minus_3") chosenDay = Math.max(1, chosenDay - 3);
+      else if (decRule === "minus_5") chosenDay = Math.max(1, chosenDay - 5);
+      else if (decRule === "fixed_15") chosenDay = 15;
+    }
+
+    chosenDay = Math.min(daysInMonth, Math.max(1, chosenDay));
+    const dStr = chosenDay < 10 ? `0${chosenDay}` : `${chosenDay}`;
+    const mStr = month < 10 ? `0${month}` : `${month}`;
+    return `${dStr}.${mStr}.${year}`;
+  }
+
+  function getPeriodText(cat) {
+    if (cat === "saison_t1") return "Kontrolle: 01. – 05. des Monats";
+    else if (cat === "saison_t2") return "Kontrolle: 15. – 20. des Monats";
+    else return "Kontrolle: 10. – 15. des Monats";
+  }
+
+  function toggleIntervalConfig() {
+    document.getElementById("staffDrawer").classList.remove("active");
+    document.getElementById("intervalDrawer").classList.toggle("active");
+  }
+
+  function toggleStaffConfig() {
+    document.getElementById("intervalDrawer").classList.remove("active");
+    const drawer = document.getElementById("staffDrawer");
+    drawer.classList.toggle("active");
+    if (drawer.classList.contains("active")) renderStaffManager();
+  }
+
+  function renderStaffManager() {
+    const container = document.getElementById("staffListContainer");
+    container.innerHTML = "";
+    runtimeStaffList.forEach((name, index) => {
+      const row = document.createElement("div");
+      row.className = "staff-row";
+      row.innerHTML = `
+        <input type="text" id="staff_item_${index}" value="${name}">
+        <button class="btn-del" onclick="removeStaffRow(${index})" title="Diese Person löschen">🗑️ Löschen</button>
+      `;
+      container.appendChild(row);
+    });
+  }
+
+  function addStaffRow() {
+    const container = document.getElementById("staffListContainer");
+    const currentInputs = Array.from(container.querySelectorAll("input")).map(i => i.value.trim()).filter(Boolean);
+    currentInputs.push("Neuer Mitarbeiter");
+    runtimeStaffList = currentInputs;
+    renderStaffManager();
+  }
+
+  function removeStaffRow(index) {
+    const container = document.getElementById("staffListContainer");
+    const currentInputs = Array.from(container.querySelectorAll("input")).map(i => i.value.trim()).filter(Boolean);
+    if (currentInputs.length <= 1) { alert("⚠️ Mindestens eine Person muss verbleiben!"); return; }
+    currentInputs.splice(index, 1);
+    runtimeStaffList = currentInputs;
+    renderStaffManager();
+  }
+
+  function saveStaffConfig() {
+    const container = document.getElementById("staffListContainer");
+    const currentInputs = Array.from(container.querySelectorAll("input")).map(i => i.value.trim()).filter(Boolean);
+    if (currentInputs.length === 0) { alert("⚠️ Die Liste darf nicht leer sein!"); return; }
+    runtimeStaffList = currentInputs;
+    initTable();
+    toggleStaffConfig();
+    alert("✅ Zuständigen-Liste lokal aktualisiert! Klicke auf '☁️ Plan in Google sichern', um sie online zu speichern.");
+  }
+
+  function saveIntervalConfig() {
+    runtimeConfig.rule_nebensaison = document.getElementById("cfg_rule_nebensaison").value;
+    runtimeConfig.rule_saison_t1 = document.getElementById("cfg_rule_saison_t1").value;
+    runtimeConfig.rule_saison_t2 = document.getElementById("cfg_rule_saison_t2").value;
+    runtimeConfig.rule_december = document.getElementById("cfg_rule_december").value;
+    runtimeConfig.quartal_tage = document.getElementById("cfg_quartal_intervall").value;
+    runtimeConfig.vorlauf_tage = parseInt(document.getElementById("cfg_vorlauf_tage").value) || 45;
+    initTable();
+    toggleIntervalConfig();
+    alert("✅ Stichtag-Regeln lokal übernommen! Klicke auf '☁️ Plan in Google sichern', um sie online zu speichern.");
+  }
+
+  function changeYearSelection() {
+    runtimeConfig.selected_year = document.getElementById("yearSelectTrigger").value;
+    initTable();
+  }
+
+  function findActiveCycleIndex(yearRows, curMonth, curDay) {
+    const isSecondHalf = (curDay >= 15);
+    let idx = yearRows.findIndex(item => {
+      if (item.monthIdx !== curMonth) return false;
+      if (item.cyclePart === "T1") return !isSecondHalf;
+      if (item.cyclePart === "T2") return isSecondHalf;
+      return true;
+    });
+    return idx !== -1 ? idx : 0;
+  }
+
+  function getDisplayedSchedule() {
+    const selectedYear = runtimeConfig.selected_year || "AUTO";
+    const now = new Date();
+    const curYear = now.getFullYear();
+    const curMonth = now.getMonth();
+    const curDay = now.getDate();
+    const monthNames = ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+    const timeElem = document.getElementById("systemTimeDisplay");
+    if (timeElem) {
+      const cycleInfo = (curMonth >= 4 && curMonth <= 8) ? (curDay >= 15 ? " [Zyklus: T2 Monatsmitte]" : " [Zyklus: T1 Monatsanfang]") : " [Zyklus: Monatsmitte]";
+      timeElem.textContent = `Erkannte Systemzeit: ${curDay}. ${monthNames[curMonth]} ${curYear} ${cycleInfo}`;
+    }
+
+    if (selectedYear === "ALL") return allScheduleData;
+    if (selectedYear !== "AUTO") {
+      const yr = parseInt(selectedYear);
+      const yearRows = allScheduleData.filter(item => item.year === yr);
+      if (yr === curYear) {
+        let splitIdx = findActiveCycleIndex(yearRows, curMonth, curDay);
+        return [...yearRows.slice(splitIdx), ...yearRows.slice(0, splitIdx)];
+      }
+      return yearRows;
+    }
+
+    const currentYearRows = allScheduleData.filter(item => item.year === curYear);
+    if (currentYearRows.length > 0) {
+      let splitIdx = findActiveCycleIndex(currentYearRows, curMonth, curDay);
+      return [...currentYearRows.slice(splitIdx), ...currentYearRows.slice(0, splitIdx)];
+    }
+    return allScheduleData;
+  }
+
+  function initTable() {
+    const tbody = document.getElementById("tableBody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    const triggerSelect = document.getElementById("yearSelectTrigger");
+    if (triggerSelect) triggerSelect.value = runtimeConfig.selected_year || "AUTO";
+
+    document.getElementById("cfg_rule_nebensaison").value = runtimeConfig.rule_nebensaison || "thursday_penultimate";
+    document.getElementById("cfg_rule_saison_t1").value = runtimeConfig.rule_saison_t1 || "thursday_first";
+    document.getElementById("cfg_rule_saison_t2").value = runtimeConfig.rule_saison_t2 || "thursday_penultimate";
+    document.getElementById("cfg_rule_december").value = runtimeConfig.rule_december || "minus_3";
+    document.getElementById("cfg_quartal_intervall").value = runtimeConfig.quartal_tage || "90";
+    document.getElementById("cfg_vorlauf_tage").value = runtimeConfig.vorlauf_tage || 45;
+
+    const displayData = getDisplayedSchedule();
+    const now = new Date();
+    const curYear = now.getFullYear();
+    const curMonth = now.getMonth();
+    const curDay = now.getDate();
+    const isSecondHalf = (curDay >= 15);
+
+    displayData.forEach((row, idx) => {
+      const state = runtimeAuditState[row.key] || {};
+      const isDone = state.done_date && state.chk_verfall && state.sign;
+
+      let isCurrent = false;
+      if (row.year === curYear && row.monthIdx === curMonth) {
+        if (row.cyclePart === "T1") isCurrent = !isSecondHalf;
+        else if (row.cyclePart === "T2") isCurrent = isSecondHalf;
+        else isCurrent = true;
+      }
+
+      const exactDate = calculateExactDeadlineDate(row.year, row.monthIdx, row.cat, row.isSpecialDec, runtimeConfig);
+      const periodText = getPeriodText(row.cat);
+
+      let intervallDetail = `Frist-Stichtag: ${exactDate}`;
+      if (row.isSpecialDec && (runtimeConfig.rule_december || "minus_3") !== "none") {
+        intervallDetail += " (Weihnachtsvorziehung aktiv)";
+      }
+      if (row.isQuarterly) {
+        intervallDetail = `Quartals-Audit (${runtimeConfig.quartal_tage}d): Vollabgleich Lager/Excel!`;
+      }
+
+      let selectedPerson = state.person || row.defaultPerson;
+      if (!runtimeStaffList.includes(selectedPerson)) selectedPerson = runtimeStaffList[0];
+
+      let optionsHtml = "";
+      runtimeStaffList.forEach(opt => {
+        optionsHtml += `<option value="${opt}" ${selectedPerson === opt ? 'selected' : ''}>${opt}</option>`;
+      });
+
+      const tr = document.createElement("tr");
+      tr.id = `row_${row.key}`;
+      if (isCurrent && idx === 0) tr.classList.add("current-cycle");
+
+      tr.innerHTML = `
+        <td><strong>${row.orderNum}</strong></td>
+        <td>
+          <strong>${row.month}</strong>
+          ${(isCurrent && idx === 0) ? '<span class="badge badge-current">AKTUELL</span>' : ''}
+        </td>
+        <td>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
+            <span style="font-size: 7.5pt; font-weight: bold; color: #1e293b;">${periodText}</span>
+            <span class="badge badge-deadline">📅 ${exactDate}</span>
+          </div>
+          <div style="font-size: 7pt; color: #64748b; margin-top: 1px;">${intervallDetail}</div>
+        </td>
+        <td>
+          <span class="badge ${row.badge}">${row.type}</span>
+          ${row.isQuarterly ? '<br><span class="badge badge-quartal" style="margin-top:2px;">Quartalsprüfung</span>' : ''}
+        </td>
+        <td>
+          <select id="person_${row.key}" onchange="savePlanningData('${row.key}')" style="width: 100%; font-size: 8pt;">
+            ${optionsHtml}
+          </select>
+        </td>
+        <td><input type="date" id="date_${row.key}" value="${state.done_date || ''}" onchange="savePlanningData('${row.key}')" style="font-size: 8pt; width: 100%;"></td>
+        <td style="text-align: center;">
+          <input type="checkbox" id="chk_${row.key}" ${state.chk_verfall ? 'checked' : ''} onchange="savePlanningData('${row.key}')" style="width: 16px; height: 16px;">
+        </td>
+        <td>
+          <textarea class="auto-grow" id="rtw_${row.key}" placeholder="RTW-Abläufe..." oninput="autoGrow(this); savePlanningData('${row.key}')">${state.rtw_exp || ''}</textarea>
+        </td>
+        <td>
+          <textarea class="auto-grow" id="nef_${row.key}" placeholder="NEF-Abläufe..." oninput="autoGrow(this); savePlanningData('${row.key}')">${state.nef_exp || ''}</textarea>
+        </td>
+        <td><input type="text" id="sign_${row.key}" placeholder="Kürzel" value="${state.sign || ''}" oninput="savePlanningData('${row.key}')" style="width: 100%; font-size: 8pt;"></td>
+        <td id="status_${row.key}" style="text-align: center;">${getStatusBadge(isDone)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    document.querySelectorAll('#tableBody textarea.auto-grow').forEach(t => autoGrow(t));
+    updateSQL();
+  }
+
+  function getStatusBadge(isDone) {
+    return isDone ? '<span class="badge badge-success">OK</span>' : '<span class="badge badge-pending">Offen</span>';
+  }
+
+  function savePlanningData(rowKey) {
+    const person = document.getElementById(`person_${rowKey}`).value;
+    const done_date = document.getElementById(`date_${rowKey}`).value;
+    const chk_verfall = document.getElementById(`chk_${rowKey}`).checked;
+    const rtw_exp = document.getElementById(`rtw_${rowKey}`).value;
+    const nef_exp = document.getElementById(`nef_${rowKey}`).value;
+    const sign = document.getElementById(`sign_${rowKey}`).value;
+
+    runtimeAuditState[rowKey] = { person, done_date, chk_verfall, rtw_exp, nef_exp, sign };
+    const isDone = done_date && chk_verfall && sign;
+    document.getElementById(`status_${rowKey}`).innerHTML = getStatusBadge(isDone);
+    updateSQL();
+  }
+
+  function getActiveRowKey() {
+    const displayData = getDisplayedSchedule();
+    for (let r of displayData) {
+      const s = runtimeAuditState[r.key] || {};
+      if (!s.done_date || !s.chk_verfall || !s.sign) return r.key;
+    }
+    return displayData[0].key;
+  }
+
+  function syncQuickToActive() {
+    const rowKey = getActiveRowKey();
+    const qRtw = document.getElementById("quick_rtw").value;
+    const qNef = document.getElementById("quick_nef").value;
+    const fieldRtw = document.getElementById(`rtw_${rowKey}`);
+    const fieldNef = document.getElementById(`nef_${rowKey}`);
+    if (fieldRtw) { fieldRtw.value = qRtw; autoGrow(fieldRtw); }
+    if (fieldNef) { fieldNef.value = qNef; autoGrow(fieldNef); }
+    savePlanningData(rowKey);
+  }
+
+  function clearActiveVehicleInputs() {
+    const rowKey = getActiveRowKey();
+    const found = allScheduleData.find(x => x.key === rowKey);
+    const mName = found ? found.month : "Aktueller Zyklus";
+
+    if (confirm(`Möchtest du die Fahrzeug-Textfelder für ${mName} wirklich leeren?`)) {
+      document.getElementById("quick_rtw").value = "";
+      document.getElementById("quick_nef").value = "";
+      autoGrow(document.getElementById("quick_rtw"));
+      autoGrow(document.getElementById("quick_nef"));
+      const fRtw = document.getElementById(`rtw_${rowKey}`);
+      const fNef = document.getElementById(`nef_${rowKey}`);
+      if (fRtw) { fRtw.value = ""; autoGrow(fRtw); }
+      if (fNef) { fNef.value = ""; autoGrow(fNef); }
+      savePlanningData(rowKey);
+    }
+  }
+
+  // =========================================================================
+  // KONTROLLPLAN, FRISTENREGELN & PERSONAL IN GOOGLE SHEETS SICHERN
+  // =========================================================================
+  async function syncPlanningToGoogleSheet() {
+    const apiUrl = document.getElementById('gsheet-api-url').value.trim() || ACTIVE_APP_URL;
+    const cyclesPayload = allScheduleData.map(r => {
+      const s = runtimeAuditState[r.key] || {};
+      const exactDate = calculateExactDeadlineDate(r.year, r.monthIdx, r.cat, r.isSpecialDec, runtimeConfig);
+      return {
+        key: r.key,
+        year: r.year,
+        orderNum: r.orderNum,
+        month: r.month,
+        deadline: exactDate,
+        person: s.person || r.defaultPerson,
+        done_date: s.done_date || "",
+        chk_verfall: s.chk_verfall || false,
+        rtw_exp: s.rtw_exp || "",
+        nef_exp: s.nef_exp || "",
+        sign: s.sign || ""
+      };
+    });
+
+    try {
+      await fetch(apiUrl, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "SAVE_PLANNING",
+          cycles: cyclesPayload,
+          config: runtimeConfig,
+          staff: runtimeStaffList
+        })
+      });
+      document.getElementById("syncDot").className = "dot dot-blue";
+      document.getElementById("syncText").textContent = `Plan & Einstellungen online gesichert (${new Date().toLocaleTimeString()})`;
+      alert("✅ Erfolgreich in Google Sheets gesichert!\n\n• Zyklen -> Reiter 'Kontrollplaner'\n• Intervalle & Personal -> Reiter 'Terminal_Einstellungen'");
+    } catch (e) {
+      alert("Fehler beim Sichern in Google Sheets: " + e.message);
+    }
+  }
+
+  // =========================================================================
+  // KONTROLLPLAN, FRISTENREGELN & PERSONAL AUS GOOGLE SHEETS LADEN
+  // =========================================================================
+  function loadPlanningFromGoogleSheet() {
+    const input = document.getElementById('gsheet-url').value.trim();
+    if (!input) { alert("Bitte gib den Google Sheets Link ein."); return; }
+    const idMatch = input.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+    if (!idMatch) { alert("Ungültiger Google Sheets Link."); return; }
+    const sheetId = idMatch[1];
+
+    // 1. Zyklen laden
+    const callbackCycles = 'gvizPlanCycles_' + Date.now();
+    window[callbackCycles] = function(data) {
+      delete window[callbackCycles];
+      let cycleCount = 0;
+      if (data && data.table && data.table.rows) {
+        data.table.rows.forEach(r => {
+          if (!r || !r.c) return;
+          const key = r.c[0] ? String(r.c[0].v).trim() : "";
+          if (!key) return;
+
+          const person = r.c[5] ? String(r.c[5].v || "") : "";
+
+          // Robustes Datums-Parsing via parseGvizDate
+          const rawDateVal = r.c[6] ? r.c[6].v : "";
+          const rawDateFormatted = r.c[6] ? r.c[6].f : "";
+          const done_date = parseGvizDate(rawDateVal, rawDateFormatted);
+
+          const chk_verfall = r.c[7] ? (r.c[7].v === 1 || String(r.c[7].v) === "1" || String(r.c[7].v).toLowerCase() === "true") : false;
+          const rtw_exp = r.c[8] ? String(r.c[8].v || "") : "";
+          const nef_exp = r.c[9] ? String(r.c[9].v || "") : "";
+          const sign = r.c[10] ? String(r.c[10].v || "") : "";
+
+          runtimeAuditState[key] = { person, done_date, chk_verfall, rtw_exp, nef_exp, sign };
+          cycleCount++;
+        });
+      }
+
+      // 2. Einstellungen & Personal laden
+      const callbackConfig = 'gvizPlanConfig_' + Date.now();
+      window[callbackConfig] = function(cfgData) {
+        delete window[callbackConfig];
+        let loadedStaff = [];
+        if (cfgData && cfgData.table && cfgData.table.rows) {
+          cfgData.table.rows.forEach(r => {
+            if (!r || !r.c) return;
+            const category = r.c[0] ? String(r.c[0].v).trim() : "";
+            const param = r.c[1] ? String(r.c[1].v).trim() : "";
+            const val = r.c[2] ? String(r.c[2].v).trim() : "";
+
+            if (category === "Regel" && param) {
+              if (param === "vorlauf_tage") runtimeConfig[param] = parseInt(val) || 45;
+              else runtimeConfig[param] = val;
+            } else if (category === "Personal" && val) {
+              if (!loadedStaff.includes(val)) loadedStaff.push(val);
+            }
+          });
+        }
+        if (loadedStaff.length > 0) runtimeStaffList = loadedStaff;
+
+        initTable();
+        document.getElementById("syncDot").className = "dot dot-green";
+        document.getElementById("syncText").textContent = `Plan & Einstellungen aus Google Sheets geladen`;
+        alert(`✅ Erfolgreich aus Google Sheets geladen!\n\n• ${cycleCount} Zyklen aktualisiert\n• Intervalle & Fristenregeln übernommen\n• ${runtimeStaffList.length} Mitarbeiter geladen`);
+      };
+
+      const scriptConfig = document.createElement('script');
+      scriptConfig.src = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=responseHandler:${callbackConfig}&sheet=Terminal_Einstellungen`;
+      scriptConfig.onerror = function() {
+        initTable();
+        alert(`✅ ${cycleCount} Zyklen aus 'Kontrollplaner' geladen.`);
+      };
+      document.body.appendChild(scriptConfig);
+    };
+
+    const scriptCycles = document.createElement('script');
+    scriptCycles.src = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=responseHandler:${callbackCycles}&sheet=Kontrollplaner`;
+    scriptCycles.onerror = function() {
+      alert("Fehler beim Abrufen von 'Kontrollplaner'. Bitte zuerst einmal auf 'Plan in Google sichern' klicken.");
+    };
+    document.body.appendChild(scriptCycles);
+  }
+
+  function generateSQLText() {
+    let sql = `-- ====================================================================\n`;
+    sql += `-- SQLite Datenbank: RW Sassnitz Lager- & Audit-Terminal\n`;
+    sql += `-- ====================================================================\n\n`;
+    sql += `CREATE TABLE IF NOT EXISTS terminal_konfiguration (\n  einstellung TEXT PRIMARY KEY,\n  wert TEXT NOT NULL\n);\n\n`;
+    sql += `INSERT OR REPLACE INTO terminal_konfiguration (einstellung, wert) VALUES\n`;
+    sql += `  ('rule_nebensaison', '${runtimeConfig.rule_nebensaison}'),\n`;
+    sql += `  ('rule_saison_t1', '${runtimeConfig.rule_saison_t1}'),\n`;
+    sql += `  ('rule_saison_t2', '${runtimeConfig.rule_saison_t2}'),\n`;
+    sql += `  ('rule_december', '${runtimeConfig.rule_december}'),\n`;
+    sql += `  ('quartal_tage', '${runtimeConfig.quartal_tage}'),\n`;
+    sql += `  ('vorlauf_tage', '${runtimeConfig.vorlauf_tage}'),\n`;
+    sql += `  ('selected_year', '${runtimeConfig.selected_year}');\n\n`;
+
+    sql += `CREATE TABLE IF NOT EXISTS wachen_personal (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  name TEXT NOT NULL UNIQUE\n);\n\n`;
+    runtimeStaffList.forEach(name => {
+      sql += `INSERT OR IGNORE INTO wachen_personal (name) VALUES ('${name.replace(/'/g, "''")}');\n`;
+    });
+    sql += `\n`;
+
+    sql += `CREATE TABLE IF NOT EXISTS lager_audit_matrix (\n`;
+    sql += `  jahres_zyklus_schluessel TEXT PRIMARY KEY,\n  jahr INTEGER NOT NULL,\n  bestell_nr TEXT NOT NULL,\n  zyklus_name TEXT NOT NULL,\n  pruefungszeitraum TEXT NOT NULL,\n  stichtag_datum TEXT NOT NULL,\n  bestelltyp TEXT NOT NULL,\n  quartalspruefung INTEGER DEFAULT 0,\n  zustaendig TEXT NOT NULL,\n  erledigt_am DATE,\n  verfallsdaten_lager_ok INTEGER DEFAULT 0,\n  fahrzeug_bedarf_rtw TEXT,\n  fahrzeug_bedarf_nef TEXT,\n  handzeichen TEXT,\n  status TEXT NOT NULL\n);\n\n`;
+
+    allScheduleData.forEach((row) => {
+      const s = runtimeAuditState[row.key] || {};
+      const isDone = s.done_date && s.chk_verfall && s.sign;
+      const status = isDone ? "ERLEDIGT" : "OFFEN";
+      const verfall = s.chk_verfall ? 1 : 0;
+      const quartal = row.isQuarterly ? 1 : 0;
+      const exactDate = calculateExactDeadlineDate(row.year, row.monthIdx, row.cat, row.isSpecialDec, runtimeConfig);
+      const periodText = getPeriodText(row.cat);
+      const dateVal = s.done_date ? `'${s.done_date}'` : "NULL";
+      const rtwVal = s.rtw_exp ? `'${s.rtw_exp.replace(/'/g, "''")}'` : "NULL";
+      const nefVal = s.nef_exp ? `'${s.nef_exp.replace(/'/g, "''")}'` : "NULL";
+      const signVal = s.sign ? `'${s.sign.replace(/'/g, "''")}'` : "NULL";
+      const personVal = s.person || row.defaultPerson;
+
+      sql += `INSERT OR REPLACE INTO lager_audit_matrix (jahres_zyklus_schluessel, jahr, bestell_nr, zyklus_name, pruefungszeitraum, stichtag_datum, bestelltyp, quartalspruefung, zustaendig, erledigt_am, verfallsdaten_lager_ok, fahrzeug_bedarf_rtw, fahrzeug_bedarf_nef, handzeichen, status) VALUES ('${row.key}', ${row.year}, '${row.orderNum}', '${row.month}', '${periodText}', '${exactDate}', '${row.type}', ${quartal}, '${personVal}', ${dateVal}, ${verfall}, ${rtwVal}, ${nefVal}, ${signVal}, '${status}');\n`;
+    });
+    return sql;
+  }
+
+  function updateSQL() {
+    const el = document.getElementById("sqlOutput");
+    if (el) el.textContent = generateSQLText();
+  }
+
+  function saveToSqlFile() {
+    const sqlText = generateSQLText();
+    const blob = new Blob([sqlText], { type: "text/plain;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "Lager_Audit_RW_Sassnitz.sql";
+    a.click();
+    alert("✅ Erfolgreich als 'Lager_Audit_RW_Sassnitz.sql' exportiert!");
+  }
+
+  function handleFileImport(event) {
+    const file = event.target.files[0];
+    if (file) parseSqlFileContent(file);
+  }
+
+  function parseSqlFileContent(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const fullText = e.target.result;
+      const statements = splitSqlStatements(fullText);
+      let loadedStaff = [];
+      let importedRows = {};
+      let configFound = false;
+
+      for (let stmt of statements) {
+        stmt = stmt.trim();
+        if (!stmt) continue;
+
+        if (stmt.includes("terminal_konfiguration") && stmt.includes("VALUES")) {
+          const valBlock = stmt.substring(stmt.indexOf("VALUES") + 6);
+          const rowRegex = /\('([^']+)',\s*'([^']+)'\)/g;
+          let m;
+          while ((m = rowRegex.exec(valBlock)) !== null) {
+            const k = m[1];
+            const v = m[2];
+            if (k in runtimeConfig) {
+              runtimeConfig[k] = (k === "vorlauf_tage") ? parseInt(v) : v;
+              configFound = true;
+            }
+          }
+        }
+
+        if (stmt.includes("wachen_personal") && stmt.includes("VALUES")) {
+          const m = stmt.match(/VALUES\s*\(\s*'([^']+)'\s*\)/i);
+          if (m) {
+            const name = m[1].replace(/''/g, "'").trim();
+            if (!loadedStaff.includes(name)) loadedStaff.push(name);
+          }
+        }
+
+        if (stmt.includes("lager_audit_matrix") && stmt.includes("VALUES")) {
+          const valIdx = stmt.indexOf("VALUES");
+          if (valIdx !== -1) {
+            const afterVal = stmt.substring(valIdx);
+            const firstParen = afterVal.indexOf("(");
+            const lastParen = afterVal.lastIndexOf(")");
+            if (firstParen !== -1 && lastParen !== -1 && lastParen > firstParen) {
+              const rawValues = afterVal.substring(firstParen + 1, lastParen);
+              const tokens = tokenizeSqlValues(rawValues);
+              if (tokens.length >= 10) {
+                const key = unquoteSql(tokens[0]);
+                const person = unquoteSql(tokens[8]);
+                const done_date = tokens[9] === "NULL" ? "" : unquoteSql(tokens[9]);
+                const chk_verfall = tokens[10] === "1";
+                const rtw_exp = (tokens.length > 11 && tokens[11] !== "NULL") ? unquoteSql(tokens[11]) : "";
+                const nef_exp = (tokens.length > 12 && tokens[12] !== "NULL") ? unquoteSql(tokens[12]) : "";
+                const sign = (tokens.length > 13 && tokens[13] !== "NULL") ? unquoteSql(tokens[13]) : "";
+                if (key) importedRows[key] = { person, done_date, chk_verfall, rtw_exp, nef_exp, sign };
+              }
+            }
+          }
+        }
+      }
+
+      if (loadedStaff.length > 0) runtimeStaffList = loadedStaff;
+      const rowCount = Object.keys(importedRows).length;
+      if (rowCount > 0 || loadedStaff.length > 0 || configFound) {
+        runtimeAuditState = { ...runtimeAuditState, ...importedRows };
+        initTable();
+        alert(`✅ SQL-Datenbank '${file.name}' geladen! (${rowCount} Zyklen aktualisiert)`);
+      } else {
+        alert("⚠️ Die Datei konnte nicht eingelesen werden.");
+      }
+      document.getElementById("importFileInput").value = "";
+    };
+    reader.readAsText(file);
+  }
+
+  function splitSqlStatements(text) {
+    const statements = [];
+    let cur = "";
+    let inQuote = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (c === "'") {
+        if (inQuote && text[i + 1] === "'") { cur += "''"; i++; continue; }
+        inQuote = !inQuote;
+        cur += c;
+      } else if (c === ";" && !inQuote) {
+        statements.push(cur);
+        cur = "";
+      } else { cur += c; }
+    }
+    if (cur.trim()) statements.push(cur);
+    return statements;
+  }
+
+  function tokenizeSqlValues(str) {
+    const result = [];
+    let cur = "";
+    let inQuote = false;
+    for (let i = 0; i < str.length; i++) {
+      const c = str[i];
+      if (c === "'") {
+        if (inQuote && str[i + 1] === "'") { cur += "''"; i++; continue; }
+        inQuote = !inQuote;
+        cur += c;
+      } else if (c === "," && !inQuote) {
+        result.push(cur.trim());
+        cur = "";
+      } else { cur += c; }
+    }
+    if (cur.trim()) result.push(cur.trim());
+    return result;
+  }
+
+  function unquoteSql(val) {
+    if (!val) return "";
+    let s = val.trim();
+    if (s.startsWith("'") && s.endsWith("'")) s = s.substring(1, s.length - 1);
+    return s.replace(/''/g, "'");
+  }
+
+  function resetForm() {
+    if (confirm("Möchtest du wirklich alle Fristendaten zurücksetzen?")) {
+      runtimeAuditState = {};
+      initTable();
+    }
   }
 </script>
 
