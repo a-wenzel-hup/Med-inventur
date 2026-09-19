@@ -184,7 +184,6 @@
  .progress-track { width: 100%; height: 4px; background-color: #e2e8f0; border-radius: 2px; overflow: hidden; margin: 6px 0 8px 0; }
  .progress-fill { height: 100%; background-color: var(--primary); width: 0%; transition: width 0.2s ease; }
 
- /* Nav-Bar im Wizard */
  .nav-bar { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
  .nav-top-row {
  display: flex;
@@ -273,7 +272,6 @@
  .info-chip { font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 4px; background: #f8fafc; border: 1px solid #e2e8f0; color: #475569; }
  .info-chip strong { color: #0f172a; }
 
- /* Bestellmengen-Karte: Stepper & Plus-Minus sauber begrenzt */
  .order-qty-card {
  background: #eff6ff;
  border: 1.5px solid #bfdbfe;
@@ -331,7 +329,6 @@
  -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--primary); cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
  }
 
- /* Responsive Chips-Leiste */
  .quick-chips-row {
  display: grid;
  grid-template-columns: repeat(8, 1fr);
@@ -399,6 +396,12 @@
  input:checked + .slider { background-color: var(--exclusive); }
  input:checked + .slider:before { transform: translateX(18px); }
 
+ /* Spezieller grüner Toggle für 'Bestellung raus' */
+ .switch-order { width: 34px; height: 18px; }
+ .switch-order .slider:before { height: 12px; width: 12px; left: 3px; bottom: 3px; }
+ .switch-order input:checked + .slider { background-color: var(--success); }
+ .switch-order input:checked + .slider:before { transform: translateX(16px); }
+
  .button-group { display: flex; gap: 6px; margin-top: 10px; }
  button.btn-main { background: var(--primary); color: white; flex-grow: 1; min-height: 42px; border-radius: 8px; font-size: 14px; font-weight: 700; border: none; cursor: pointer; }
  button.btn-sub { background: #e2e8f0; color: var(--text); min-height: 42px; border-radius: 8px; font-size: 14px; font-weight: 700; border: none; cursor: pointer; padding: 10px 14px; }
@@ -406,7 +409,7 @@
  button.btn-gsheet { background: #0f9d58; color: white; white-space: nowrap; border-radius: 8px; border: none; font-weight: 700; padding: 8px 14px; cursor: pointer; }
 
  /* =========================================================================
- REITER 2: LAGER- & FRISTENPLANUNG (RESPONSIV & STICKY COLUMNS)
+ REITER 2: LAGER- & FRISTENPLANUNG
  ========================================================================= */
  .planning-panel {
  background: #fff;
@@ -493,7 +496,6 @@
  .vehicle-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
  @media (min-width: 700px) { .vehicle-grid { grid-template-columns: 1fr 1fr; gap: 12px; } }
 
- /* Mobiler Wisch-Hinweis */
  .mobile-swipe-hint {
  display: block;
  font-size: 8pt;
@@ -508,7 +510,6 @@
  }
  @media (min-width: 850px) { .mobile-swipe-hint { display: none; } }
 
- /* Tabelle mit Sticky-Spalten für absolut stabile Navigation */
  .table-scroll-container {
  width: 100%;
  overflow-x: auto;
@@ -520,7 +521,7 @@
  }
  table.planning-table {
  width: 100%;
- min-width: 860px;
+ min-width: 930px;
  border-collapse: collapse;
  font-size: 8pt;
  background: #fff;
@@ -643,7 +644,7 @@
  <span>☁️ Apps Script Web-App URL:</span>
  <a href="javascript:void(0)" onclick="testConnection()" style="font-size: 11px; text-decoration: underline; color: #4338ca;">🔍 Verbindung testen</a>
  </label>
- <input type="text" id="gsheet-api-url" value="https://script.google.com/macros/s/AKfycbz91QWU6bzyllbjRWmmYLdB1tF1vMQOWS0kwdT0E0dNG2Y06kkSG5MSiYO_CT88krx6/exec" style="width: 100%; padding: 6px 10px; font-size: 12px; margin-top: 4px; border: 1px solid #c7d2fe; border-radius: 6px;">
+ <input type="text" id="gsheet-api-url" value="https://script.google.com/macros/s/AKfycbyLiwmS6SHewkmUOjW6Fgqg8e4p3GIwOTkWeorUaR2ujZJZ1ldQRC0JRah0Z8ziHWzr/exec" style="width: 100%; padding: 6px 10px; font-size: 12px; margin-top: 4px; border: 1px solid #c7d2fe; border-radius: 6px;">
  <div id="api-test-status" style="font-size: 11px; font-weight: 700; margin-top: 4px;"></div>
  </div>
 
@@ -958,7 +959,6 @@
  </div>
  </div>
 
- <!-- Mobiler Wisch-Hinweis -->
  <div class="mobile-swipe-hint">👉 Tabelle seitlich wischen für Zuständige, RTW/NEF & Status (Monat bleibt links fixiert)</div>
 
  <div class="table-scroll-container">
@@ -971,7 +971,8 @@
  <th style="width: 80px;">Typ</th>
  <th style="width: 110px;">Zuständig</th>
  <th style="width: 105px;">Erledigt am</th>
- <th style="width: 38px;">MHD</th>
+ <th style="width: 38px; text-align: center;">MHD</th>
+ <th style="width: 60px; text-align: center;">Bestellt?</th>
  <th style="width: 120px;">RTW-Bedarf</th>
  <th style="width: 120px;">NEF-Bedarf</th>
  <th style="width: 50px;">Handz.</th>
@@ -1019,7 +1020,7 @@
  // PIN- & REITER-STEUERUNG
  // =========================================================================
  const AUTH_HASH = "4cf902947292a75664d9a6769017372f5d2d161501c869c33aa6ddae21a2be83";
- const ACTIVE_APP_URL = "https://script.google.com/macros/s/AKfycbz91QWU6bzyllbjRWmmYLdB1tF1vMQOWS0kwdT0E0dNG2Y06kkSG5MSiYO_CT88krx6/exec";
+ const ACTIVE_APP_URL = "https://script.google.com/macros/s/AKfycbyLiwmS6SHewkmUOjW6Fgqg8e4p3GIwOTkWeorUaR2ujZJZ1ldQRC0JRah0Z8ziHWzr/exec";
 
  function autoGrow(element) {
  if (!element) return;
@@ -1154,8 +1155,10 @@
  try {
  const savedUrl = localStorage.getItem('saved_gsheet_url');
  if (savedUrl) document.getElementById('gsheet-url').value = savedUrl;
- const savedApi = localStorage.getItem('saved_gsheet_api');
- document.getElementById('gsheet-api-url').value = savedApi || ACTIVE_APP_URL;
+ 
+ document.getElementById('gsheet-api-url').value = ACTIVE_APP_URL;
+ localStorage.setItem('saved_gsheet_api', ACTIVE_APP_URL);
+
  const savedTab = localStorage.getItem('saved_gsheet_tab');
  if (savedTab) document.getElementById('gsheet-tab-name').value = savedTab;
  } catch(e) {}
@@ -2092,6 +2095,8 @@
  optionsHtml += `<option value="${opt}" ${selectedPerson === opt ? 'selected' : ''}>${opt}</option>`;
  });
 
+ const isOrderSent = !!state.order_sent;
+
  const tr = document.createElement("tr");
  tr.id = `row_${row.key}`;
  if (isCurrent && idx === 0) tr.classList.add("current-cycle");
@@ -2122,6 +2127,15 @@
  <td style="text-align: center;">
  <input type="checkbox" id="chk_${row.key}" ${state.chk_verfall ? 'checked' : ''} onchange="savePlanningData('${row.key}')" style="width: 16px; height: 16px; cursor: pointer;">
  </td>
+ <td style="text-align: center;">
+ <label class="switch switch-order" style="display: inline-block; margin: 0 auto;">
+ <input type="checkbox" id="order_${row.key}" ${isOrderSent ? 'checked' : ''} onchange="savePlanningData('${row.key}')">
+ <span class="slider"></span>
+ </label>
+ <div id="lbl_order_${row.key}" style="font-size: 6.5pt; font-weight: bold; color: ${isOrderSent ? 'var(--success)' : 'var(--text-muted)'}; margin-top: 1px;">
+ ${isOrderSent ? 'Ja' : 'Nein'}
+ </div>
+ </td>
  <td>
  <textarea class="auto-grow" id="rtw_${row.key}" placeholder="RTW-Abläufe..." style="min-width: 115px; font-size: 7.5pt;" oninput="autoGrow(this); savePlanningData('${row.key}')">${state.rtw_exp || ''}</textarea>
  </td>
@@ -2146,11 +2160,18 @@
  const person = document.getElementById(`person_${rowKey}`).value;
  const done_date = document.getElementById(`date_${rowKey}`).value;
  const chk_verfall = document.getElementById(`chk_${rowKey}`).checked;
+ const order_sent = document.getElementById(`order_${rowKey}`).checked;
  const rtw_exp = document.getElementById(`rtw_${rowKey}`).value;
  const nef_exp = document.getElementById(`nef_${rowKey}`).value;
  const sign = document.getElementById(`sign_${rowKey}`).value;
 
- runtimeAuditState[rowKey] = { person, done_date, chk_verfall, rtw_exp, nef_exp, sign };
+ const lblOrder = document.getElementById(`lbl_order_${rowKey}`);
+ if (lblOrder) {
+ lblOrder.textContent = order_sent ? "Ja" : "Nein";
+ lblOrder.style.color = order_sent ? "var(--success)" : "var(--text-muted)";
+ }
+
+ runtimeAuditState[rowKey] = { person, done_date, chk_verfall, order_sent, rtw_exp, nef_exp, sign };
  const isDone = done_date && chk_verfall && sign;
  document.getElementById(`status_${rowKey}`).innerHTML = getStatusBadge(isDone);
  updateSQL();
@@ -2208,6 +2229,7 @@
  person: s.person || r.defaultPerson,
  done_date: s.done_date || "",
  chk_verfall: s.chk_verfall || false,
+ order_sent: s.order_sent || false,
  rtw_exp: s.rtw_exp || "",
  nef_exp: s.nef_exp || "",
  sign: s.sign || ""
@@ -2228,7 +2250,7 @@
  });
  document.getElementById("syncDot").className = "dot dot-blue";
  document.getElementById("syncText").textContent = `Plan & Einstellungen online gesichert (${new Date().toLocaleTimeString()})`;
- alert("✅ Erfolgreich in Google Sheets gesichert!\n\n• Zyklen -> Reiter 'Kontrollplaner'\n• Intervalle & Personal -> Reiter 'Terminal_Einstellungen'");
+ alert("✅ Erfolgreich in Google Sheets gesichert!\n\n• Zyklen inkl. Bestell-Status -> Reiter 'Kontrollplaner'\n• Intervalle & Personal -> Reiter 'Terminal_Einstellungen'");
  } catch (e) {
  alert("Fehler beim Sichern in Google Sheets: " + e.message);
  }
@@ -2256,12 +2278,25 @@
  const rawDateFormatted = r.c[6] ? r.c[6].f : "";
  const done_date = parseGvizDate(rawDateVal, rawDateFormatted);
 
- const chk_verfall = r.c[7] ? (r.c[7].v === 1 || String(r.c[7].v) === "1" || String(r.c[7].v).toLowerCase() === "true") : false;
- const rtw_exp = r.c[8] ? String(r.c[8].v || "") : "";
- const nef_exp = r.c[9] ? String(r.c[9].v || "") : "";
- const sign = r.c[10] ? String(r.c[10].v || "") : "";
+ const chk_verfall = r.c[7] ? (r.c[7].v === 1 || String(r.c[7].v) === "1" || String(r.c[7].v).toLowerCase() === "true" || String(r.c[7].v).toLowerCase() === "ja") : false;
 
- runtimeAuditState[key] = { person, done_date, chk_verfall, rtw_exp, nef_exp, sign };
+ let order_sent = false;
+ let rtw_exp = "";
+ let nef_exp = "";
+ let sign = "";
+
+ if (r.c.length >= 12) {
+ order_sent = r.c[8] ? (r.c[8].v === 1 || String(r.c[8].v) === "1" || String(r.c[8].v).toLowerCase() === "true" || String(r.c[8].v).toLowerCase() === "ja") : false;
+ rtw_exp = r.c[9] ? String(r.c[9].v || "") : "";
+ nef_exp = r.c[10] ? String(r.c[10].v || "") : "";
+ sign = r.c[11] ? String(r.c[11].v || "") : "";
+ } else {
+ rtw_exp = r.c[8] ? String(r.c[8].v || "") : "";
+ nef_exp = r.c[9] ? String(r.c[9].v || "") : "";
+ sign = r.c[10] ? String(r.c[10].v || "") : "";
+ }
+
+ runtimeAuditState[key] = { person, done_date, chk_verfall, order_sent, rtw_exp, nef_exp, sign };
  cycleCount++;
  });
  }
@@ -2331,13 +2366,14 @@
  sql += `\n`;
 
  sql += `CREATE TABLE IF NOT EXISTS lager_audit_matrix (\n`;
- sql += ` jahres_zyklus_schluessel TEXT PRIMARY KEY,\n jahr INTEGER NOT NULL,\n bestell_nr TEXT NOT NULL,\n zyklus_name TEXT NOT NULL,\n pruefungszeitraum TEXT NOT NULL,\n stichtag_datum TEXT NOT NULL,\n bestelltyp TEXT NOT NULL,\n quartalspruefung INTEGER DEFAULT 0,\n zustaendig TEXT NOT NULL,\n erledigt_am DATE,\n verfallsdaten_lager_ok INTEGER DEFAULT 0,\n fahrzeug_bedarf_rtw TEXT,\n fahrzeug_bedarf_nef TEXT,\n handzeichen TEXT,\n status TEXT NOT NULL\n);\n\n`;
+ sql += ` jahres_zyklus_schluessel TEXT PRIMARY KEY,\n jahr INTEGER NOT NULL,\n bestell_nr TEXT NOT NULL,\n zyklus_name TEXT NOT NULL,\n pruefungszeitraum TEXT NOT NULL,\n stichtag_datum TEXT NOT NULL,\n bestelltyp TEXT NOT NULL,\n quartalspruefung INTEGER DEFAULT 0,\n zustaendig TEXT NOT NULL,\n erledigt_am DATE,\n verfallsdaten_lager_ok INTEGER DEFAULT 0,\n bestellung_erfolgt INTEGER DEFAULT 0,\n fahrzeug_bedarf_rtw TEXT,\n fahrzeug_bedarf_nef TEXT,\n handzeichen TEXT,\n status TEXT NOT NULL\n);\n\n`;
 
  allScheduleData.forEach((row) => {
  const s = runtimeAuditState[row.key] || {};
  const isDone = s.done_date && s.chk_verfall && s.sign;
  const status = isDone ? "ERLEDIGT" : "OFFEN";
  const verfall = s.chk_verfall ? 1 : 0;
+ const bestellt = s.order_sent ? 1 : 0;
  const quartal = row.isQuarterly ? 1 : 0;
  const exactDate = calculateExactDeadlineDate(row.year, row.monthIdx, row.cat, row.isSpecialDec, runtimeConfig);
  const periodText = getPeriodText(row.cat);
@@ -2347,7 +2383,7 @@
  const signVal = s.sign ? `'${s.sign.replace(/'/g, "''")}'` : "NULL";
  const personVal = s.person || row.defaultPerson;
 
- sql += `INSERT OR REPLACE INTO lager_audit_matrix (jahres_zyklus_schluessel, jahr, bestell_nr, zyklus_name, pruefungszeitraum, stichtag_datum, bestelltyp, quartalspruefung, zustaendig, erledigt_am, verfallsdaten_lager_ok, fahrzeug_bedarf_rtw, fahrzeug_bedarf_nef, handzeichen, status) VALUES ('${row.key}', ${row.year}, '${row.orderNum}', '${row.month}', '${periodText}', '${exactDate}', '${row.type}', ${quartal}, '${personVal}', ${dateVal}, ${verfall}, ${rtwVal}, ${nefVal}, ${signVal}, '${status}');\n`;
+ sql += `INSERT OR REPLACE INTO lager_audit_matrix (jahres_zyklus_schluessel, jahr, bestell_nr, zyklus_name, pruefungszeitraum, stichtag_datum, bestelltyp, quartalspruefung, zustaendig, erledigt_am, verfallsdaten_lager_ok, bestellung_erfolgt, fahrzeug_bedarf_rtw, fahrzeug_bedarf_nef, handzeichen, status) VALUES ('${row.key}', ${row.year}, '${row.orderNum}', '${row.month}', '${periodText}', '${exactDate}', '${row.type}', ${quartal}, '${personVal}', ${dateVal}, ${verfall}, ${bestellt}, ${rtwVal}, ${nefVal}, ${signVal}, '${status}');\n`;
  });
  return sql;
  }
@@ -2421,10 +2457,24 @@
  const person = unquoteSql(tokens[8]);
  const done_date = tokens[9] === "NULL" ? "" : unquoteSql(tokens[9]);
  const chk_verfall = tokens[10] === "1";
- const rtw_exp = (tokens.length > 11 && tokens[11] !== "NULL") ? unquoteSql(tokens[11]) : "";
- const nef_exp = (tokens.length > 12 && tokens[12] !== "NULL") ? unquoteSql(tokens[12]) : "";
- const sign = (tokens.length > 13 && tokens[13] !== "NULL") ? unquoteSql(tokens[13]) : "";
- if (key) importedRows[key] = { person, done_date, chk_verfall, rtw_exp, nef_exp, sign };
+
+ let order_sent = false;
+ let rtw_exp = "";
+ let nef_exp = "";
+ let sign = "";
+
+ if (tokens.length >= 15) {
+ order_sent = tokens[11] === "1";
+ rtw_exp = tokens[12] !== "NULL" ? unquoteSql(tokens[12]) : "";
+ nef_exp = tokens[13] !== "NULL" ? unquoteSql(tokens[13]) : "";
+ sign = tokens[14] !== "NULL" ? unquoteSql(tokens[14]) : "";
+ } else {
+ rtw_exp = (tokens.length > 11 && tokens[11] !== "NULL") ? unquoteSql(tokens[11]) : "";
+ nef_exp = (tokens.length > 12 && tokens[12] !== "NULL") ? unquoteSql(tokens[12]) : "";
+ sign = (tokens.length > 13 && tokens[13] !== "NULL") ? unquoteSql(tokens[13]) : "";
+ }
+
+ if (key) importedRows[key] = { person, done_date, chk_verfall, order_sent, rtw_exp, nef_exp, sign };
  }
  }
  }
