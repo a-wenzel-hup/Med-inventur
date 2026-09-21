@@ -849,7 +849,7 @@
  </div>
  <div class="btn-group">
  <button class="btn btn-sync" onclick="syncPlanningToGoogleSheet()">☁️ Plan sichern</button>
- <button class="btn btn-teal" onclick="loadPlanningFromGoogleSheet()">☁️ Plan laden</button>
+ <button class="btn btn-teal" onclick="loadPlanningFromGoogleSheet(false)">☁️ Plan laden</button>
  <button class="btn btn-save" onclick="saveToSqlFile()">💾 SQL Datei</button>
  <button class="btn btn-purple" onclick="toggleIntervalConfig()">⚙️ Intervalle</button>
  <button class="btn btn-teal" onclick="toggleStaffConfig()">👥 Personal</button>
@@ -1130,6 +1130,8 @@
  viewP.style.display = 'block';
  viewW.style.display = 'none';
  initTable();
+ // Lädt beim Klick auf den Reiter direkt die Live-Daten aus Google Sheets
+ loadPlanningFromGoogleSheet(true);
  }
  }
 
@@ -2267,12 +2269,23 @@
  }
  }
 
- function loadPlanningFromGoogleSheet() {
+ function loadPlanningFromGoogleSheet(silent = false) {
  const input = document.getElementById('gsheet-url').value.trim();
- if (!input) { alert("Bitte gib den Google Sheets Link ein."); return; }
+ if (!input) { 
+ if (!silent) alert("Bitte gib den Google Sheets Link ein."); 
+ return; 
+ }
  const idMatch = input.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
- if (!idMatch) { alert("Ungültiger Google Sheets Link."); return; }
+ if (!idMatch) { 
+ if (!silent) alert("Ungültiger Google Sheets Link."); 
+ return; 
+ }
  const sheetId = idMatch[1];
+
+ const syncDot = document.getElementById("syncDot");
+ const syncText = document.getElementById("syncText");
+ if (syncDot) syncDot.className = "dot dot-orange";
+ if (syncText) syncText.textContent = "⏳ Lade Live-Daten aus Google Sheets...";
 
  const callbackCycles = 'gvizPlanCycles_' + Date.now();
  window[callbackCycles] = function(data) {
@@ -2334,16 +2347,20 @@
  if (loadedStaff.length > 0) runtimeStaffList = loadedStaff;
 
  initTable();
- document.getElementById("syncDot").className = "dot dot-green";
- document.getElementById("syncText").textContent = `Plan & Einstellungen aus Google Sheets geladen`;
+ if (syncDot) syncDot.className = "dot dot-green";
+ if (syncText) syncText.textContent = `✅ Live-Daten aus Google Sheets geladen (${new Date().toLocaleTimeString()})`;
+ if (!silent) {
  alert(`✅ Erfolgreich aus Google Sheets geladen!\n\n• ${cycleCount} Zyklen aktualisiert\n• Intervalle & Fristenregeln übernommen\n• ${runtimeStaffList.length} Mitarbeiter geladen`);
+ }
  };
 
  const scriptConfig = document.createElement('script');
  scriptConfig.src = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=responseHandler:${callbackConfig}&sheet=Terminal_Einstellungen`;
  scriptConfig.onerror = function() {
  initTable();
- alert(`✅ ${cycleCount} Zyklen aus 'Kontrollplaner' geladen.`);
+ if (syncDot) syncDot.className = "dot dot-green";
+ if (syncText) syncText.textContent = `✅ ${cycleCount} Zyklen geladen`;
+ if (!silent) alert(`✅ ${cycleCount} Zyklen aus 'Kontrollplaner' geladen.`);
  };
  document.body.appendChild(scriptConfig);
  };
@@ -2351,7 +2368,9 @@
  const scriptCycles = document.createElement('script');
  scriptCycles.src = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=responseHandler:${callbackCycles}&sheet=Kontrollplaner`;
  scriptCycles.onerror = function() {
- alert("Fehler beim Abrufen von 'Kontrollplaner'. Bitte zuerst einmal auf 'Plan sichern' klicken.");
+ if (syncDot) syncDot.className = "dot dot-orange";
+ if (syncText) syncText.textContent = "Offline / Konnte nicht laden";
+ if (!silent) alert("Fehler beim Abrufen von 'Kontrollplaner'. Bitte zuerst einmal auf 'Plan sichern' klicken.");
  };
  document.body.appendChild(scriptCycles);
  }
@@ -2532,7 +2551,7 @@
  for (let i = 0; i < str.length; i++) {
  const c = str[i];
  if (c === "'") {
- if (inQuote && text[i + 1] === "'") { cur += "''"; i++; continue; }
+ if (inQuote && str[i + 1] === "'") { cur += "''"; i++; continue; }
  inQuote = !inQuote;
  cur += c;
  } else if (c === "," && !inQuote) {
