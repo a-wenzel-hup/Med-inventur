@@ -420,6 +420,7 @@
  .btn-chip:active { background: var(--primary); color: #ffffff; }
  .btn-chip-plus { background: var(--highlight-row); border-color: var(--border); color: var(--primary); }
 
+ /* Absolut stabiler MHD-Bereich ohne Layout-Sprünge */
  .mhd-box { 
  background: var(--bg-gray); 
  border: 1px solid var(--border); 
@@ -428,6 +429,24 @@
  margin-bottom: 8px; 
  box-sizing: border-box; 
  overflow: hidden; 
+ }
+ .mhd-top-row {
+ display: flex;
+ justify-content: space-between;
+ align-items: center;
+ height: 28px;
+ margin-bottom: 4px;
+ }
+ .meldetext-card { 
+ height: 26px;
+ padding: 0 8px; 
+ border-radius: 6px; 
+ font-weight: 600; 
+ font-size: 11px; 
+ display: inline-flex; 
+ align-items: center; 
+ gap: 4px; 
+ white-space: nowrap;
  }
  #input-mhd, input[type="date"], input[type="text"], input[type="number"], select {
  display: block;
@@ -447,11 +466,10 @@
  padding: 6px 8px;
  font-size: 14px;
  }
- .meldetext-card { padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; }
  .status-ok { background-color: #dcfce7; color: #15803d; }
  .status-orange { background-color: #ffedd5; color: #c2410c; }
  .status-red { background-color: #fee2e2; color: #b91c1c; }
- .status-none { background-color: var(--bg-gray); color: var(--text-muted); height: 42px; display: inline-flex; align-items: center; justify-content: center; }
+ .status-none { background-color: var(--bg-gray); color: var(--text-muted); }
 
  /* MHD Eingabefeld Statusfarben mit fester Höhe */
  input#input-mhd.border-mhd-ok { border: 2px solid var(--success) !important; background-color: #f0fdf4 !important; color: var(--success) !important; }
@@ -865,11 +883,11 @@
  </div>
 
  <div class="mhd-box">
- <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+ <div class="mhd-top-row">
  <label for="input-mhd" style="font-size: 12px; font-weight: 700; color: var(--text);">MHD / Verfall:</label>
  <div id="box-meldetext" class="meldetext-card status-none">
  <span id="meldetext-icon">ℹ️</span>
- <span id="meldetext-display">Gültig</span>
+ <span id="meldetext-display">Kein Datum</span>
  </div>
  </div>
  <input type="date" id="input-mhd" oninput="calcLiveValues()">
