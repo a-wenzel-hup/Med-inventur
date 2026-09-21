@@ -374,7 +374,26 @@
  .btn-chip:active { background: #2563eb; color: #ffffff; }
  .btn-chip-plus { background: #e0e7ff; border-color: #c7d2fe; color: #3730a3; }
 
- .mhd-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; }
+ .mhd-box { 
+ background: #f8fafc; 
+ border: 1px solid #e2e8f0; 
+ border-radius: 8px; 
+ padding: 8px 10px; 
+ margin-bottom: 8px; 
+ box-sizing: border-box; 
+ overflow: hidden; 
+ }
+ #input-mhd, input[type="date"] {
+ display: block;
+ width: 100% !important;
+ max-width: 100% !important;
+ box-sizing: border-box !important;
+ -webkit-appearance: none !important;
+ -moz-appearance: none !important;
+ appearance: none !important;
+ margin: 0 !important;
+ text-align: center !important;
+ }
  .meldetext-card { padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; }
  .status-ok { background-color: #dcfce7; color: #15803d; }
  .status-orange { background-color: #ffedd5; color: #c2410c; }
@@ -416,7 +435,7 @@
  .button-group { display: flex; gap: 6px; margin-top: 10px; }
  button.btn-main { background: var(--primary); color: white; flex-grow: 1; min-height: 42px; border-radius: 8px; font-size: 14px; font-weight: 700; border: none; cursor: pointer; }
  button.btn-sub { background: #e2e8f0; color: var(--text); min-height: 42px; border-radius: 8px; font-size: 14px; font-weight: 700; border: none; cursor: pointer; padding: 10px 14px; }
- button.btn-export { background: var(--success); color: white; width: 100%; padding: 12px; font-size: 15px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; }
+ button.btn-export { background: var(--success); color: white; width: 100%; padding: 12px; font-size: 15px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; display: flex; justify-content: center; align-items: center; text-align: center; }
  button.btn-gsheet { background: #0f9d58; color: white; white-space: nowrap; border-radius: 8px; border: none; font-weight: 700; padding: 8px 14px; cursor: pointer; }
 
  /* =========================================================================
@@ -770,7 +789,7 @@
  <span id="meldetext-display">Gültig</span>
  </div>
  </div>
- <input type="date" id="input-mhd" oninput="calcLiveValues()" style="width: 100%; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px;">
+ <input type="date" id="input-mhd" oninput="calcLiveValues()" style="width: 100%; max-width: 100%; box-sizing: border-box; -webkit-appearance: none; display: block; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; text-align: center;">
  </div>
 
  <details class="details-accordion" id="accordion-details">
@@ -821,7 +840,7 @@
 
  <div class="button-group">
  <button type="button" class="btn-sub" id="btn-prev" onclick="prevStep()">Zurück</button>
- <button type="submit" class="btn-main" id="btn-next">Weiter ► (Enter)</button>
+ <button type="submit" class="btn-main" id="btn-next">Weiter ►</button>
  </div>
  <div id="live-save-status" style="font-size: 11px; font-weight: 700; text-align: center; margin-top: 6px; padding: 4px; border-radius: 4px; display: none;"></div>
  </form>
@@ -830,7 +849,7 @@
  <div id="screen-export" style="display: none; text-align: center; padding: 15px 0;">
  <h2 style="color: var(--success); margin-top: 0; font-size: 18px;">Prüfung abgeschlossen!</h2>
  <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Alle Positionen wurden erfasst.</p>
- <button type="button" id="btn-sync-bottom" class="btn-action btn-sync" style="width: 100%; padding: 12px; font-size: 15px; margin-bottom: 8px;" onclick="syncToGoogleSheet()">
+ <button type="button" id="btn-sync-bottom" class="btn-action btn-sync" style="width: 100%; padding: 12px; font-size: 15px; margin-bottom: 8px; display: flex; justify-content: center; align-items: center; text-align: center;" onclick="syncToGoogleSheet()">
  ☁️ Direkt in Google Sheet speichern
  </button>
  <button class="btn-export" onclick="exportExcel()">📥 Lokale Excel-Datei speichern (.xlsx)</button>
@@ -1130,7 +1149,6 @@
  viewP.style.display = 'block';
  viewW.style.display = 'none';
  initTable();
- // Lädt beim Klick auf den Reiter direkt die Live-Daten aus Google Sheets
  loadPlanningFromGoogleSheet(true);
  }
  }
@@ -1617,7 +1635,7 @@
  autoGrow(bemerkungEl);
 
  document.getElementById('btn-prev').style.visibility = currentFilteredIndex === 0 ? 'hidden' : 'visible';
- document.getElementById('btn-next').innerText = currentFilteredIndex === total - 1 ? 'Abschließen' : 'Weiter ►';
+ document.getElementById('btn-next').innerText = currentFilteredIndex === total - 1 ? 'Bestellung abschließen' : 'Weiter ►';
  calcLiveValues();
  }
 
@@ -2459,7 +2477,7 @@
  const k = m[1];
  const v = m[2];
  if (k in runtimeConfig) {
- runtimeConfig[k] = (k === "vorlauf_tage") ? parseInt(v) : v;
+ runtimeConfig[k] = (k === "vorlauf_tage") ? parseInt(val) : v;
  configFound = true;
  }
  }
