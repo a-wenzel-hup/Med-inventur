@@ -133,39 +133,56 @@
  ========================================================================= */
  .auth-card {
  text-align: center;
- padding: 35px 16px;
- max-width: 380px;
- margin: 25px auto;
+ padding: 40px 20px;
+ max-width: 400px;
+ margin: 40px auto;
  background: var(--card-bg);
- border-radius: 12px;
- box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+ border-radius: 14px;
+ box-shadow: 0 6px 20px rgba(0,0,0,0.1);
  border: 1px solid var(--border);
  }
- .auth-icon { font-size: 42px; margin-bottom: 10px; }
- .auth-title { font-size: 20px; font-weight: 700; color: var(--primary); margin: 0 0 6px 0; }
- .auth-desc { font-size: 13px; color: var(--text-muted); margin: 0 0 18px 0; }
+ .auth-icon { font-size: 48px; margin-bottom: 12px; }
+ .auth-title { font-size: 22px; font-weight: 700; color: var(--primary); margin: 0 0 6px 0; }
+ .auth-desc { font-size: 14px; color: var(--text-muted); margin: 0 0 20px 0; }
  .input-pin {
  width: 100%;
- max-width: 240px;
- font-size: 24px !important;
+ max-width: 260px;
+ font-size: 26px !important;
  text-align: center;
- letter-spacing: 6px;
+ letter-spacing: 8px;
  font-weight: 700;
- padding: 8px 12px !important;
+ padding: 10px 14px !important;
  border: 2px solid var(--border) !important;
- border-radius: 8px;
+ border-radius: 10px;
  outline: none;
  background: var(--bg-gray);
  color: var(--text);
- margin: 0 auto 12px auto;
+ margin: 0 auto 16px auto;
  display: block;
  }
  .input-pin:focus {
  border-color: var(--primary) !important;
  background: var(--card-bg);
- box-shadow: 0 0 0 3px rgba(31, 78, 121, 0.15);
+ box-shadow: 0 0 0 4px rgba(31, 78, 121, 0.15);
  }
- .pin-error { color: var(--danger); font-size: 12px; font-weight: 700; min-height: 18px; margin-top: 6px; }
+ .pin-error { color: var(--danger); font-size: 13px; font-weight: 700; min-height: 20px; margin-top: 8px; }
+ .btn-auth-large {
+ width: 100%;
+ max-width: 260px;
+ min-height: 50px;
+ font-size: 17px;
+ font-weight: 700;
+ border-radius: 10px;
+ background: var(--primary);
+ color: white;
+ border: none;
+ cursor: pointer;
+ margin: 0 auto;
+ display: block;
+ box-shadow: 0 4px 12px rgba(31, 78, 121, 0.3);
+ transition: background 0.2s;
+ }
+ .btn-auth-large:hover { background: var(--primary-hover); }
 
  textarea.auto-grow {
  width: 100%;
@@ -416,6 +433,7 @@
  display: block;
  width: 100% !important;
  max-width: 100% !important;
+ height: 42px !important;
  box-sizing: border-box !important;
  -webkit-appearance: none !important;
  -moz-appearance: none !important;
@@ -433,14 +451,16 @@
  .status-ok { background-color: #dcfce7; color: #15803d; }
  .status-orange { background-color: #ffedd5; color: #c2410c; }
  .status-red { background-color: #fee2e2; color: #b91c1c; }
- .status-none { background-color: var(--bg-gray); color: var(--text-muted); }
- input.border-mhd-ok { border: 2px solid var(--success) !important; background-color: #f0fdf4 !important; }
- input.border-mhd-orange { border: 2px solid var(--warning) !important; background-color: #fff7ed !important; }
- input.border-mhd-red { border: 2px solid var(--danger) !important; background-color: #fef2f2 !important; }
+ .status-none { background-color: var(--bg-gray); color: var(--text-muted); height: 42px; display: inline-flex; align-items: center; justify-content: center; }
 
- body.dark-theme input.border-mhd-ok { background-color: #052e16 !important; }
- body.dark-theme input.border-mhd-orange { background-color: #431407 !important; }
- body.dark-theme input.border-mhd-red { background-color: #450a0a !important; }
+ /* MHD Eingabefeld Statusfarben mit fester Höhe */
+ input#input-mhd.border-mhd-ok { border: 2px solid var(--success) !important; background-color: #f0fdf4 !important; color: var(--success) !important; }
+ input#input-mhd.border-mhd-orange { border: 2px solid var(--warning) !important; background-color: #fff7ed !important; color: var(--warning) !important; }
+ input#input-mhd.border-mhd-red { border: 2px solid var(--danger) !important; background-color: #fef2f2 !important; color: var(--danger) !important; }
+
+ body.dark-theme input#input-mhd.border-mhd-ok { background-color: #052e16 !important; color: #4ade80 !important; }
+ body.dark-theme input#input-mhd.border-mhd-orange { background-color: #431407 !important; color: #fb923c !important; }
+ body.dark-theme input#input-mhd.border-mhd-red { background-color: #450a0a !important; color: #f87171 !important; }
 
  .details-accordion { border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); margin-top: 4px; overflow: hidden; }
  .details-summary {
@@ -672,9 +692,9 @@
  <div class="auth-icon">🔒</div>
  <h2 class="auth-title">Terminal Sassnitz</h2>
  <p class="auth-desc">Arzneimittel-Prüfung & Fristenplanung</p>
- <form onsubmit="event.preventDefault(); verifyPin();" style="max-width: 260px; margin: 0 auto;">
+ <form onsubmit="event.preventDefault(); verifyPin();" style="max-width: 280px; margin: 0 auto;">
  <input type="password" id="input-pin" class="input-pin" inputmode="numeric" placeholder="••••••" maxlength="12" autofocus>
- <button type="submit" class="btn-main" style="width: 100%;">Entsperren</button>
+ <button type="submit" class="btn-auth-large">Entsperren</button>
  <div id="pin-error-msg" class="pin-error"></div>
  </form>
 </div>
@@ -710,39 +730,52 @@
  Tabelle über Google Sheets oder als lokale Datei einlesen:
  </p>
 
- <div class="gsheet-card">
- <label for="gsheet-url" style="color: #0f9d58; display: flex; align-items: center; gap: 6px; font-size: 13px;">
- <span>📊</span> <strong>Google Sheets Link (Lesen):</strong>
+ <!-- 1. Abrufen-Button direkt oben (außerhalb) -->
+ <button type="button" class="btn-main" id="btn-load-gsheet" onclick="loadFromGoogleSheet()" style="width: 100%; min-height: 44px; font-size: 15px; margin-bottom: 10px; display: flex; justify-content: center; align-items: center; gap: 8px;">
+ 📊 Tabelle aus Google Sheets abrufen
+ </button>
+
+ <!-- 2. Bestellmenge / Entwurf-Option (außerhalb) -->
+ <div class="options-box" style="margin-bottom: 12px;">
+ <input type="checkbox" id="chk-reset-on-load">
+ <label for="chk-reset-on-load" style="margin-bottom:0; cursor:pointer;">
+ Bestellmengen beim Laden direkt nullen (für neue Bestandsprüfung / Entwurf)
  </label>
- <div class="input-row">
- <input type="text" id="gsheet-url" value="https://docs.google.com/spreadsheets/d/1T78HBf3lpsdhtrJPF1pXsui_gOE-vKF_KxMsJs9GhGM/edit?usp=sharing" style="padding: 7px 10px; font-size: 13px; border: 1px solid var(--border); border-radius: 6px;">
- <button type="button" class="btn-gsheet" id="btn-load-gsheet" onclick="loadFromGoogleSheet()">Abrufen</button>
  </div>
 
- <div style="margin-top: 10px;">
- <label for="gsheet-api-url" style="color: var(--primary); display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 700;">
- <span>☁️ Apps Script Web-App URL:</span>
+ <!-- 3. Klappfenster für Google Sheets & API Links -->
+ <details class="details-accordion" style="margin-bottom: 12px;">
+ <summary class="details-summary">
+ <span>⚙️ Google Sheets & API-Links konfigurieren</span>
+ </summary>
+ <div class="details-content">
+ <div class="form-group-sm" style="margin-bottom: 8px;">
+ <label for="gsheet-url" style="color: #0f9d58; font-weight: 700;">Google Sheets Link (Lesen):</label>
+ <input type="text" id="gsheet-url" value="https://docs.google.com/spreadsheets/d/1T78HBf3lpsdhtrJPF1pXsui_gOE-vKF_KxMsJs9GhGM/edit?usp=sharing">
+ </div>
+
+ <div class="form-group-sm" style="margin-bottom: 8px;">
+ <div style="display: flex; justify-content: space-between; align-items: center;">
+ <label for="gsheet-api-url" style="color: var(--primary); font-weight: 700;">Apps Script Web-App URL:</label>
  <a href="javascript:void(0)" onclick="testConnection()" style="font-size: 11px; text-decoration: underline; color: var(--primary);">🔍 Verbindung testen</a>
- </label>
- <input type="text" id="gsheet-api-url" value="https://script.google.com/macros/s/AKfycbyLiwmS6SHewkmUOjW6Fgqg8e4p3GIwOTkWeorUaR2ujZJZ1ldQRC0JRah0Z8ziHWzr/exec" style="width: 100%; padding: 6px 10px; font-size: 12px; margin-top: 4px; border: 1px solid var(--border); border-radius: 6px;">
+ </div>
+ <input type="text" id="gsheet-api-url" value="https://script.google.com/macros/s/AKfycbyLiwmS6SHewkmUOjW6Fgqg8e4p3GIwOTkWeorUaR2ujZJZ1ldQRC0JRah0Z8ziHWzr/exec" style="margin-top: 4px;">
  <div id="api-test-status" style="font-size: 11px; font-weight: 700; margin-top: 4px;"></div>
  </div>
 
- <div style="display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; flex-wrap: wrap;">
- <label for="gsheet-tab-name" style="margin-bottom:0;">Blatt:</label>
- <input type="text" id="gsheet-tab-name" value="Prüfung Verfallsdatum" style="max-width: 180px; padding: 4px 8px; font-size: 12px; border: 1px solid var(--border); border-radius: 4px;">
+ <div class="form-group-sm" style="margin-bottom: 10px;">
+ <label for="gsheet-tab-name" style="font-weight: 700;">Tabellenblatt:</label>
+ <input type="text" id="gsheet-tab-name" value="Prüfung Verfallsdatum" style="max-width: 220px;">
  </div>
 
- <div class="options-box">
- <input type="checkbox" id="chk-reset-on-load">
- <label for="chk-reset-on-load" style="margin-bottom:0; cursor:pointer;">
- Bestellmengen beim Laden direkt nullen (für neue Inventur)
- </label>
+ <div style="display: flex; justify-content: flex-end;">
+ <button type="button" class="btn-action btn-sync" onclick="saveCustomLinks()" style="padding: 6px 12px; font-size: 11.5px;">💾 Links dauerhaft speichern</button>
  </div>
+ </div>
+ </details>
 
- <div id="gsheet-status" style="display: none; font-size: 12px; margin-top: 6px; color: var(--primary); font-weight: 600;">
+ <div id="gsheet-status" style="display: none; font-size: 12px; margin-top: 6px; color: var(--primary); font-weight: 600; text-align: center;">
  ⏳ Lade Daten...
- </div>
  </div>
 
  <div class="divider">ODER LOKALE DATEI</div>
@@ -756,7 +789,7 @@
 
  <div id="sheet-picker-row" style="display: none; margin-top: 10px;">
  <label for="sheet-select" style="font-size: 12px;">Tabellenblatt wählen:</label>
- <select id="sheet-select" onchange="switchSheet(this.value)" style="width: 100%; padding: 6px; border: 1px solid var(--border); border-radius: 4px;"></select>
+ <select id="sheet-select" onchange="switchSheet(this.value)"></select>
  </div>
  </div>
 
@@ -1244,19 +1277,53 @@
  const savedUrl = localStorage.getItem('saved_gsheet_url');
  if (savedUrl) document.getElementById('gsheet-url').value = savedUrl;
  
- document.getElementById('gsheet-api-url').value = ACTIVE_APP_URL;
- localStorage.setItem('saved_gsheet_api', ACTIVE_APP_URL);
+ const savedApi = localStorage.getItem('saved_gsheet_api');
+ document.getElementById('gsheet-api-url').value = savedApi || ACTIVE_APP_URL;
 
  const savedTab = localStorage.getItem('saved_gsheet_tab');
  if (savedTab) document.getElementById('gsheet-tab-name').value = savedTab;
 
- if (localStorage.getItem('rw_sassnitz_dark_mode') === '1') {
+ const storedTheme = localStorage.getItem('rw_sassnitz_dark_mode');
+ const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+ if (storedTheme === '1' || (storedTheme === null && prefersDark)) {
  document.body.classList.add('dark-theme');
  const btn = document.getElementById('dark-toggle-btn');
  if (btn) btn.innerHTML = '☀️ Light';
+ } else {
+ document.body.classList.remove('dark-theme');
+ const btn = document.getElementById('dark-toggle-btn');
+ if (btn) btn.innerHTML = '🌙 Dark';
  }
+
+ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+ if (!localStorage.getItem('rw_sassnitz_dark_mode')) {
+ if (e.matches) {
+ document.body.classList.add('dark-theme');
+ const btn = document.getElementById('dark-toggle-btn');
+ if (btn) btn.innerHTML = '☀️ Light';
+ } else {
+ document.body.classList.remove('dark-theme');
+ const btn = document.getElementById('dark-toggle-btn');
+ if (btn) btn.innerHTML = '🌙 Dark';
+ }
+ }
+ });
  } catch(e) {}
  });
+
+ function saveCustomLinks() {
+ const url = document.getElementById('gsheet-url').value.trim();
+ const api = document.getElementById('gsheet-api-url').value.trim();
+ const tab = document.getElementById('gsheet-tab-name').value.trim();
+ try {
+ localStorage.setItem('saved_gsheet_url', url);
+ localStorage.setItem('saved_gsheet_api', api);
+ localStorage.setItem('saved_gsheet_tab', tab);
+ alert("✅ Links & Einstellungen erfolgreich dauerhaft gespeichert!");
+ } catch(e) {
+ alert("Fehler beim Speichern: " + e.message);
+ }
+ }
 
  async function testConnection() {
  const statusEl = document.getElementById('api-test-status');
