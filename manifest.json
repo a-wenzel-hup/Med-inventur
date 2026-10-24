@@ -1,18 +1,19 @@
 {
+  "id": "./index.html",
   "name": "Lager- & Fristenterminal RW Sassnitz",
   "short_name": "Lager RW",
-  "description": "Arzneimittel-Prüfung & Fristenplanung",
+  "description": "Arzneimittel-Prüfung, Fristenplanung & Bestellübergabe",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#f1f5f9",
   "theme_color": "#1F4E79",
   "orientation": "portrait-primary",
+  "lang": "de",
   "icons": [
-    {
-      "src": "icon.svg",
-      "sizes": "192x192 512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ]
 }
