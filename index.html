@@ -367,8 +367,13 @@
  border-radius: 6px; padding: 4px 8px; min-height: 28px; cursor: pointer; white-space: nowrap;
  }
  .btn-tool:active { background: var(--highlight-row); }
- .product-title { font-size: 16px; font-weight: 700; margin: 2px 0 0 0; width: 100%; color: var(--text); line-height: 1.25; word-break: break-word; }
- .quick-info-bar { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
+ .product-title { font-size: 16px; font-weight: 700; margin: 2px 0 0 0; width: 100%; color: var(--text); line-height: 1.25; word-break: break-word;
+ height: 2.5em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+ .quick-info-bar { display: flex; gap: 6px; margin-top: 4px; flex-wrap: nowrap; overflow: hidden; }
+ .quick-info-bar .info-chip { flex: 0 0 auto; white-space: nowrap; }
+ .quick-info-bar .info-chip.chip-ort { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+ .hist-line { height: 20px; margin-top: 4px; display: flex; align-items: center; overflow: hidden; }
+ .hist-line .info-chip { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
  .info-chip { font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 4px; background: var(--bg-gray); border: 1px solid var(--border); color: var(--text-muted); }
  .info-chip strong { color: var(--text); }
  .info-chip.hist-chip { color: var(--primary); border-style: dashed; }
@@ -1209,9 +1214,9 @@
  <div class="quick-info-bar">
  <span class="info-chip">Soll: <strong id="val-chip-soll">0</strong></span>
  <span class="info-chip">Ist: <strong id="val-chip-bestand">0</strong></span>
- <span class="info-chip">Ort: <strong id="val-chip-lager">-</strong></span>
- <span class="info-chip hist-chip" id="val-chip-hist" style="display: none;"></span>
+ <span class="info-chip chip-ort">Ort: <strong id="val-chip-lager">-</strong></span>
  </div>
+ <div class="hist-line"><span class="info-chip hist-chip" id="val-chip-hist" style="visibility: hidden;"></span></div>
  </div>
 
  <div class="order-qty-card">
@@ -2463,6 +2468,7 @@
 
  document.getElementById("val-pos").innerText = `Pos ${it.pos}`;
  document.getElementById("val-name").innerText = it.name;
+ document.getElementById("val-name").title = it.name;
  document.getElementById("input-name").value = it.name;
  document.getElementById("val-soll-hint").innerText = `Soll: ${it.soll}`;
  document.getElementById("val-badge-new").style.display = it.isNew ? "inline-block" : "none";
@@ -2484,8 +2490,8 @@
  // Kleine Erinnerung aus der Historie: zuletzt bestellt
  const histChip = document.getElementById("val-chip-hist");
  const last = lastOrderedInfo(it.name);
- if (last) { histChip.style.display = "inline-block"; histChip.innerHTML = `Zuletzt: <strong>${last.qty}×</strong> am ${fmtDateDE(last.date)}`; }
- else histChip.style.display = "none";
+ if (last) { histChip.style.visibility = "visible"; histChip.innerHTML = `Zuletzt bestellt: <strong>${last.qty}×</strong> am ${fmtDateDE(last.date)}`; }
+ else { histChip.style.visibility = "hidden"; histChip.innerHTML = "&nbsp;"; }
 
  document.getElementById("btn-prev").style.visibility = currentFilteredIndex === 0 ? "hidden" : "visible";
  document.getElementById("btn-next").innerText = currentFilteredIndex === total - 1 ? "Bestellung abschließen" : "Weiter ►";
