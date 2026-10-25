@@ -12,8 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Lager RW">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon.svg">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -1122,7 +1121,7 @@
  <label for="gsheet-api-url" style="color: var(--primary); font-weight: 700;">Apps Script Web-App URL:</label>
  <a href="javascript:void(0)" onclick="testConnection()" style="font-size: 11px; text-decoration: underline; color: var(--primary);">🔍 Verbindung testen</a>
  </div>
- <input type="text" id="gsheet-api-url" value="https://script.google.com/macros/s/AKfycbx5SZZQ9TqyjcX3WEdwWv5i9fppDXkCGKKkcWx93Og-SEzm-ATycFkzRaBLI_BGu953/exec" style="margin-top: 4px;">
+ <input type="text" id="gsheet-api-url" value="https://script.google.com/macros/s/AKfycbyLiwmS6SHewkmUOjW6Fgqg8e4p3GIwOTkWeorUaR2ujZJZ1ldQRC0JRah0Z8ziHWzr/exec" style="margin-top: 4px;">
  <div id="api-test-status" style="font-size: 11px; font-weight: 700; margin-top: 4px;"></div>
  </div>
 
@@ -1663,7 +1662,7 @@
  // GRUNDLAGEN: Speicher, Hilfsfunktionen, Toast
  // =========================================================================
  const AUTH_HASH = "4cf902947292a75664d9a6769017372f5d2d161501c869c33aa6ddae21a2be83";
- const ACTIVE_APP_URL = "https://script.google.com/macros/s/AKfycbx5SZZQ9TqyjcX3WEdwWv5i9fppDXkCGKKkcWx93Og-SEzm-ATycFkzRaBLI_BGu953/exec";
+ const ACTIVE_APP_URL = "https://script.google.com/macros/s/AKfycbyLiwmS6SHewkmUOjW6Fgqg8e4p3GIwOTkWeorUaR2ujZJZ1ldQRC0JRah0Z8ziHWzr/exec";
 
  const LS = {
  get(key, fallback) {
@@ -5486,9 +5485,6 @@
  window.addEventListener("DOMContentLoaded", () => {
  const savedUrl = LS.getRaw("saved_gsheet_url");
  if (savedUrl) document.getElementById("gsheet-url").value = savedUrl;
- // Alte, gespeicherte Web-App-Adresse automatisch auf die neue umstellen
- const OLD_APP_URLS = ["https://script.google.com/macros/s/AKfycbyLiwmS6SHewkmUOjW6Fgqg8e4p3GIwOTkWeorUaR2ujZJZ1ldQRC0JRah0Z8ziHWzr/exec"];
- if (OLD_APP_URLS.includes(LS.getRaw("saved_gsheet_api"))) LS.setRaw("saved_gsheet_api", ACTIVE_APP_URL);
  document.getElementById("gsheet-api-url").value = LS.getRaw("saved_gsheet_api") || ACTIVE_APP_URL;
  const savedTab = LS.getRaw("saved_gsheet_tab");
  if (savedTab) document.getElementById("gsheet-tab-name").value = savedTab;
