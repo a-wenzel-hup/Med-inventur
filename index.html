@@ -5284,7 +5284,12 @@
  const termUnits = o.items.filter(i => !i.exklusiv).reduce((a, i) => a + (Number(i.qty) || 0), 0);
  srcBox += `<div class="ho-sub">✓ ${ho.tab.pairs.length} Einträge mit Bedarf aus eurem Reiter „Bestellliste“ (Stand ${fmtDateTimeDE(ho.tab.loadedAt)}) – die Namen sind bereits die des Hauptlagers. <a href="javascript:void(0)" onclick="hoReloadTab()">neu laden</a></div>`;
  if (ho.saveWarn) srcBox += `<div class="ho-sub" style="color: var(--danger); font-weight:700;">⚠️ Die Prüfung konnte vorher nicht gespeichert werden (${esc(ho.saveWarn)}). Der Reiter zeigt den zuletzt gespeicherten Stand.</div>`;
- if (termUnits !== tabUnits) srcBox += `<div class="ho-sub" style="color: var(--warning); font-weight:700;">ℹ️ Im Terminal sind ${termUnits} Stück (ohne Exklusiv) bestellt, in der „Bestellliste“ stehen ${tabUnits}. Artikel, die in eurer „Bestellliste“ fehlen (z. B. neue NEF-Produkte), bitte als Exklusiv markieren oder dort ergänzen.</div>`;
+ if (termUnits !== tabUnits) {
+ const diffs = qtyDiffs(o, ho.tab);
+ srcBox += `<div class="ho-sub" style="color: var(--warning); font-weight:700;">ℹ️ Prüfung: ${termUnits} Stück (ohne Exklusiv) · Reiter „Bestellliste“: ${tabUnits} Stück – Unterschied ${Math.abs(termUnits - tabUnits)}.</div>`;
+ if (diffs && diffs.length) srcBox += `<ul class="ho-maillist" style="font-size:12px;">${diffs.map(d => `<li>${d}</li>`).join("")}</ul>`;
+ else if (!diffs) srcBox += `<div class="ho-sub">Welche Artikel betroffen sind, kann erst mit Apps Script 2.4 angezeigt werden.</div>`;
+ }
  } else srcBox += `<div class="ho-sub" style="color: var(--danger); font-weight:700;">⚠️ Euer Reiter „Bestellliste“ konnte nicht gelesen werden – es wird NICHTS automatisch eingetragen.
  <a href="javascript:void(0)" onclick="hoReloadTab()">erneut versuchen</a><br><span style="font-weight:500;">${esc((ho.tab && ho.tab.error) || "")}</span></div>`;
  if (!isLatestOrder) srcBox += `<div class="ho-sub" style="color: var(--warning); font-weight:700;">ℹ️ Ältere Bestellung: Der Reiter „Bestellliste“ zeigt den AKTUELLEN Bedarf, nicht den von damals.</div>`;
@@ -5360,6 +5365,42 @@
  ["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("drag-over"); }));
  drop.addEventListener("drop", e => { const f = e.dataTransfer.files && e.dataTransfer.files[0]; if (f) hoLoadFile(f); });
  }
+ }
+
+ // Welche Artikel machen den Stückzahl-Unterschied aus? (braucht die Verbindungen aus Apps Script 2.4)
+ function qtyDiffs(o, tab) {
+ if (!sheetMapPairs || !tab) return null;
+ const ord = {};
+ o.items.forEach(i => { ord[normName(i.name)] = { qty: Number(i.qty) || 0, excl: !!i.exklusiv, name: i.name }; });
+ const byHl = {}, links = {};
+ sheetMapPairs.forEach(p => { (byHl[normName(p.hl)] = byHl[normName(p.hl)] || []).push(p.name); links[normName(p.name)] = (links[normName(p.name)] || 0) + 1; });
+ const out = [];
+ tab.pairs.forEach(pr => {
+ const src = byHl[normName(pr.name)] || [];
+ const exp = src.reduce((a, n) => { const x = ord[normName(n)]; return a + (x && !x.excl ? x.qty : 0); }, 0);
+ if (exp === pr.qty) return;
+ let why = "";
+ if (!src.length) why = " – keine Verbindung zur Prüfliste gefunden";
+ else if (src.some(n => ord[normName(n)] && ord[normName(n)].excl)) why = " – ist in der Prüfliste als Exklusiv markiert, steht aber in der Bestellliste";
+ else if (exp === 0) why = " – in der Prüfung nicht bestellt (oder noch nicht gespeichert)";
+ else why = " – Prüfung noch nicht gespeichert?";
+ out.push(`<strong>${esc(pr.name)}</strong>: Bestellliste <strong>${pr.qty}</strong> Stück, Prüfung${src.length ? ` („${esc(src.join("“, „"))}“)` : ""} <strong>${exp}</strong> Stück${why}`);
+ });
+ const inTab = new Set(tab.pairs.map(p => normName(p.name)));
+ sheetMapPairs.forEach(p => {
+ const x = ord[normName(p.name)];
+ if (x && !x.excl && x.qty > 0 && !inTab.has(normName(p.hl)))
+ out.push(`<strong>${esc(p.hl)}</strong>: Prüfung („${esc(p.name)}“) <strong>${x.qty}</strong> Stück, Bestellliste <strong>0</strong> – noch nicht gespeichert?`);
+ if (x && x.qty > 0 && links[normName(p.name)] > 1) {
+ const all = sheetMapPairs.filter(q => normName(q.name) === normName(p.name)).map(q => q.hl);
+ out.push(`<strong>${esc(p.name)}</strong> ist in der Bestellliste <strong>${all.length}× verknüpft</strong> („${esc(all.join("“ und „"))}“) – wird dadurch ${all.length}× bestellt.`);
+ }
+ });
+ o.items.forEach(i => {
+ if (Number(i.qty) > 0 && !i.exklusiv && !sheetMapPairs.some(p => normName(p.name) === normName(i.name)))
+ out.push(`<strong>${esc(i.name)}</strong>: ${i.qty} Stück bestellt, hat aber <strong>keine Zeile</strong> in der Bestellliste – fehlt in der Excel.`);
+ });
+ return [...new Set(out)];
  }
 
  // ---------------------------------------------------------------------
