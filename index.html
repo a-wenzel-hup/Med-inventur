@@ -91,7 +91,7 @@
  padding: 4px;
  border-radius: 10px;
  margin-bottom: 10px;
- max-width: 1200px;
+ max-width: 1680px;
  margin-left: auto;
  margin-right: auto;
  align-items: center;
@@ -574,7 +574,7 @@
  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
  border: 1px solid var(--border);
  padding: 10px;
- max-width: 1200px;
+ max-width: 1680px;
  margin: 0 auto;
  }
  @media (min-width: 768px) {
@@ -680,7 +680,7 @@
  }
  table.planning-table {
  width: 100%;
- min-width: 1110px;
+ min-width: 1040px;
  border-collapse: collapse;
  font-size: 8pt;
  background: var(--card-bg);
@@ -1610,7 +1610,8 @@
  <input type="date" id="fin-date">
  <div class="finish-checks">
  <label><input type="checkbox" id="fin-chk-mhd" checked> Verfallskontrolle (MHD) durchgeführt</label>
- <label><input type="checkbox" id="fin-chk-order" checked> Bestellung ist raus („Bestellt?“ = Ja)</label>
+ <label><input type="radio" name="fin-kind" id="fin-kind-order" value="order" checked> 📦 Es wird bestellt – danach Bestellliste fürs Hauptlager & E-Mail</label>
+ <label><input type="radio" name="fin-kind" id="fin-kind-check" value="check"> ✔️ Nur kontrolliert – <strong>keine</strong> Bestellung</label>
  <label><input type="checkbox" id="fin-chk-sync" checked> Alles direkt in Google Sheets sichern (Tabelle, Plan, Historie)</label>
  </div>
  <div id="fin-status" style="font-size: 12px; font-weight: 700; min-height: 16px; margin-top: 8px;"></div>
@@ -3429,7 +3430,7 @@
  document.getElementById("fin-person").innerHTML = runtimeStaffList.map(p => `<option value="${esc(p)}" ${p === defaultPerson ? "selected" : ""}>${esc(p)}</option>`).join("");
  autoFillSign();
  document.getElementById("fin-date").value = todayIso();
- document.getElementById("fin-chk-order").checked = s.ordered.length > 0;
+ document.getElementById(s.ordered.length > 0 ? "fin-kind-order" : "fin-kind-check").checked = true;
  document.getElementById("fin-status").innerText = "";
  document.getElementById("fin-go").disabled = false;
  document.getElementById("finish-overlay").style.display = "flex";
@@ -3448,13 +3449,26 @@
  const sign = document.getElementById("fin-sign").value.trim();
  const date = document.getElementById("fin-date").value || todayIso();
  const chkMhd = document.getElementById("fin-chk-mhd").checked;
- const chkOrder = document.getElementById("fin-chk-order").checked;
+ const noOrder = document.getElementById("fin-kind-check").checked; // nur Kontrolle, keine Bestellung
  const doSync = document.getElementById("fin-chk-sync").checked;
  const status = document.getElementById("fin-status");
  if (!sign) { status.style.color = "var(--danger)"; status.innerText = "Bitte ein Handzeichen eintragen."; return; }
 
  const signs = LS.get(KEY_SIGNS, {}); signs[person] = sign; LS.set(KEY_SIGNS, signs);
  const cycleRow = allScheduleData.find(r => r.key === cycleKey);
+ if (noOrder) {
+ // Nur Kontrolle: Fristenplan ausfüllen, KEIN Eintrag in Historie/Auswertung, keine Übergabe
+ setPlanningFields(cycleKey, { person, done_date: date, chk_verfall: chkMhd, sign });
+ closeFinishModal(); clearDraft(); draftSuppressed = true;
+ if (cycleRow && cycleRow.year !== new Date().getFullYear()) runtimeConfig.selected_year = String(cycleRow.year);
+ switchTab("planning");
+ showToast(`✔️ Kontrolle in „${esc(cycleRow ? cycleRow.month : cycleKey)}“ eingetragen – ohne Bestellung`, "ok", 4500);
+ if (doSync) Promise.allSettled([syncItemsToCloud(), syncPlanningToGoogleSheet(true)]).then(r => {
+ const bad = r.filter(x => x.status === "rejected");
+ showToast(bad.length ? "⚠️ Nicht alles gesichert: " + esc(bad[0].reason && bad[0].reason.message) : "☁️ Prüfung & Fristenplan gesichert", bad.length ? "err" : "ok", 5000);
+ });
+ return;
+ }
  const order = {
  id: newOrderId(),
  ts: new Date().toISOString(),
@@ -3471,7 +3485,8 @@
  orderHistory.unshift(order);
  saveHistoryLocal();
 
- setPlanningFields(cycleKey, { person, done_date: date, chk_verfall: chkMhd, order_sent: chkOrder, sign, order_id: order.id });
+ // "Bestellt? = Ja" erst, wenn im Übergabe-Fenster "Bestellung ist raus" gedrückt wird
+ setPlanningFields(cycleKey, { person, done_date: date, chk_verfall: chkMhd, order_sent: false, sign, order_id: order.id });
 
  closeFinishModal();
  clearDraft();
@@ -3766,7 +3781,7 @@
  const optionsHtml = staffForRow.map(opt => `<option value="${esc(opt)}" ${selectedPerson === opt ? "selected" : ""}>${esc(opt)}</option>`).join("");
 
  const isOrderSent = !!state.order_sent;
- const order = state.order_id ? orderHistory.find(o => o.id === state.order_id) : null;
+ const order = (state.order_id && orderHistory.find(o => o.id === state.order_id)) || orderHistory.find(o => o.cycleKey === row.key) || null;
  const orderLink = order
  ? `<span class="order-link" onclick="showOrder('${esc(order.id)}')">📦 ${order.items.filter(i => i.qty > 0).length} Pos.</span><br>
  <span class="order-link" onclick="openHandover('${esc(order.id)}')">📄 Übergabe${order.handover ? " ✓" : ""}</span>`
@@ -5355,6 +5370,13 @@
  <button type="button" class="btn-action btn-sync" onclick="hoOpenMail()">✉️ E-Mail öffnen</button>
  </div>
  <div class="ho-sub">Die ausgefüllte Excel-Datei bitte in der E-Mail anhängen.</div>
+ </div>
+ <div class="ho-step" style="border-color: var(--success);">
+ ${isOrderSent(o)
+ ? `<div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;"><strong style="color: var(--success);">✅ Bestellung ist raus</strong> <span class="ho-sub">${o.sentAt ? "seit " + fmtDateTimeDE(o.sentAt) + " – " : ""}im Fristenplan „Bestellt? = Ja“</span>
+ <button type="button" class="mgr-mini" onclick="markOrderSent('${esc(o.id)}', false)">rückgängig</button></div>`
+ : `<button type="button" class="btn-finish" style="background: var(--success); margin:0;" onclick="markOrderSent('${esc(o.id)}', true)">📨 Bestellung ist raus – abschließen</button>
+ <div class="ho-sub" style="text-align:center;">Erst damit wird im Fristenplan „Bestellt? = Ja“ gesetzt.</div>`}
  </div>`;
 
  body.innerHTML = html;
@@ -5479,6 +5501,25 @@
  <ul>${nameCheck.issues.map(x => `<li>${x}</li>`).join("")}</ul></div>`;
  }
 
+ function isOrderSent(o) {
+ if (o.sentAt) return true;
+ const st = runtimeAuditState[o.cycleKey];
+ return !!(st && st.order_sent && (!st.order_id || st.order_id === o.id));
+ }
+ // Bestellung als "raus" markieren -> Fristenplan "Bestellt? = Ja"
+ function markOrderSent(id, val) {
+ const o = orderHistory.find(x => x.id === id);
+ if (!o) return;
+ if (!val && !confirm("Markierung „Bestellung ist raus“ wirklich zurücknehmen?")) return;
+ o.sentAt = val ? new Date().toISOString() : null;
+ saveHistoryLocal();
+ setPlanningFields(o.cycleKey, { order_sent: !!val, order_id: o.id });
+ syncPlanningToGoogleSheet(true).catch(() => showToast("Lokal gespeichert – bitte später „☁️ Plan sichern“.", "warn", 5000));
+ if (ho && ho.order === o) renderHandover();
+ renderHandoverPanel();
+ showToast(val ? "📨 Bestellung abgeschlossen – im Fristenplan „Bestellt? = Ja“" : "Markierung zurückgenommen", "ok", 4000);
+ }
+
  function renderHandoverPanel() {
  const el = document.getElementById("handover-panel");
  if (!el) return;
@@ -5493,6 +5534,7 @@
  <div class="order-chips">
  ${hd ? `<span class="o-chip" style="color: var(--success);">📄 Liste erstellt</span>` : `<span class="o-chip warn">📄 Liste offen</span>`}
  <span class="o-chip">⭐ ${mailN} per E-Mail</span>
+ ${isOrderSent(o) ? `<span class="o-chip" style="color: var(--success);">📨 raus</span>` : `<span class="o-chip warn">📨 noch nicht raus</span>`}
  </div>
  <button type="button" class="btn-action" onclick="openHandover('${esc(o.id)}')">Öffnen</button>
  <button type="button" class="btn-action" style="color: var(--danger);" title="Bestellung löschen" onclick="deleteOrder('${esc(o.id)}')">🗑️</button>
