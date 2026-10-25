@@ -12,7 +12,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Lager RW">
-<link rel="apple-touch-icon" href="icon.svg">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -908,6 +909,16 @@
  .hbar { height: 14px; background: var(--primary); border-radius: 0 4px 4px 0; min-width: 2px; }
  .hbar-row:hover .hbar { background: var(--primary-light); }
  .hbar-val { font-size: 12px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; color: var(--text); }
+ .trend-svg { width: 100%; height: 220px; display: block; }
+ .trend-svg .grid { stroke: var(--border); stroke-width: 1; }
+ .trend-svg .axis { fill: var(--text-muted); font-size: 10px; }
+ .trend-svg .line { fill: none; stroke: var(--primary); stroke-width: 2; }
+ .trend-svg .area { fill: var(--primary); opacity: 0.08; }
+ .trend-svg .dot { fill: var(--primary); stroke: var(--card-bg); stroke-width: 2; }
+ .trend-svg .hit { fill: transparent; cursor: default; }
+ .trend-table { width: 100%; border-collapse: collapse; font-size: 11.5px; margin-top: 6px; }
+ .trend-table td, .trend-table th { border-bottom: 1px solid var(--border); padding: 3px 4px; text-align: center; }
+ .trend-table th { color: var(--text-muted); font-weight: 600; }
  .vbar-wrap { display: flex; align-items: flex-end; gap: 2px; height: 150px; border-bottom: 1px solid var(--border); padding-top: 18px; position: relative; }
  .vbar-col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; position: relative; cursor: default; min-width: 0; }
  .vbar { width: 100%; max-width: 34px; background: var(--primary); border-radius: 4px 4px 0 0; min-height: 2px; }
@@ -1121,7 +1132,7 @@
  <label for="gsheet-api-url" style="color: var(--primary); font-weight: 700;">Apps Script Web-App URL:</label>
  <a href="javascript:void(0)" onclick="testConnection()" style="font-size: 11px; text-decoration: underline; color: var(--primary);">🔍 Verbindung testen</a>
  </div>
- <input type="text" id="gsheet-api-url" value="https://script.google.com/macros/s/AKfycbyLiwmS6SHewkmUOjW6Fgqg8e4p3GIwOTkWeorUaR2ujZJZ1ldQRC0JRah0Z8ziHWzr/exec" style="margin-top: 4px;">
+ <input type="text" id="gsheet-api-url" value="https://script.google.com/macros/s/AKfycbx5SZZQ9TqyjcX3WEdwWv5i9fppDXkCGKKkcWx93Og-SEzm-ATycFkzRaBLI_BGu953/exec" style="margin-top: 4px;">
  <div id="api-test-status" style="font-size: 11px; font-weight: 700; margin-top: 4px;"></div>
  </div>
 
@@ -1529,6 +1540,17 @@
  </div>
 
  <div class="stat-card" style="margin-bottom: 12px;">
+ <h3>
+ <span>Verlauf über die Zeit <small id="trend-unit">bestellte Stück pro Monat</small></span>
+ <span style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+ <select id="trend-item" onchange="renderTrend()" style="height:30px !important; width:auto !important; min-width:180px; font-size:12px; text-align:left !important;"></select>
+ <span class="mini-seg"><button type="button" id="trend-m" class="active" onclick="setTrendMode('month')">pro Monat</button><button type="button" id="trend-c" onclick="setTrendMode('cum')">aufsummiert</button></span>
+ </span>
+ </h3>
+ <div id="stats-trend"></div>
+ </div>
+
+ <div class="stat-card" style="margin-bottom: 12px;">
  <h3><span>Wiederkehrende Verfalls-Auffälligkeiten <small>Artikel, die bei Prüfungen abgelaufen/kurz vor Ablauf waren</small></span></h3>
  <div id="stats-mhd"></div>
  </div>
@@ -1662,7 +1684,7 @@
  // GRUNDLAGEN: Speicher, Hilfsfunktionen, Toast
  // =========================================================================
  const AUTH_HASH = "4cf902947292a75664d9a6769017372f5d2d161501c869c33aa6ddae21a2be83";
- const ACTIVE_APP_URL = "https://script.google.com/macros/s/AKfycbyLiwmS6SHewkmUOjW6Fgqg8e4p3GIwOTkWeorUaR2ujZJZ1ldQRC0JRah0Z8ziHWzr/exec";
+ const ACTIVE_APP_URL = "https://script.google.com/macros/s/AKfycbx5SZZQ9TqyjcX3WEdwWv5i9fppDXkCGKKkcWx93Og-SEzm-ATycFkzRaBLI_BGu953/exec";
 
  const LS = {
  get(key, fallback) {
@@ -4199,6 +4221,8 @@
  // =========================================================================
  let orderHistory = LS.get(KEY_HISTORY, []);
  if (!Array.isArray(orderHistory)) orderHistory = [];
+ // Alte Einträge mit "Date(2026,9,1)" als Zyklus-Namen korrigieren
+ orderHistory.forEach(o => { if (/^Date\(/.test(o.cycleLabel || "")) o.cycleLabel = cycleLabelOf(o.cycleKey, o.cycleLabel); });
  let lastHistoryCloudLoad = 0;
  let topMode = "qty";
 
@@ -4249,7 +4273,7 @@
  byId[id] = {
  id, ts: r.c[1] ? parseGvizDateTime(r.c[1].v, r.c[1].f) : new Date().toISOString(),
  date: r.c[2] ? parseGvizDate(r.c[2].v, r.c[2].f) : "",
- cycleKey: cellStr(r.c[3]), cycleLabel: cellStr(r.c[4]), person: cellStr(r.c[5]), sign: cellStr(r.c[6]),
+ cycleKey: cellStr(r.c[3]), cycleLabel: cycleLabelOf(cellStr(r.c[3]), cellStr(r.c[4])), person: cellStr(r.c[5]), sign: cellStr(r.c[6]),
  synced: true, items: []
  };
  }
@@ -4340,6 +4364,8 @@
  }).join("");
  }
 
+ renderTrend();
+
  // Volumen je Bestellung (chronologisch, letzte 12)
  const vol = orders.slice(0, 12).reverse();
  const volEl = document.getElementById("stats-volume");
@@ -4415,6 +4441,66 @@
  }).join("");
  }
 
+ // Zyklus-Name aus dem Schlüssel (Google wandelt "Oktober 2026" sonst in ein Datum um)
+ function cycleLabelOf(key, raw) {
+ const row = allScheduleData.find(r => r.key === key);
+ if (row) return row.month;
+ return /^Date\(/.test(raw || "") ? parseGvizDate(raw).slice(0, 7) : raw;
+ }
+
+ // ---------------------------------------------------------------------
+ // VERLAUF: bestellte Stück pro Monat bzw. aufsummiert – gesamt oder je Artikel
+ // ---------------------------------------------------------------------
+ let trendMode = "month";
+ function setTrendMode(m) {
+ trendMode = m;
+ document.getElementById("trend-m").classList.toggle("active", m === "month");
+ document.getElementById("trend-c").classList.toggle("active", m === "cum");
+ renderTrend();
+ }
+ function renderTrend() {
+ const el = document.getElementById("stats-trend");
+ const sel = document.getElementById("trend-item");
+ if (!el || !sel) return;
+ const orders = ordersInRange().slice().sort((a, b) => String(a.date || a.ts).localeCompare(String(b.date || b.ts)));
+ // Artikel-Auswahl (häufigste zuerst)
+ const freq = {};
+ orders.forEach(o => o.items.forEach(i => { if (i.qty > 0) { const k = normName(i.name); freq[k] = freq[k] || { name: i.name, n: 0 }; freq[k].n += i.qty; } }));
+ const prev = sel.value;
+ sel.innerHTML = `<option value="">Alle Artikel zusammen</option>` + Object.values(freq).sort((a, b) => b.n - a.n)
+ .map(x => `<option value="${esc(normName(x.name))}">${esc(x.name)} (${x.n})</option>`).join("");
+ if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
+ const pick = sel.value;
+ document.getElementById("trend-unit").textContent = (trendMode === "cum" ? "aufsummiert seit Beginn" : "bestellte Stück pro Monat") + (pick ? " – " + (freq[pick] ? freq[pick].name : "") : "");
+ if (!orders.length) { el.innerHTML = `<div class="empty-state">Noch keine Daten.</div>`; return; }
+ // Monate vom ersten bis zum letzten Bestellmonat (max. 24)
+ const ym = o => String(o.date || o.ts).slice(0, 7);
+ const first = ym(orders[0]), last = ym(orders[orders.length - 1]);
+ const months = [];
+ let [y, mo] = first.split("-").map(Number);
+ while (`${y}-${String(mo).padStart(2, "0")}` <= last && months.length < 240) { months.push(`${y}-${String(mo).padStart(2, "0")}`); mo++; if (mo > 12) { mo = 1; y++; } }
+ const per = months.map(mk => orders.filter(o => ym(o) === mk).reduce((a, o) => a + o.items.filter(i => i.qty > 0 && (!pick || normName(i.name) === pick)).reduce((b, i) => b + i.qty, 0), 0));
+ let vals = per.slice();
+ if (trendMode === "cum") { let s = 0; vals = per.map(v => (s += v)); }
+ const show = months.slice(-24), v = vals.slice(-24);
+ const W = Math.max(320, Math.round(el.clientWidth || 640)), H = 220, L = 34, R = 26, T = 14, B = 26;
+ const max = Math.max(1, ...v);
+ const nice = Math.pow(10, Math.floor(Math.log10(max))); const top = Math.ceil(max / nice) * nice;
+ const x = i => L + (show.length === 1 ? (W - L - R) / 2 : i * (W - L - R) / (show.length - 1));
+ const yy = val => T + (H - T - B) * (1 - val / top);
+ const mName = mk => ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"][Number(mk.slice(5)) - 1] + " " + mk.slice(2, 4);
+ const grid = [0, 0.25, 0.5, 0.75, 1].map(f => `<line class="grid" x1="${L}" x2="${W - R}" y1="${yy(top * f)}" y2="${yy(top * f)}"/><text class="axis" x="${L - 5}" y="${yy(top * f) + 3}" text-anchor="end">${Math.round(top * f)}</text>`).join("");
+ const pts = v.map((val, i) => `${x(i)},${yy(val)}`).join(" ");
+ const step = Math.ceil(show.length / 8);
+ const labels = show.map((mk, i) => (i % step === 0 || i === show.length - 1) ? `<text class="axis" x="${x(i)}" y="${H - 8}" text-anchor="middle">${mName(mk)}</text>` : "").join("");
+ const dots = v.map((val, i) => `<circle class="dot" cx="${x(i)}" cy="${yy(val)}" r="4"/><rect class="hit" x="${x(i) - 14}" y="${T}" width="28" height="${H - T - B}" onmousemove="showTip(event, this.dataset.tip)" onmouseleave="hideTip()" data-tip="${esc(`<strong>${mName(show[i])}</strong><br>${val} Stück${trendMode === "cum" ? " (aufsummiert)" : ""}`)}"/>`).join("");
+ const area = `${x(0)},${yy(0)} ${pts} ${x(v.length - 1)},${yy(0)}`;
+ el.innerHTML = `<svg class="trend-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Verlauf">${grid}<polygon class="area" points="${area}"/><polyline class="line" points="${pts}"/>${dots}${labels}</svg>
+ <div class="ho-grid-wrap"><table class="trend-table"><tr><th></th>${show.map(mk => `<th>${mName(mk)}</th>`).join("")}</tr>
+ <tr><th>Stück</th>${per.slice(-24).map(n => `<td>${n || ""}</td>`).join("")}</tr>
+ ${trendMode === "cum" ? `<tr><th>Summe</th>${v.map(n => `<td><strong>${n}</strong></td>`).join("")}</tr>` : ""}</table></div>`;
+ }
+
  function showOrder(id) {
  const range = document.getElementById("stats-range");
  if (range) range.value = "all";
@@ -4440,8 +4526,17 @@
  if (!o || !confirm(`Bestellung vom ${fmtDateDE(o.date || o.ts.slice(0, 10))} (${o.cycleLabel}) wirklich löschen?\nSie wird auch aus dem Reiter „Bestellhistorie“ in Google Sheets entfernt.`)) return;
  orderHistory = orderHistory.filter(x => x.id !== id);
  saveHistoryLocal();
- renderStats();
- try { await postToScript({ action: "DELETE_ORDER", id }); } catch (e) { showToast("Lokal gelöscht, online nicht erreichbar.", "warn"); }
+ // Verknüpfung im Fristenplan lösen (der Zyklus selbst bleibt – zurücksetzen geht über 🗑️ in der Tabelle)
+ Object.keys(runtimeAuditState).forEach(k => {
+ if (runtimeAuditState[k] && runtimeAuditState[k].order_id === id) { runtimeAuditState[k].order_id = ""; planningDirtyKeys.add(k); }
+ });
+ savePlanningLocal();
+ try { const db = await idbOpen(); db.transaction("files", "readwrite").objectStore("files").delete("order_" + id); } catch (_) {}
+ if (activeTab === "planning") initTable(); else renderStats();
+ nameCheck.at = 0;
+ showToast("🗑️ Bestellung gelöscht", "ok");
+ try { await postToScript({ action: "DELETE_ORDER", id }); if (planningDirtyKeys.size) syncPlanningToGoogleSheet(true).catch(() => {}); }
+ catch (e) { showToast("Lokal gelöscht – online nicht erreichbar, bitte später „☁️ Plan sichern“.", "warn", 6000); }
  }
 
  function exportOrderExcel(id) {
@@ -5359,6 +5454,7 @@
  <span class="o-chip">⭐ ${mailN} per E-Mail</span>
  </div>
  <button type="button" class="btn-action" onclick="openHandover('${esc(o.id)}')">Öffnen</button>
+ <button type="button" class="btn-action" style="color: var(--danger);" title="Bestellung löschen" onclick="deleteOrder('${esc(o.id)}')">🗑️</button>
  </div>`;
  }).join("");
  }
@@ -5485,6 +5581,9 @@
  window.addEventListener("DOMContentLoaded", () => {
  const savedUrl = LS.getRaw("saved_gsheet_url");
  if (savedUrl) document.getElementById("gsheet-url").value = savedUrl;
+ // Alte, gespeicherte Web-App-Adresse automatisch auf die neue umstellen
+ const OLD_APP_URLS = ["https://script.google.com/macros/s/AKfycbyLiwmS6SHewkmUOjW6Fgqg8e4p3GIwOTkWeorUaR2ujZJZ1ldQRC0JRah0Z8ziHWzr/exec"];
+ if (OLD_APP_URLS.includes(LS.getRaw("saved_gsheet_api"))) LS.setRaw("saved_gsheet_api", ACTIVE_APP_URL);
  document.getElementById("gsheet-api-url").value = LS.getRaw("saved_gsheet_api") || ACTIVE_APP_URL;
  const savedTab = LS.getRaw("saved_gsheet_tab");
  if (savedTab) document.getElementById("gsheet-tab-name").value = savedTab;
