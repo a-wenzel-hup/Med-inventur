@@ -1147,6 +1147,7 @@
  #loader-text { font-weight: 800; font-size: 15px; }
  #loader-sub { font-size: 12.5px; color: var(--text-muted); margin-top: 4px; min-height: 16px; }
  #loader-skip { margin-top: 14px; visibility: hidden; }
+ #loader-skip[style*="hidden"] { display: none; }
 
  /* Eigene Fristen-Regeln */
  .config-item input.rule-custom { display: none !important; margin-top: 6px; font-family: ui-monospace, Menlo, Consolas, monospace; text-align: left !important; }
@@ -1164,6 +1165,9 @@
  .o-chip-btn { cursor: pointer; font-family: inherit; }
  .o-chip-btn:hover { border-color: var(--text-muted); }
  .session-box strong { color: var(--text); }
+ .o-chip.recv { color: var(--primary); border-color: var(--primary); background: color-mix(in srgb, var(--primary) 8%, var(--card-bg)); }
+ .row-recv { margin-top: 5px; }
+ .row-recv .o-chip { font-size: 10.5px; padding: 2px 6px; white-space: normal; line-height: 1.2; }
 </style>
 </head>
 <body>
@@ -1463,7 +1467,7 @@
  <div class="pl-subtitle">Prüftermine, Zuständige & Bestellstatus · gespeichert in Google Sheets</div>
  </div>
  <div class="pl-actions">
- <button type="button" class="pbtn pbtn-primary" id="btn-plan-sync" onclick="syncPlanningToGoogleSheet(false)">☁️ Sichern</button>
+ <button type="button" class="pbtn pbtn-primary" id="btn-plan-sync" onclick="withLoader('Sichere Fristenplan …', 'in Google Sheets', () => syncPlanningToGoogleSheet(false)).catch(() => {})">☁️ Sichern</button>
  <button type="button" class="pbtn" onclick="refreshPlanningTab(true)">↻ Neu laden</button>
  <button type="button" class="pbtn" onclick="toggleIntervalConfig()">⚙️ Fristen-Regeln</button>
  <button type="button" class="pbtn" onclick="toggleStaffConfig()">👥 Personal</button>
@@ -1637,7 +1641,7 @@
  <th style="width: 130px;">NEF-Bedarf</th>
  <th style="width: 170px;">📝 Notiz</th>
  <th style="width: 64px;">Handz.</th>
- <th style="width: 86px; text-align: center;">Status</th>
+ <th style="width: 100px; text-align: center;">Status</th>
  </tr>
  </thead>
  <tbody id="tableBody"></tbody>
@@ -1663,7 +1667,7 @@
  <option value="365">Letzte 12 Monate</option>
  </select>
  <button type="button" class="pbtn" onclick="withLoader('Lade Bestellhistorie …', 'aus Google Sheets', () => loadHistoryFromCloud(false)).then(() => { applyHoState(); renderStats(); })">↻ Neu laden</button>
- <button type="button" class="pbtn" id="btn-resend" onclick="resendUnsyncedOrders()">☁️ Offene senden</button>
+ <button type="button" class="pbtn" id="btn-resend" onclick="withLoader('Sende offene Bestellungen …', 'an Google Sheets', resendUnsyncedOrders)">☁️ Offene senden</button>
  <button type="button" class="pbtn" onclick="exportHistoryExcel()">📥 Excel</button>
  </div>
  </div>
@@ -1863,7 +1867,7 @@
  // LADEANZEIGE (Kreis) – sperrt die Oberfläche, bis die Daten da sind
  // =========================================================================
  let loaderCount = 0, loaderSkipTimer = null;
- function showLoader(text, sub) {
+ function showLoader(text, sub, canSkip = true) {
  const el = document.getElementById("loader");
  if (!el) return;
  loaderCount++;
@@ -1872,7 +1876,8 @@
  document.getElementById("loader-skip").style.visibility = "hidden";
  el.classList.add("show");
  clearTimeout(loaderSkipTimer);
- loaderSkipTimer = setTimeout(() => { document.getElementById("loader-skip").style.visibility = "visible"; }, 9000);
+ // Beim Schreiben in Google kein „Weiter“, damit währenddessen nichts geändert wird
+ if (canSkip && loaderCount === 1) loaderSkipTimer = setTimeout(() => { document.getElementById("loader-skip").style.visibility = "visible"; }, 9000);
  }
  function hideLoader(force) {
  loaderCount = force ? 0 : Math.max(0, loaderCount - 1);
@@ -1881,9 +1886,9 @@
  const el = document.getElementById("loader");
  if (el) el.classList.remove("show");
  }
- async function withLoader(text, sub, fn) {
+ async function withLoader(text, sub, fn, canSkip = true) {
  if (!text) return fn();
- showLoader(text, sub);
+ showLoader(text, sub, canSkip);
  try { return await fn(); } finally { hideLoader(); }
  }
 
@@ -2099,7 +2104,7 @@
  } else if (tab === "stats") {
  renderStats();
  if (Date.now() - lastHistoryCloudLoad > 60000) {
- withLoader(lastHistoryCloudLoad ? null : "Lade Bestellhistorie …", "aus Google Sheets", () => loadHistoryFromCloud(true))
+ withLoader("Lade Bestellhistorie …", "aus Google Sheets", () => loadHistoryFromCloud(true))
  .then(() => { applyHoState(); if (activeTab === "stats") renderStats(); });
  }
  }
@@ -2163,7 +2168,8 @@
  showToast("✅ Links & Einstellungen dauerhaft gespeichert", "ok");
  }
 
- async function testConnection() {
+ function testConnection() { return withLoader("Prüfe die Verbindung …", "Google Apps Script", testConnectionNow); }
+ async function testConnectionNow() {
  const statusEl = document.getElementById("api-test-status");
  const apiUrl = getApiUrl();
  statusEl.innerHTML = "<span style='color: var(--primary);'>⏳ Prüfe Verbindung...</span>";
@@ -2307,6 +2313,7 @@
  statusBanner.style.color = "#0369a1";
  statusBanner.innerText = "⏳ Sende Daten an Google Sheets...";
  }
+ showLoader("Speichere in Google Sheets …", `${allItems.length} Artikel`, false);
  try {
  const res = await syncItemsToCloud();
  const msg = res.confirmed
@@ -2327,6 +2334,7 @@
  }
  showToast("❌ Übertragungsfehler: " + esc(err.message), "err", 6000);
  } finally {
+ hideLoader();
  if (btnTop) btnTop.innerText = "☁️ Sichern";
  if (btnBottom) btnBottom.innerText = "☁️ Nur Tabelle in Google Sheet speichern";
  }
@@ -2382,6 +2390,24 @@
  await Promise.allSettled([loadPlanningFromGoogleSheet(true), loadHistoryFromCloud(true)]);
  applyHoState();
  pushHoIfNeeded();
+ rawMatrix = await fetchSheetMatrix(sheetId, tabName, gidMatch);
+ const ws = XLSX.utils.aoa_to_sheet(rawMatrix);
+ workbook = XLSX.utils.book_new();
+ XLSX.utils.book_append_sheet(workbook, ws, tabName.substring(0, 31));
+ activeSheetName = tabName;
+ activeSheet = ws;
+ parseUnifiedMatrix(rawMatrix);
+ } catch (err) {
+ hideLoader(true);
+ alert("Google Sheets Fehler: " + err.message);
+ } finally {
+ hideLoader();
+ btnLoad.disabled = false;
+ statusEl.style.display = "none";
+ }
+ }
+
+ async function fetchSheetMatrix(sheetId, tabName, gidMatch) {
  const params = (gidMatch && gidMatch[1]) ? `&gid=${gidMatch[1]}` : `&sheet=${encodeURIComponent(tabName)}`;
  const data = await gvizQuery(sheetId, params);
  const matrix = [];
@@ -2399,21 +2425,7 @@
  }
  matrix.push(rowVals);
  });
- rawMatrix = matrix;
- const ws = XLSX.utils.aoa_to_sheet(rawMatrix);
- workbook = XLSX.utils.book_new();
- XLSX.utils.book_append_sheet(workbook, ws, tabName.substring(0, 31));
- activeSheetName = tabName;
- activeSheet = ws;
- parseUnifiedMatrix(rawMatrix);
- } catch (err) {
- hideLoader(true);
- alert("Google Sheets Fehler: " + err.message);
- } finally {
- hideLoader();
- btnLoad.disabled = false;
- statusEl.style.display = "none";
- }
+ return matrix;
  }
 
  function parseGvizDate(valStr, formattedStr) {
@@ -3678,12 +3690,14 @@
  setPlanningFields(cycleKey, { person, done_date: date, chk_verfall: chkMhd, sign });
  closeFinishModal(); clearDraft(); draftSuppressed = true;
  if (cycleRow && cycleRow.year !== new Date().getFullYear()) runtimeConfig.selected_year = String(cycleRow.year);
+ let bad = [];
+ if (doSync) {
+ const r = await withLoader("Sichere Prüfung & Fristenplan …", "in Google Sheets", () => Promise.allSettled([syncItemsToCloud(), syncPlanningToGoogleSheet(true)]), false);
+ bad = r.filter(x => x.status === "rejected");
+ }
  switchTab("planning");
- showToast(`✔️ Kontrolle in „${esc(cycleRow ? cycleRow.month : cycleKey)}“ eingetragen – ohne Bestellung`, "ok", 4500);
- if (doSync) Promise.allSettled([syncItemsToCloud(), syncPlanningToGoogleSheet(true)]).then(r => {
- const bad = r.filter(x => x.status === "rejected");
- showToast(bad.length ? "⚠️ Nicht alles gesichert: " + esc(bad[0].reason && bad[0].reason.message) : "☁️ Prüfung & Fristenplan gesichert", bad.length ? "err" : "ok", 5000);
- });
+ if (bad.length) showToast("⚠️ Nicht alles gesichert: " + esc(bad[0].reason && bad[0].reason.message), "err", 6000);
+ else showToast(`✔️ Kontrolle in „${esc(cycleRow ? cycleRow.month : cycleKey)}“ eingetragen – ohne Bestellung${doSync ? " · gesichert" : ""}`, "ok", 4500);
  return;
  }
  const order = {
@@ -3708,32 +3722,32 @@
  closeFinishModal();
  clearDraft();
  draftSuppressed = true;
- // Auf die Fristenplanung wechseln und den eingetragenen Zyklus zeigen
  if (cycleRow && cycleRow.year !== new Date().getFullYear()) runtimeConfig.selected_year = String(cycleRow.year);
- switchTab("planning");
- setTimeout(() => {
- const tr = document.getElementById("row_" + cycleKey);
- if (tr) { tr.scrollIntoView({ block: "center", behavior: "smooth" }); tr.classList.add("row-flash"); setTimeout(() => tr.classList.remove("row-flash"), 2500); }
- }, 120);
- showToast(`✅ Bestellung gespeichert & in „${esc(order.cycleLabel)}“ eingetragen`, "ok", 4500);
- setTimeout(() => openHandover(order.id), 450); // letzter Schritt: Bestellliste Hauptlager + E-Mail-Liste
 
- if (!doSync) return;
- setSyncStatus("orange", "⏳ Sichere Tabelle, Plan & Bestellhistorie in Google Sheets …");
- const results = await Promise.allSettled([
+ // Erst alles sichern (Ladekreis), danach Fristenplan und das fertige Übergabe-Fenster zeigen
+ let failed = [], confirmed = true;
+ if (doSync) {
+ const results = await withLoader("Sichere die Bestellung …", "Tabelle, Fristenplan & Bestellhistorie in Google Sheets", () => Promise.allSettled([
  syncItemsToCloud(),
  sendOrderToCloud(order),
  syncPlanningToGoogleSheet(true)
- ]);
- const failed = results.filter(r => r.status === "rejected");
- if (!failed.length) {
- const confirmed = results.every(r => r.value && r.value.confirmed);
+ ]), false);
+ failed = results.filter(r => r.status === "rejected");
+ confirmed = results.every(r => r.value && r.value.confirmed);
+ }
+ switchTab("planning");
+ const tr = document.getElementById("row_" + cycleKey);
+ if (tr) { tr.scrollIntoView({ block: "center" }); tr.classList.add("row-flash"); setTimeout(() => tr.classList.remove("row-flash"), 2500); }
+ if (!doSync) showToast(`✅ Bestellung gespeichert & in „${esc(order.cycleLabel)}“ eingetragen`, "ok", 4500);
+ else if (!failed.length) {
  setSyncStatus("blue", `Alles online gesichert (${new Date().toLocaleTimeString()})${confirmed ? "" : " – ohne Bestätigung"}`);
- showToast("☁️ Tabelle, Fristenplan & Bestellhistorie in Google Sheets gesichert", confirmed ? "ok" : "warn", 5000);
+ showToast(`✅ Bestellung gespeichert & in Google Sheets gesichert`, confirmed ? "ok" : "warn", 4500);
  } else {
  setSyncStatus("orange", "Teilweise nicht gesichert – bitte später erneut senden");
  showToast("⚠️ Nicht alles konnte gesichert werden: " + esc(failed[0].reason && failed[0].reason.message), "err", 7000);
  }
+ if (planRefreshRunning) await planRefreshRunning;
+ openHandover(order.id); // letzter Schritt: Bestellliste Hauptlager + E-Mail-Liste
  }
 
  // =========================================================================
@@ -4141,6 +4155,7 @@
  <td><textarea rows="1" class="auto-grow pl-ta" id="note_${k}" placeholder="Notiz …" oninput="autoGrow(this); savePlanningData('${k}')">${esc(state.note || "")}</textarea></td>
  <td><input type="text" id="sign_${k}" class="pl-in center" placeholder="Kürzel" value="${esc(state.sign || "")}" oninput="savePlanningData('${k}')"></td>
  <td style="text-align: center;"><div id="status_${k}">${getStatusBadge(isDone, k)}</div>
+ ${order ? `<div class="row-recv">${receivedChip(order)}</div>` : ""}
  <button type="button" class="btn-row-reset" title="Zyklus komplett zurücksetzen" onclick="resetCycle('${k}')">🗑️</button></td>
  `;
  tbody.appendChild(tr);
@@ -4723,7 +4738,8 @@
  }, 80);
  }
 
- async function resendOne(id) {
+ function resendOne(id) { return withLoader("Sende Bestellung …", "an Google Sheets", () => resendOneNow(id)); }
+ async function resendOneNow(id) {
  const o = orderHistory.find(x => x.id === id);
  if (!o) return;
  try { const r = await sendOrderToCloud(o); showToast("☁️ Bestellung gesendet" + (r.confirmed ? "" : " (ohne Bestätigung)"), r.confirmed ? "ok" : "warn"); }
@@ -5162,9 +5178,9 @@
  function hoSetMode(m) { ho.mode = m; ho.choices = {}; renderHandover(); }
  async function hoReloadTab() {
  if (!ho) return;
- ho.tabLoading = true; renderHandover();
- const tab = await loadBestelllisteTab();
- if (!ho) return;
+ const cur = ho;
+ const tab = await withLoader("Lese euren Reiter „Bestellliste“ …", "aus Google Sheets", () => loadBestelllisteTab().catch(e => ({ pairs: [], error: e.message })));
+ if (ho !== cur) return;
  ho.tab = tab; ho.tabLoading = false;
  if (!tab || !tab.pairs.length) showToast("Reiter „Bestellliste“ konnte nicht gelesen werden.", "warn", 6000);
  renderHandover();
@@ -5278,28 +5294,23 @@
  async function openHandover(orderId) {
  const order = orderHistory.find(o => o.id === orderId);
  if (!order) { showToast("Bestellung nicht gefunden.", "warn"); return; }
+ if (ho && ho.order === order && document.getElementById("ho-overlay").style.display === "flex") return;
  const dw = order.handover ? { month: order.handover.month, week: order.handover.week } : defaultWeekFor(order.date || order.ts);
- const isLatest = true; // Reiter "Bestellliste" wird immer gelesen
- ho = { order, model: null, month: dw.month, week: dw.week, choices: {}, busy: false, templateInfo: null,
+ const state = { order, model: null, month: dw.month, week: dw.week, choices: {}, busy: false, templateInfo: null,
  mode: "sheet", tab: null, tabLoading: true };
+ // Erst ALLES laden (Ladekreis), dann das fertige Fenster zeigen – nichts springt nachträglich um
+ await withLoader("Öffne Übergabe ans Hauptlager …", (itemsDirty || layoutDirty) ? "speichere die Prüfung & lese euren Reiter „Bestellliste“" : "lese euren Reiter „Bestellliste“", async () => {
+ // Terminal-Änderungen zuerst speichern, damit der Reiter "Bestellliste" den aktuellen Stand rechnet
+ try { if (itemsDirty || layoutDirty) await syncItemsToCloud(); } catch (e) { state.saveWarn = e.message; }
+ const [tab, , tpl] = await Promise.allSettled([loadBestelllisteTab(), loadSheetMapping(), idbGet("last_template")]);
+ state.tab = tab.status === "fulfilled" ? tab.value : { pairs: [], error: tab.reason && tab.reason.message };
+ state.templateInfo = tpl.status === "fulfilled" ? tpl.value || null : null;
+ state.tabLoading = false;
+ });
+ ho = state;
  document.getElementById("ho-overlay").style.display = "flex";
  document.body.style.overflow = "hidden";
  renderHandover();
- loadSheetMapping().then(() => { if (ho && ho.order === order) renderHandover(); });
- if (isLatest) {
- // Erst Terminal-Änderungen speichern, damit der Reiter "Bestellliste" den aktuellen Stand rechnet
- (async () => {
- try { if (itemsDirty || layoutDirty) await syncItemsToCloud(); } catch (e) { if (ho) ho.saveWarn = e.message; }
- const tab = await loadBestelllisteTab();
- if (!ho || ho.order !== order) return;
- ho.tab = tab; ho.tabLoading = false;
- renderHandover();
- })();
- }
- try {
- const t = await idbGet("last_template");
- if (t && ho && ho.order === order) { ho.templateInfo = t; renderHandover(); }
- } catch (_) {}
  }
 
  function closeHandover() {
@@ -5312,8 +5323,9 @@
 
  async function hoLoadFile(file) {
  if (!file || !ho) return;
+ showLoader("Lese Hauptlager-Datei …", file.name);
  try {
- ho.busy = true; renderHandover();
+ ho.busy = true;
  ho.model = await parseHauptlagerFile(await file.arrayBuffer(), file.name);
  // Namen der Hauptlager-Datei merken – für den roten Punkt, wenn sich später etwas nicht mehr deckt
  LS.set("rw_sassnitz_hl_names", { names: ho.model.articles.map(a => a.name), file: file.name, at: new Date().toISOString() });
@@ -5321,7 +5333,7 @@
  ho.choices = {};
  } catch (e) {
  showToast("❌ " + esc(e.message), "err", 7000);
- } finally { if (ho) { ho.busy = false; renderHandover(); } }
+ } finally { hideLoader(); if (ho) { ho.busy = false; renderHandover(); } }
  }
 
  async function hoUseTemplate() {
@@ -5369,7 +5381,8 @@
  if (open && !confirm(`${open} Zuordnung(en) sind nur Vorschläge (gelb).\nWenn sie stimmen: OK. Sonst Abbrechen und den richtigen Artikel wählen.`)) return;
  if (ho.model.year && ho.model.year !== new Date((ho.order.date || ho.order.ts).slice(0, 10)).getFullYear() &&
  !confirm(`Die Datei ist für ${ho.model.year}, die Bestellung aber aus einem anderen Jahr. Trotzdem eintragen?`)) return;
- ho.busy = true; renderHandover();
+ ho.busy = true;
+ showLoader("Erstelle die Bestellliste …", "Excel-Datei fürs Hauptlager", false);
  try {
  const res = await buildHandoverFile(ho.model, lines, ho.month, ho.week);
  const d = (ho.order.date || ho.order.ts).slice(0, 10).split("-");
@@ -5397,7 +5410,7 @@
  showToast(`✅ ${esc(outName)} erstellt – ${res.cells.length} Artikel in Spalte ${res.col} eingetragen`, "ok", 6000);
  } catch (e) {
  showToast("❌ " + esc(e.message), "err", 8000);
- } finally { if (ho) { ho.busy = false; renderHandover(); } }
+ } finally { hideLoader(); if (ho) { ho.busy = false; renderHandover(); } }
  }
 
  async function hoDownloadArchived(orderId) {
@@ -5565,7 +5578,7 @@
  const mailItems = mailList.slice().sort((a, b) => a.name.localeCompare(b.name, "de"));
  html += `<div class="ho-step ho-mail"><div class="ho-step-title"><span class="ho-num">⭐</span> Per E-Mail bestellen (Exklusiv-Artikel & von dir markierte)</div>
  ${mailItems.length ? `<ul class="ho-maillist">${mailItems.map(i => `<li><strong>${i.qty}×</strong> ${esc(i.name)} <span class="ho-sub">${esc(i.reason)}</span></li>`).join("")}</ul>` : `<div class="ho-sub">Keine Artikel für die E-Mail${m ? "" : " (nach dem Laden der Datei wird geprüft, was nicht in der Liste steht)"}.</div>`}
- ${!m && nofile.length ? `<div class="ho-sub">⏳ ${nofile.length} weitere Position(en) werden nach dem Laden der Datei geprüft.</div>` : ""}
+ ${!m && nofile.length ? `<div class="ho-sub">ℹ️ ${nofile.length} weitere Position(en) werden geprüft, sobald oben die Hauptlager-Datei geladen ist.</div>` : ""}
  <textarea id="ho-email-text" class="auto-grow ho-mailtext" readonly>${esc(hoEmailText(o, mailItems))}</textarea>
  <div class="ho-actions">
  <input type="text" id="ho-mail-to" placeholder="E-Mail Hauptlager (optional)" value="${esc(LS.getRaw(KEY_HLMAIL) || "")}" style="height:36px !important; text-align:left !important; flex:1; min-width:170px; width:auto !important;">
@@ -5729,11 +5742,12 @@
  let cloudHo = LS.get(KEY_HO, {}) || {};
  let deletedOrders = LS.get(KEY_HO_DEL, {}) || {};
  function packHo(o) {
- if (!o.handover && !o.sentAt && !o.hoU) return null;
+ if (!o.handover && !o.sentAt && !o.receivedAt && !o.hoU) return null;
  const h = o.handover;
  return {
  u: o.hoU || Date.parse((h && h.createdAt) || o.sentAt || o.ts) || 1,
  sent: o.sentAt || null,
+ r: o.receivedAt || null,
  h: h ? { x: h.manual ? 1 : 0, c: h.createdAt, o: h.outName, t: h.sheetTitle || "", s: h.sourceName || "", m: h.month, w: h.week, col: h.col,
  cells: (h.cells || []).map(c => [c.ref, c.hlName, c.qty, c.prev, (c.ours || []).join(" | ")]),
  e: (h.email || []).map(e => [e.name, e.qty, e.reason]) } : null
@@ -5774,7 +5788,17 @@
  if (!st) return;
  const newer = (st.u || 0) > (o.hoU || 0);
  if (st.h && (!o.handover || newer)) { o.handover = unpackHandover(st.h); changed = true; }
- if (newer) { o.sentAt = st.sent || null; o.hoU = st.u; changed = true; }
+ if (newer) {
+ const wasRecv = !!o.receivedAt;
+ o.sentAt = st.sent || null; o.receivedAt = st.r || null; o.hoU = st.u; changed = true;
+ // Ware wurde auf einem anderen Gerät als eingegangen gebucht -> geladene Prüfung hier angleichen,
+ // damit ein späteres „Sichern“ die alten Mengen nicht wieder zurückschreibt
+ if (!wasRecv && o.receivedAt && allItems.length && !itemsDirty) {
+ const names = new Set((o.items || []).filter(i => Number(i.qty) > 0).map(i => normName(i.name)));
+ allItems.forEach(it => { if (names.has(normName(it.name)) && Number(it.bestellmenge) > 0) it.bestellmenge = 0; });
+ scheduleDraftSave();
+ }
+ }
  });
  if (changed) saveHistoryLocal();
  return changed;
@@ -5816,6 +5840,104 @@
  if (activeTab === "planning") initTable();
  showToast(val ? "📄 Als „Liste erstellt“ abgehakt" : "Markierung entfernt", "ok");
  }
+ // Ware ist da -> Bestellmengen dieser Bestellung in der Google-Tabelle auf 0 (Bestand = Soll)
+ async function markOrderReceived(id) {
+ const o = orderHistory.find(x => x.id === id);
+ if (!o) return;
+ if (o.receivedAt) { showToast(`📥 Schon als eingegangen markiert (${fmtDateDE(o.receivedAt.slice(0, 10))})`, "ok"); return; }
+ if (itemsDirty || layoutDirty) {
+ alert("In der Bestandsprüfung gibt es noch Änderungen, die nicht in Google Sheets gesichert sind.\n\nBitte dort erst „☁️ Sichern“ drücken oder die begonnene Prüfung verwerfen – sonst würden sie mitgeschrieben.");
+ return;
+ }
+ const sheetId = getSheetId();
+ if (!sheetId) { alert("Kein Google-Sheets-Link eingestellt."); return; }
+ const ordered = new Map();
+ (o.items || []).forEach(i => { if (Number(i.qty) > 0) ordered.set(normName(i.name), Number(i.qty)); });
+ if (!ordered.size) { alert("Diese Bestellung enthält keine Artikel mit Menge."); return; }
+ try {
+ // immer den aktuellen Stand der Tabelle holen
+ await withLoader("Lese die Google-Tabelle …", "aktuelle Bestellmengen", async () => {
+ const tabName = (LS.getRaw("saved_gsheet_tab") || document.getElementById("gsheet-tab-name").value || "Prüfung Verfallsdatum").trim();
+ const input = document.getElementById("gsheet-url").value.trim();
+ const gidMatch = input.match(/[?&#]gid=([0-9]+)/);
+ const matrix = await fetchSheetMatrix(sheetId, tabName, gidMatch);
+ const chk = document.getElementById("chk-reset-on-load"), was = chk.checked;
+ chk.checked = false; // hier niemals alles nullen
+ const keepTab = activeTab;
+ try { activeSheetName = tabName; rawMatrix = matrix; workbook = null; activeSheet = null; parseUnifiedMatrix(matrix); }
+ finally { chk.checked = was; }
+ if (keepTab !== "wizard") switchTab(keepTab);
+ });
+ } catch (e) { alert("Google-Tabelle konnte nicht gelesen werden: " + e.message); return; }
+ if (!allItems.length) return;
+ const hit = allItems.filter(it => ordered.has(normName(it.name)) && Number(it.bestellmenge) > 0);
+ const notFound = [...ordered.keys()].filter(n => !allItems.some(it => normName(it.name) === n));
+ const other = allItems.filter(it => !ordered.has(normName(it.name)) && Number(it.bestellmenge) > 0);
+ if (!hit.length) {
+ alert(`In der Google-Tabelle steht bei den Artikeln dieser Bestellung keine Bestellmenge mehr – es gibt nichts zurückzusetzen.${other.length ? `\n\n(${other.length} andere Artikel haben eine Menge – die gehören nicht zu dieser Bestellung und bleiben.)` : ""}`);
+ if (confirm("Bestellung trotzdem als „eingegangen“ markieren?")) finishReceived(o, 0);
+ return;
+ }
+ let msg = `📥 Bestellung vom ${fmtDateDE(o.date || o.ts.slice(0, 10))} eingegangen?\n\nIn der Google-Tabelle wird bei ${hit.length} Artikel(n) die Bestellmenge auf 0 gesetzt (Bestand = Soll).`;
+ if (other.length) msg += `\n\n${other.length} andere Artikel haben ebenfalls eine Menge, gehören aber nicht zu dieser Bestellung (z. B. schon eine neue Prüfung) – die bleiben unverändert.`;
+ if (notFound.length) msg += `\n\n${notFound.length} Artikel der Bestellung gibt es in der Tabelle nicht mehr unter diesem Namen.`;
+ if (!confirm(msg)) return;
+ // In Teilen senden: Das Apps Script stoppt aus Sicherheit, wenn auf einen Schlag sehr viele Mengen verschwinden
+ const prev = new Map(hit.map(it => [it, it.bestellmenge]));
+ const queue = hit.slice();
+ let size = Math.max(8, Math.floor(allItems.length * 0.15) - 2), done = 0;
+ showLoader("Setze Bestellmengen auf 0 …", `${hit.length} Artikel in Google Sheets`, false);
+ try {
+ while (queue.length) {
+ const part = queue.slice(0, size);
+ part.forEach(it => { it.bestellmenge = 0; });
+ itemsDirty = true;
+ document.getElementById("loader-sub").textContent = `${done} von ${hit.length} Artikeln erledigt …`;
+ try {
+ await syncItemsToCloud();
+ queue.splice(0, part.length);
+ done += part.length;
+ } catch (e) {
+ part.forEach(it => { it.bestellmenge = prev.get(it); });
+ if (/Sicherheitsstopp/.test(e.message) && size > 8) { size = 8; continue; }
+ throw e;
+ }
+ }
+ } catch (e) {
+ queue.forEach(it => { it.bestellmenge = prev.get(it); });
+ itemsDirty = false; markSynced();
+ hideLoader();
+ alert(`Speichern in Google Sheets fehlgeschlagen${done ? ` – ${done} von ${hit.length} Artikeln stehen schon auf 0` : ""}. Die Bestellung wurde NICHT als eingegangen markiert, du kannst es einfach nochmal versuchen.\n\n${e.message}`);
+ if (currentFilteredList.length) renderStep();
+ return;
+ }
+ hideLoader();
+ if (currentFilteredList.length) renderStep();
+ finishReceived(o, hit.length);
+ }
+ function finishReceived(o, n) {
+ o.receivedAt = new Date().toISOString();
+ o.hoU = Date.now();
+ saveHistoryLocal();
+ syncPlanningToGoogleSheet(true).catch(() => showToast("Lokal gespeichert – bitte später „☁️ Sichern“.", "warn", 5000));
+ renderHandoverPanel();
+ if (activeTab === "planning") initTable();
+ if (ho && ho.order === o) renderHandover();
+ showToast(n ? `📥 Ware eingegangen – ${n} Bestellmenge(n) in Google auf 0 gesetzt` : "📥 Als eingegangen markiert", "ok", 5000);
+ }
+ function unmarkReceived(id) {
+ const o = orderHistory.find(x => x.id === id);
+ if (!o || !confirm("Markierung „Ware eingegangen“ entfernen?\n(Die Bestellmengen in der Tabelle bleiben auf 0 – die kannst du in der Prüfung wieder eintragen.)")) return;
+ o.receivedAt = null; o.hoU = Date.now(); saveHistoryLocal();
+ syncPlanningToGoogleSheet(true).catch(() => {});
+ renderHandoverPanel(); if (activeTab === "planning") initTable();
+ }
+ function receivedChip(o) {
+ return o.receivedAt
+ ? `<button type="button" class="o-chip o-chip-btn" style="color: var(--success);" title="Antippen zum Entfernen der Markierung" onclick="unmarkReceived('${esc(o.id)}')">📥 eingegangen ${fmtDateDE(o.receivedAt.slice(0, 10)).slice(0, 6)}</button>`
+ : `<button type="button" class="o-chip o-chip-btn recv" title="Ware ist da: Bestellmengen in der Google-Tabelle auf 0 setzen" onclick="markOrderReceived('${esc(o.id)}')">📥 Bestellung eingegangen</button>`;
+ }
+
  function chipSent(id) {
  const o = orderHistory.find(x => x.id === id);
  if (!o) return;
@@ -5835,7 +5957,7 @@
  const stale = Date.now() - lastPlanCloudLoad > 60000 || Date.now() - lastHistoryCloudLoad > 60000;
  if (!force && !stale) { pushHoIfNeeded().then(() => { if (activeTab === "planning") renderHandoverPanel(); }); return; }
  if (planRefreshRunning) return planRefreshRunning;
- const blocking = force || !planCloudLoadedOnce || !lastHistoryCloudLoad;
+ const blocking = true; // immer erst laden, dann fertig anzeigen
  if (!blocking) setSyncStatus("orange", "⏳ Aktualisiere aus Google Sheets …");
  planRefreshRunning = withLoader(blocking ? "Lade Fristenplan & Bestellungen …" : null, "aus Google Sheets",
  () => Promise.allSettled([loadHistoryFromCloud(true), loadPlanningFromGoogleSheet(true)]))
@@ -5868,6 +5990,7 @@
  : `<button type="button" class="o-chip o-chip-btn warn" title="Antippen, wenn die Liste schon erstellt wurde" onclick="markListDone('${esc(o.id)}', true)">📄 Liste offen</button>`}
  <span class="o-chip">⭐ ${mailN} per E-Mail</span>
  <button type="button" class="o-chip o-chip-btn${isOrderSent(o) ? "" : " warn"}" ${isOrderSent(o) ? 'style="color: var(--success);"' : ""} title="Antippen zum Ändern" onclick="chipSent('${esc(o.id)}')">${isOrderSent(o) ? "📨 raus" : "📨 noch nicht raus"}</button>
+ ${receivedChip(o)}
  </div>
  <button type="button" class="btn-action" onclick="openHandover('${esc(o.id)}')">Öffnen</button>
  <button type="button" class="btn-action" style="color: var(--danger);" title="Bestellung löschen" onclick="deleteOrder('${esc(o.id)}')">🗑️</button>
@@ -5971,6 +6094,7 @@
  if (!confirm(`Google-Tabelle „${activeSheetName}“ in die Terminal-Reihenfolge bringen?\n\n• Die Zeilen werden mit Googles „Zeilen verschieben“ umgestellt – Formeln und Verweise wandern mit dem Artikel mit.\n• Danach prüft das Script alle festen Verweise (z. B. Reiter „Bestellliste“). Stimmt auch nur einer nicht, wird automatisch ALLES rückgängig gemacht.\n• Dauert je nach Umfang bis zu einer Minute.\n\nTipp: Das erste Mal an einer Kopie der Tabelle ausprobieren.`)) return;
  sorting = true;
  const keepName = currentFilteredList[currentFilteredIndex] ? currentFilteredList[currentFilteredIndex].name : null;
+ showLoader("Sortiere die Google-Tabelle …", "und prüfe alle Verweise – kann bis zu einer Minute dauern", false);
  try {
  if (allItems.some(i => i.isNew) || deletedOffsets.length || itemsDirty || layoutDirty) {
  showToast("⏳ Speichere zuerst die Änderungen …", "", 60000);
@@ -5988,8 +6112,9 @@
  try { await loadFromGoogleSheet(); } finally { chk.checked = was; }
  if (keepName) { const i = currentFilteredList.findIndex(x => x.name === keepName); if (i >= 0) { currentFilteredIndex = i; renderStep(); } }
  } catch (e) {
+ hideLoader(true);
  alert("⚠️ " + e.message);
- } finally { sorting = false; }
+ } finally { sorting = false; hideLoader(); }
  }
  // =========================================================================
  // START
