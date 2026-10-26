@@ -1168,6 +1168,10 @@
  .o-chip.recv { color: var(--primary); border-color: var(--primary); background: color-mix(in srgb, var(--primary) 8%, var(--card-bg)); }
  .row-recv { margin-top: 5px; }
  .row-recv .o-chip { font-size: 10.5px; padding: 2px 6px; white-space: normal; line-height: 1.2; }
+ .row-links.multi { padding-top: 4px; border-top: 1px dashed var(--border); }
+ .row-links.multi:first-of-type { border-top: none; padding-top: 0; }
+ .row-odate { font-size: 10.5px; font-weight: 800; color: var(--text-muted); }
+ .row-recv .row-odate { display: block; margin-bottom: 1px; }
 </style>
 </head>
 <body>
@@ -4118,11 +4122,19 @@
  const optionsHtml = staffForRow.map(opt => `<option value="${esc(opt)}" ${selectedPerson === opt ? "selected" : ""}>${esc(opt)}</option>`).join("");
 
  const isOrderSent = !!state.order_sent;
- const order = (state.order_id && orderHistory.find(o => o.id === state.order_id)) || orderHistory.find(o => o.cycleKey === row.key) || null;
- const orderLink = order
- ? `<div class="row-links"><span class="row-link order-link" title="Bestellung in der Auswertung zeigen" onclick="showOrder('${esc(order.id)}')">📦 ${order.items.filter(i => i.qty > 0).length} Pos.</span>
- <span class="row-link${order.handover ? " ok" : ""}" title="Übergabe ans Hauptlager öffnen" onclick="openHandover('${esc(order.id)}')">📄 Übergabe${order.handover ? " ✓" : ""}</span></div>`
- : "";
+ // Alle Bestellungen dieses Zyklus (auch mehrere im selben Monat), neueste zuerst
+ const cycOrders = orderHistory.filter(o => o.cycleKey === row.key || (state.order_id && o.id === state.order_id));
+ const order = cycOrders[0] || null;
+ const multi = cycOrders.length > 1;
+ const sameDay = new Set(cycOrders.map(o => o.date || o.ts.slice(0, 10))).size < cycOrders.length;
+ const dayOf = o => {
+ const d = fmtDateDE(o.date || o.ts.slice(0, 10)).slice(0, 6);
+ if (!sameDay) return d;
+ const t = new Date(o.ts);
+ return isNaN(t) ? d : `${d} ${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}`;
+ };
+ const orderLink = cycOrders.map(o => `<div class="row-links${multi ? " multi" : ""}">${multi ? `<span class="row-odate">${dayOf(o)}</span>` : ""}<span class="row-link order-link" title="Bestellung in der Auswertung zeigen" onclick="showOrder('${esc(o.id)}')">📦 ${o.items.filter(i => i.qty > 0).length} Pos.</span>
+ <span class="row-link${o.handover ? " ok" : ""}" title="Übergabe ans Hauptlager öffnen" onclick="openHandover('${esc(o.id)}')">📄 Übergabe${o.handover ? " ✓" : ""}</span></div>`).join("");
  const k = row.key;
 
  const tr = document.createElement("tr");
@@ -4155,7 +4167,7 @@
  <td><textarea rows="1" class="auto-grow pl-ta" id="note_${k}" placeholder="Notiz …" oninput="autoGrow(this); savePlanningData('${k}')">${esc(state.note || "")}</textarea></td>
  <td><input type="text" id="sign_${k}" class="pl-in center" placeholder="Kürzel" value="${esc(state.sign || "")}" oninput="savePlanningData('${k}')"></td>
  <td style="text-align: center;"><div id="status_${k}">${getStatusBadge(isDone, k)}</div>
- ${order ? `<div class="row-recv">${receivedChip(order)}</div>` : ""}
+ ${cycOrders.map(o => `<div class="row-recv">${multi ? `<span class="row-odate">${dayOf(o)}</span>` : ""}${receivedChip(o)}</div>`).join("")}
  <button type="button" class="btn-row-reset" title="Zyklus komplett zurücksetzen" onclick="resetCycle('${k}')">🗑️</button></td>
  `;
  tbody.appendChild(tr);
@@ -5976,7 +5988,8 @@
  const el = document.getElementById("handover-panel");
  if (!el) return;
  renderNameAlert();
- const list = orderHistory.slice(0, 6);
+ // Offene Bestellungen zuerst; eingegangene rutschen nach unten und fallen irgendwann raus (max. 6)
+ const list = [...orderHistory.filter(o => !o.receivedAt), ...orderHistory.filter(o => o.receivedAt)].slice(0, 6);
  if (!list.length) { el.innerHTML = `<div class="ho-sub">Noch keine abgeschlossene Bestellung. Nach „✅ Bestellung abschließen“ erscheint sie hier.</div>`; return; }
  el.innerHTML = list.map(o => {
  const hd = o.handover;
@@ -5995,7 +6008,8 @@
  <button type="button" class="btn-action" onclick="openHandover('${esc(o.id)}')">Öffnen</button>
  <button type="button" class="btn-action" style="color: var(--danger);" title="Bestellung löschen" onclick="deleteOrder('${esc(o.id)}')">🗑️</button>
  </div>`;
- }).join("");
+ }).join("") + (orderHistory.length > list.length
+ ? `<div class="ho-sub" style="padding-top:8px; border-top:1px solid var(--border);">Es werden die 6 aktuellsten offenen Bestellungen gezeigt. <a href="javascript:void(0)" onclick="switchTab('stats')">Alle ${orderHistory.length} Bestellungen in der Auswertung →</a></div>` : "");
  }
 
 
