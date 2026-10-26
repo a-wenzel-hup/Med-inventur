@@ -1172,6 +1172,25 @@
  .row-links.multi:first-of-type { border-top: none; padding-top: 0; }
  .row-odate { font-size: 10.5px; font-weight: 800; color: var(--text-muted); }
  .row-recv .row-odate { display: block; margin-bottom: 1px; }
+
+ /* E-Mail-Erinnerungen */
+ .staff-row input.staff-mail { flex: 1.3; }
+ .remind-box { margin-top: 14px; padding-top: 10px; border-top: 1px dashed var(--border); display: flex; flex-direction: column; gap: 7px; font-size: 12.5px; max-width: 760px; }
+ .remind-box > strong { font-size: 13px; color: var(--text); }
+ .rm-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-weight: 600; }
+ .rm-line input[type=checkbox] { width: 18px; height: 18px; flex-shrink: 0; }
+ .rm-line input[type=text] { height: 34px !important; font-size: 13px !important; border-radius: 8px !important; text-align: left !important; }
+ .rm-preview { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 12px; line-height: 1.5; }
+ .rm-preview .warn { color: var(--warning); font-weight: 700; }
+ .rm-test { font-weight: 500; }
+ /* Version & Update-Hinweis */
+ .app-version { margin-top: 12px; text-align: center; font-size: 11px; color: var(--text-muted); }
+ .update-banner { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%) translateY(140%); z-index: 15000; width: min(680px, calc(100% - 24px));
+ background: var(--card-bg); color: var(--text); border: 1px solid var(--border); border-left: 5px solid var(--primary); border-radius: 12px;
+ box-shadow: 0 10px 30px rgba(0,0,0,0.22); padding: 10px 12px; display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap;
+ font-size: 13px; transition: transform 0.25s; }
+ .update-banner.show { transform: translateX(-50%) translateY(0); }
+ .update-banner .ub-sub { color: var(--text-muted); font-size: 12px; }
 </style>
 </head>
 <body>
@@ -1291,6 +1310,8 @@
  <p style="color: var(--text-muted); font-size: 11px; margin: 2px 0 0 0;">Tippen oder Datei hierher ziehen</p>
  <input type="file" id="file-input" accept=".xlsx, .xls, .csv" style="display: none;" onchange="loadFile(this.files[0])">
  </div>
+
+ <div class="app-version" id="app-version"></div>
 
  <div id="sheet-picker-row" style="display: none; margin-top: 10px;">
  <label for="sheet-select" style="font-size: 12px;">Tabellenblatt wählen:</label>
@@ -1572,13 +1593,34 @@
 
  <div id="staffDrawer" class="config-drawer">
  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 6px;">
- <strong style="color: var(--primary); font-size: 10pt;">👥 Zuständige verwalten:</strong>
+ <strong style="color: var(--primary); font-size: 10pt;">👥 Zuständige & E-Mail-Erinnerungen:</strong>
  <div style="display: flex; gap: 6px;">
  <button class="btn btn-purple" style="padding: 4px 10px; font-size: 8pt;" onclick="addStaffRow()">➕ Hinzufügen</button>
  <button class="btn btn-teal" style="padding: 4px 10px; font-size: 8pt;" onclick="saveStaffConfig()">Speichern</button>
  </div>
  </div>
  <div class="staff-list-container" id="staffListContainer"></div>
+ <div class="remind-box">
+ <strong>📧 Erinnerungs-Mails</strong>
+ <label class="rm-line"><input type="checkbox" id="rem_on" onchange="renderReminderPreview()"> Automatisch erinnern – an den, der für den Zyklus eingetragen ist</label>
+ <label class="rm-line">Wie viele Tage vor dem Stichtag? <input type="text" id="rem_days" placeholder="7, 1" oninput="renderReminderPreview()" style="width: 110px !important;"></label>
+ <label class="rm-line"><input type="checkbox" id="rem_late" onchange="renderReminderPreview()"> Am Tag nach dem Stichtag mahnen, wenn der Zyklus noch offen ist</label>
+ <div id="rem_preview" class="rm-preview"></div>
+ <strong style="margin-top: 6px;">⏳ Verfalls-Warnungen</strong>
+ <label class="rm-line">Mail senden an
+ <select id="mhd_mode" onchange="renderReminderPreview()" style="width: auto !important; min-width: 230px; height: 34px !important;">
+ <option value="aus">– aus –</option>
+ <option value="naechster">den Zuständigen des nächsten Zyklus</option>
+ <option value="alle">alle mit E-Mail-Adresse</option>
+ </select></label>
+ <label class="rm-line">Warnen, wenn das MHD in weniger als <input type="text" id="mhd_days" placeholder="30" oninput="renderReminderPreview()" style="width: 70px !important;"> Tagen erreicht ist</label>
+ <label class="rm-line"><input type="checkbox" id="mhd_in_rem" onchange="renderReminderPreview()"> In der Prüfungs-Erinnerung die bald ablaufenden Artikel mitschicken</label>
+ <div id="mhd_preview" class="rm-preview"></div>
+ <div class="rm-line rm-test">Test: <select id="rem_test_who" style="width: auto !important; min-width: 160px; height: 34px !important;"></select>
+ <button type="button" class="pbtn pbtn-sm" onclick="sendTestMail()">📨 Test-Erinnerung</button>
+ <button type="button" class="pbtn pbtn-sm" onclick="sendTestMail('mhd')">📨 Test-Verfallsliste</button></div>
+ <div class="ho-sub">Die Mails verschickt das Google-Skript jeden Morgen (ab Apps Script 2.7, einmal „automatikEinrichten“ ausführen). Jede Erinnerung geht nur einmal raus, erledigte Zyklen bekommen keine. Bei den Verfalls-Warnungen wird jeder Artikel einmal gemeldet, wenn er ins Warnfenster kommt, und noch einmal, wenn er abgelaufen ist – nach einem neuen MHD geht es von vorn los.</div>
+ </div>
  </div>
 
  <div class="sync-status-bar">
@@ -1671,6 +1713,7 @@
  <option value="365">Letzte 12 Monate</option>
  </select>
  <button type="button" class="pbtn" onclick="withLoader('Lade Bestellhistorie …', 'aus Google Sheets', () => loadHistoryFromCloud(false, true)).then(() => { applyHoState(); renderStats(); })" title="Lädt die komplette Bestellhistorie frisch aus Google">↻ Alles neu laden</button>
+ <button type="button" class="pbtn" onclick="loadArchiveYears()" title="Bestellungen früherer Jahre aus den Archiv-Reitern holen (nur bei Bedarf)">🗄 Ältere Jahre</button>
  <button type="button" class="pbtn" id="btn-resend" onclick="withLoader('Sende offene Bestellungen …', 'an Google Sheets', resendUnsyncedOrders)">☁️ Offene senden</button>
  <button type="button" class="pbtn" onclick="exportHistoryExcel()">📥 Excel</button>
  </div>
@@ -1834,6 +1877,13 @@
 <div id="print-area"></div>
 
 <div id="toast" class="toast"></div>
+<div id="update-banner" class="update-banner" role="status">
+ <span>🆕 <strong>Neue Version des Terminals verfügbar.</strong> <span class="ub-sub" id="update-sub"></span></span>
+ <span style="display:flex; gap:6px;">
+ <button type="button" class="pbtn pbtn-sm" onclick="document.getElementById('update-banner').classList.remove('show')">Später</button>
+ <button type="button" class="pbtn pbtn-sm pbtn-primary" onclick="applyUpdate()">Jetzt aktualisieren</button>
+ </span>
+</div>
 <div id="loader" class="loader-overlay" role="status" aria-live="polite">
  <div class="loader-box">
  <div class="spinner"></div>
@@ -3996,37 +4046,158 @@
  runtimeStaffList.forEach((name, index) => {
  const row = document.createElement("div");
  row.className = "staff-row";
- row.innerHTML = `<input type="text" id="staff_item_${index}" value="${esc(name)}" style="text-align:left !important;">
+ const mail = staffMailDraft[name] !== undefined ? staffMailDraft[name] : (runtimeConfig["mail::" + name] || "");
+ row.innerHTML = `<input type="text" class="staff-name" id="staff_item_${index}" value="${esc(name)}" style="text-align:left !important;" oninput="renderReminderPreview()">
+ <input type="email" class="staff-mail" id="staff_mail_${index}" value="${esc(mail)}" placeholder="E-Mail (für Erinnerungen)" style="text-align:left !important;" oninput="renderReminderPreview()">
  <button class="btn-del" onclick="removeStaffRow(${index})" title="Diese Person löschen">🗑️</button>`;
  container.appendChild(row);
  });
+ document.getElementById("rem_on").checked = String(runtimeConfig.erinnerung_aktiv || "").toLowerCase() === "ja";
+ document.getElementById("rem_days").value = runtimeConfig.erinnerung_tage || "7, 1";
+ document.getElementById("rem_late").checked = String(runtimeConfig.erinnerung_mahnung || "").toLowerCase() === "ja";
+ document.getElementById("mhd_mode").value = ["aus", "naechster", "alle"].includes(runtimeConfig.verfall_mail) ? runtimeConfig.verfall_mail : "aus";
+ document.getElementById("mhd_days").value = runtimeConfig.verfall_tage || mhdWarnDays || 30;
+ document.getElementById("mhd_in_rem").checked = String(runtimeConfig.erinnerung_mit_mhd || "ja").toLowerCase() === "ja";
+ renderReminderPreview();
  }
- function currentStaffInputs() {
- return Array.from(document.getElementById("staffListContainer").querySelectorAll("input")).map(i => i.value.trim()).filter(Boolean);
+ let staffMailDraft = {};
+ function currentStaffRows() {
+ return Array.from(document.getElementById("staffListContainer").querySelectorAll(".staff-row")).map(r => ({
+ name: r.querySelector(".staff-name").value.trim(), mail: r.querySelector(".staff-mail").value.trim()
+ })).filter(x => x.name);
  }
+ function currentStaffInputs() { return currentStaffRows().map(x => x.name); }
+ function keepMailDraft() { staffMailDraft = {}; currentStaffRows().forEach(x => { staffMailDraft[x.name] = x.mail; }); }
  function addStaffRow() {
+ keepMailDraft();
  const cur = currentStaffInputs();
  cur.push("Neuer Mitarbeiter");
  runtimeStaffList = cur;
  renderStaffManager();
  }
  function removeStaffRow(index) {
+ keepMailDraft();
  const cur = currentStaffInputs();
  if (cur.length <= 1) { alert("⚠️ Mindestens eine Person muss verbleiben!"); return; }
  cur.splice(index, 1);
  runtimeStaffList = cur;
  renderStaffManager();
  }
- function saveStaffConfig() {
- const cur = currentStaffInputs();
- if (!cur.length) { alert("⚠️ Die Liste darf nicht leer sein!"); return; }
- runtimeStaffList = [...new Set(cur)];
+
+ // Vorschau: wer bekommt wann die nächste Erinnerung (gleiche Regeln wie im Google-Skript)
+ function reminderDays() {
+ const d = String(document.getElementById("rem_days").value || "7, 1").split(/[^0-9]+/).filter(Boolean).map(Number).filter(n => n >= 0 && n <= 60);
+ return [...new Set(d.length ? d : [7, 1])].sort((a, b) => a - b);
+ }
+ function renderReminderPreview() {
+ const el = document.getElementById("rem_preview");
+ if (!el) return;
+ const rows = currentStaffRows();
+ const mails = {}; rows.forEach(x => { mails[x.name] = x.mail; });
+ const sel = document.getElementById("rem_test_who"), prevSel = sel.value;
+ sel.innerHTML = rows.map(x => `<option value="${esc(x.name)}">${esc(x.name)}${x.mail ? "" : " (keine E-Mail)"}</option>`).join("");
+ if (rows.some(x => x.name === prevSel)) sel.value = prevSel;
+ renderMhdPreview(mails);
+ if (!document.getElementById("rem_on").checked) { el.innerHTML = "Erinnerungen sind aus."; return; }
+ const days = reminderDays(), late = document.getElementById("rem_late").checked;
+ const t0 = new Date(); t0.setHours(0, 0, 0, 0);
+ const plan = [];
+ allScheduleData.forEach(row => {
+ const st = runtimeAuditState[row.key] || {};
+ if (st.done_date && st.chk_verfall && st.sign) return;
+ const m = calculateExactDeadlineDate(row.year, row.monthIdx, row.cat, row.isSpecialDec, runtimeConfig).match(/(\d+)\.(\d+)\.(\d+)/);
+ if (!m) return;
+ const dl = new Date(+m[3], +m[2] - 1, +m[1]);
+ const person = st.person || row.defaultPerson;
+ const diff = Math.round((dl - t0) / 86400000);
+ const sends = days.map(d => ({ at: new Date(dl.getTime() - d * 86400000), d, what: d === 0 ? "am Stichtag" : `${d} Tag${d === 1 ? "" : "e"} vorher` }));
+ if (late) sends.push({ at: new Date(dl.getTime() + 86400000), what: "Mahnung, falls noch offen" });
+ // Wie das Skript: ist ein Termin schon vorbei, wird die passende Erinnerung beim nächsten Lauf nachgeholt
+ const catchUp = diff >= 0 ? days.find(d => d >= diff) : undefined;
+ sends.forEach(x => {
+ if (x.at >= t0) plan.push({ at: x.at, person, cyc: row.month, what: x.what });
+ else if (x.d !== undefined && x.d === catchUp) plan.push({ at: new Date(t0.getTime() + 86400000), person, cyc: row.month, what: `${x.what} – wird nachgeholt, falls noch nicht verschickt`, soon: true });
+ });
+ });
+ plan.sort((a, b) => a.at - b.at);
+ const wd = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
+ const fmt = d => `${wd[d.getDay()]} ${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.`;
+ const next = plan.slice(0, 4);
+ const missing = [...new Set(plan.slice(0, 12).map(p => p.person).filter(p => !mails[p]))];
+ el.innerHTML = (next.length ? "<strong>Nächste Erinnerungen:</strong><br>" + next.map(p =>
+ `${p.soon ? "nächster Lauf (morgens)" : fmt(p.at)} → <strong>${esc(p.person)}</strong> · ${esc(p.cyc)} (${p.what})${mails[p.person] ? "" : ' <span class="warn">– keine E-Mail hinterlegt</span>'}`).join("<br>") : "Keine anstehenden Erinnerungen.")
+ + (missing.length ? `<br><span class="warn">⚠️ Ohne E-Mail-Adresse bekommt keine Erinnerung: ${missing.map(esc).join(", ")}</span>` : "");
+ }
+ function renderMhdPreview(mails) {
+ const el = document.getElementById("mhd_preview");
+ const mode = document.getElementById("mhd_mode").value;
+ const days = Number(document.getElementById("mhd_days").value) || 30;
+ let to = "";
+ if (mode === "aus") { el.innerHTML = "Verfalls-Warnungen sind aus."; return; }
+ if (mode === "alle") { const n = Object.keys(mails).filter(k => mails[k]); to = n.length ? `an ${n.map(esc).join(", ")}` : '<span class="warn">– niemand hat eine E-Mail-Adresse</span>'; }
+ else {
+ const t0 = new Date(); t0.setHours(0, 0, 0, 0);
+ let best = null;
+ allScheduleData.forEach(row => {
+ const st = runtimeAuditState[row.key] || {};
+ if (st.done_date && st.chk_verfall && st.sign) return;
+ const m = calculateExactDeadlineDate(row.year, row.monthIdx, row.cat, row.isSpecialDec, runtimeConfig).match(/(\d+)\.(\d+)\.(\d+)/);
+ const dl = m ? new Date(+m[3], +m[2] - 1, +m[1]) : null;
+ if (dl && dl >= new Date(t0.getTime() - 3 * 86400000) && (!best || dl < best.dl)) best = { dl, person: st.person || row.defaultPerson, cyc: row.month };
+ });
+ to = best ? `an <strong>${esc(best.person)}</strong> (${esc(best.cyc)})${mails[best.person] ? "" : ' <span class="warn">– keine E-Mail hinterlegt</span>'}` : "– kein offener Zyklus";
+ }
+ let now = "";
+ if (allItems.length) {
+ const t0 = new Date(); t0.setHours(0, 0, 0, 0);
+ const hit = allItems.filter(it => it.mhd).map(it => ({ it, diff: Math.round((new Date(it.mhd + "T00:00:00") - t0) / 86400000) })).filter(x => x.diff <= days);
+ const ex = hit.filter(x => x.diff < 0).length;
+ now = `<br>Laut geladener Tabelle gerade im Warnfenster: <strong>${hit.length}</strong> Artikel${ex ? ` (davon ${ex} abgelaufen)` : ""}.`;
+ } else now = "<br>(Für eine Vorschau der Artikel die Tabelle in der Prüfung laden.)";
+ el.innerHTML = `Jeden Morgen: neu ablaufende Artikel ${to}.${now}`;
+ }
+ async function sendTestMail(kind) {
+ const who = document.getElementById("rem_test_who").value;
+ const row = currentStaffRows().find(x => x.name === who);
+ if (!row || !row.mail) { alert("Für diese Person ist keine E-Mail-Adresse eingetragen."); return; }
+ const unsavedMhd = (runtimeConfig.verfall_mail || "aus") !== document.getElementById("mhd_mode").value || String(runtimeConfig.verfall_tage || "") !== String(Number(document.getElementById("mhd_days").value) || 30);
+ if ((runtimeConfig["mail::" + who] || "") !== row.mail || planningConfigDirty || (kind === "mhd" && unsavedMhd)) {
+ if (!confirm("Die Adresse ist noch nicht gespeichert. Jetzt speichern und dann die Test-Mail senden?")) return;
+ if (!(await saveStaffConfig(true))) return;
+ }
+ const info = await getScriptInfo(true);
+ const need = kind === "mhd" ? 2.7 : 2.6;
+ if (!info.json || info.version < need) { alert(`Dafür wird Apps Script ${need} benötigt (installiert: ${info.json ? info.version : "altes Script"}).`); return; }
+ try {
+ const res = await withLoader("Sende Test-Mail …", "über Google", () => postToScript({ action: "TEST_MAIL", name: who, kind: kind || "" }), false);
+ showToast(`📨 Test-Mail${kind === "mhd" ? ` (${res.count} Artikel)` : ""} an ${esc(res.to || row.mail)} verschickt – bitte Postfach (auch Spam) prüfen`, "ok", 6000);
+ } catch (e) { alert("Test-Mail fehlgeschlagen:\n\n" + e.message); }
+ }
+ function saveStaffConfig(keepOpen) {
+ const rows = currentStaffRows();
+ if (!rows.length) { alert("⚠️ Die Liste darf nicht leer sein!"); return false; }
+ const bad = rows.filter(x => x.mail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x.mail));
+ if (bad.length) { alert(`⚠️ Diese E-Mail-Adresse sieht nicht richtig aus: ${bad[0].mail}`); return false; }
+ runtimeStaffList = [...new Set(rows.map(x => x.name))];
+ Object.keys(runtimeConfig).forEach(k => { if (k.startsWith("mail::")) delete runtimeConfig[k]; });
+ rows.forEach(x => { if (x.mail) runtimeConfig["mail::" + x.name] = x.mail; });
+ runtimeConfig.erinnerung_aktiv = document.getElementById("rem_on").checked ? "ja" : "nein";
+ runtimeConfig.erinnerung_tage = reminderDays().join(", ");
+ runtimeConfig.erinnerung_mahnung = document.getElementById("rem_late").checked ? "ja" : "nein";
+ runtimeConfig.verfall_mail = document.getElementById("mhd_mode").value;
+ runtimeConfig.verfall_tage = String(Math.max(1, Math.min(365, Number(document.getElementById("mhd_days").value) || 30)));
+ runtimeConfig.erinnerung_mit_mhd = document.getElementById("mhd_in_rem").checked ? "ja" : "nein";
+ if (/^https?:/.test(location.protocol)) runtimeConfig.app_url = location.origin + location.pathname;
+ staffMailDraft = {};
  planningConfigDirty = true;
  savePlanningLocal();
  initTable();
- toggleStaffConfig();
- syncPlanningToGoogleSheet(true).then(() => showToast("✅ Zuständigen-Liste gespeichert – gilt jetzt auf allen Geräten", "ok"))
- .catch(() => showToast("Zuständige lokal geändert – online nicht erreichbar, bitte später „☁️ Sichern“.", "warn", 5000));
+ if (!keepOpen) toggleStaffConfig();
+ const p = syncPlanningToGoogleSheet(true);
+ p.then(() => showToast("✅ Personal & Erinnerungen gespeichert – gelten jetzt auf allen Geräten", "ok"))
+ .catch(() => showToast("Lokal geändert – online nicht erreichbar, bitte später „☁️ Sichern“.", "warn", 5000));
+ if (keepOpen) return p.then(() => true).catch(() => false);
+ return true;
  }
  function saveIntervalConfig() {
  for (const key of ["nebensaison", "saison_t1", "saison_t2", "december"]) {
@@ -4430,6 +4601,7 @@
  });
  mergeCloudHo(hoRows, delRows);
  if (!planningConfigDirty) {
+ Object.keys(runtimeConfig).forEach(k => { if (k.startsWith("mail::") && !(k in newCfg)) delete runtimeConfig[k]; });
  Object.assign(runtimeConfig, newCfg);
  if (Object.keys(cloudMap).length) { hlMap = Object.assign({}, hlMap, cloudMap); saveHlMap(); }
  if (Object.keys(cloudOrders).length) LS.set(KEY_ORDER, Object.assign(getSavedOrders(), cloudOrders));
@@ -4517,6 +4689,27 @@
  LS.setRaw("rw_sassnitz_hist_inc", new Date().toISOString());
  const labels = (data.table.cols || []).map(c => String(c.label || "").toLowerCase());
  if (!labels[0] || !labels[0].includes("bestell")) throw new Error("Reiter „Bestellhistorie“ nicht gefunden (wird beim ersten Abschluss angelegt)");
+ const byId = parseHistoryTable(data);
+ const known = new Set(orderHistory.map(o => o.id));
+ let added = 0;
+ Object.values(byId).forEach(o => {
+ if (deletedOrders[o.id]) return;
+ if (!known.has(o.id)) { orderHistory.push(o); added++; }
+ else { const loc = orderHistory.find(x => x.id === o.id); if (loc) loc.synced = true; }
+ });
+ orderHistory = orderHistory.filter(o => !deletedOrders[o.id]);
+ applyHoState();
+ saveHistoryLocal();
+ lastHistoryCloudLoad = Date.now();
+ if (activeTab === "stats") renderStats();
+ if (!silent) showToast(`✅ Historie geladen – ${added} neue Bestellung(en) von anderen Geräten`, "ok");
+ } catch (e) {
+ lastHistoryCloudLoad = Date.now();
+ if (!silent) showToast("⚠️ " + esc(e.message), "warn", 5000);
+ }
+ }
+
+ function parseHistoryTable(data) {
  const byId = {};
  (data.table.rows || []).forEach(r => {
  if (!r || !r.c) return;
@@ -4537,23 +4730,7 @@
  exklusiv: truthy(r.c[12]), lagerort: cellStr(r.c[13])
  });
  });
- const known = new Set(orderHistory.map(o => o.id));
- let added = 0;
- Object.values(byId).forEach(o => {
- if (deletedOrders[o.id]) return;
- if (!known.has(o.id)) { orderHistory.push(o); added++; }
- else { const loc = orderHistory.find(x => x.id === o.id); if (loc) loc.synced = true; }
- });
- orderHistory = orderHistory.filter(o => !deletedOrders[o.id]);
- applyHoState();
- saveHistoryLocal();
- lastHistoryCloudLoad = Date.now();
- if (activeTab === "stats") renderStats();
- if (!silent) showToast(`✅ Historie geladen – ${added} neue Bestellung(en) von anderen Geräten`, "ok");
- } catch (e) {
- lastHistoryCloudLoad = Date.now();
- if (!silent) showToast("⚠️ " + esc(e.message), "warn", 5000);
- }
+ return byId;
  }
 
  function setTopMode(m) {
@@ -6160,6 +6337,71 @@
  // =========================================================================
  // START
  // =========================================================================
+ // =========================================================================
+ // VERSION & UPDATE-HINWEIS
+ // Bei jedem neuen Hochladen auf GitHub wird APP_VERSION erhöht. Das Terminal schaut
+ // regelmäßig nach, ob auf dem Server eine neuere index.html liegt, und bietet das Update an.
+ // =========================================================================
+ const APP_VERSION = "2026.10.26-2";
+ let updateCheckAt = 0, updateFound = null;
+ async function checkForUpdate(force) {
+ if (!/^https?:$/.test(location.protocol) || updateFound) return;
+ if (!force && Date.now() - updateCheckAt < 10 * 60000) return;
+ updateCheckAt = Date.now();
+ try {
+ const r = await fetch(location.pathname + "?v=" + Date.now(), { cache: "no-store" });
+ if (!r.ok) return;
+ const m = (await r.text()).match(/const APP_VERSION = "([^"]+)"/);
+ if (m && m[1] !== APP_VERSION) {
+ updateFound = m[1];
+ document.getElementById("update-sub").textContent = `(${APP_VERSION} → ${m[1]})`;
+ document.getElementById("update-banner").classList.add("show");
+ }
+ } catch (_) { /* offline – später nochmal */ }
+ }
+ async function applyUpdate() {
+ if ((itemsDirty || layoutDirty) && !confirm("In der Prüfung gibt es noch nicht gesicherte Änderungen. Der Zwischenstand bleibt auf diesem Gerät erhalten (▶ Fortsetzen), sicherer ist aber vorher „☁️ Sichern“.\n\nTrotzdem jetzt aktualisieren?")) return;
+ if (typeof saveDraftNow === "function") { try { saveDraftNow(); } catch (_) {} }
+ showLoader("Lade die neue Version …", updateFound || "");
+ try {
+ if (window.caches) { const keys = await caches.keys(); await Promise.all(keys.map(k => caches.delete(k))); }
+ await fetch(location.pathname, { cache: "reload" });
+ if (navigator.serviceWorker) { const regs = await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(r => r.update().catch(() => {}))); }
+ } catch (_) {}
+ location.reload();
+ }
+
+ // =========================================================================
+ // ARCHIV: frühere Jahre nur auf Knopfdruck laden (Reiter "Bestellhistorie_JJJJ")
+ // =========================================================================
+ async function loadArchiveYears() {
+ const sheetId = getSheetId();
+ if (!sheetId) return;
+ const cur = new Date().getFullYear();
+ const years = []; for (let y = cur; y >= 2024; y--) years.push(y);
+ let added = 0, found = [];
+ await withLoader("Lade ältere Jahre …", "aus den Archiv-Reitern in Google Sheets", async () => {
+ const res = await Promise.allSettled(years.map(y => gvizQuery(sheetId, `&headers=1&sheet=${encodeURIComponent("Bestellhistorie_" + y)}`)));
+ res.forEach((r, i) => {
+ if (r.status !== "fulfilled") return;
+ const data = r.value;
+ const labels = (data.table.cols || []).map(c => String(c.label || "").toLowerCase());
+ if (!labels[0] || !labels[0].includes("bestell")) return; // Google liefert bei unbekanntem Reiter evtl. den ersten – nicht übernehmen
+ const byId = parseHistoryTable(data);
+ const ids = Object.keys(byId);
+ // nur übernehmen, wenn die Bestellungen wirklich aus diesem Jahr stammen
+ const ok = ids.filter(id => String(byId[id].date || byId[id].ts).slice(0, 4) === String(years[i]));
+ if (!ok.length) return;
+ found.push(years[i]);
+ const known = new Set(orderHistory.map(o => o.id));
+ ok.forEach(id => { if (!known.has(id) && !deletedOrders[id]) { byId[id].archived = true; orderHistory.push(byId[id]); added++; } });
+ });
+ });
+ saveHistoryLocal();
+ renderStats();
+ showToast(found.length ? `🗄 Archiv ${found.join(", ")} geladen – ${added} Bestellung(en) neu in der Auswertung` : "Noch keine Archiv-Jahre vorhanden (das Google-Skript legt sie ab 2.6 an).", found.length ? "ok" : "warn", 5500);
+ }
+
  window.addEventListener("DOMContentLoaded", () => {
  const savedUrl = LS.getRaw("saved_gsheet_url");
  if (savedUrl) document.getElementById("gsheet-url").value = savedUrl;
@@ -6182,6 +6424,11 @@
 
  loadPlanningLocal();
  updateDraftBox();
+ const av = document.getElementById("app-version");
+ if (av) av.textContent = `Version ${APP_VERSION}`;
+ setTimeout(() => checkForUpdate(true), 4000);
+ setInterval(() => checkForUpdate(false), 30 * 60000);
+ document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checkForUpdate(false); });
 
  // Datei per Drag & Drop
  const zone = document.getElementById("upload-zone");
