@@ -752,7 +752,6 @@
  .btn-row-reset:hover { background: var(--bg-gray); }
  .order-link { display: inline-block; margin-top: 3px; font-size: 7pt; font-weight: 700; color: var(--primary); cursor: pointer; text-decoration: underline; white-space: nowrap; }
 
- .sql-box { background: #090d16; color: #38bdf8; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 8pt; white-space: pre-wrap; max-height: 180px; overflow-y: auto; }
 
  .modal-overlay {
  position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.75);
@@ -1022,7 +1021,7 @@
  .pl-opts input[type=checkbox], .pl-opts input[type=radio] { width: 18px; height: 18px; flex-shrink: 0; }
 
  @media print {
- .main-nav-bar, .btn-group, .vehicle-alert-box, .mobile-swipe-hint, .sql-box, .toast { display: none !important; }
+ .main-nav-bar, .btn-group, .pl-actions, .vehicle-alert-box, .mobile-swipe-hint, .toast, .loader-overlay, .btn-row-reset { display: none !important; }
  body.printing-list { background: #fff !important; padding: 0 !important; color: #000 !important; }
  body.printing-list > *:not(#print-area) { display: none !important; }
  body.printing-list #print-area { display: block !important; }
@@ -1045,6 +1044,126 @@
  #print-area .warn { font-weight: bold; }
  #print-area .pl-foot { font-size: 7.5pt; color: #444; margin-top: 2mm; }
  }
+
+ /* =========================================================================
+ EINHEITLICHES DESIGN: Fristenplanung & Auswertung, Ladeanzeige
+ (die Prüfmaske in Reiter 1 bleibt bewusst unverändert)
+ ========================================================================= */
+ .planning-panel { border-radius: 12px; box-shadow: 0 1px 3px rgba(15,23,42,0.06); }
+ #tab-view-planning, #tab-view-stats { font-size: 13px; }
+ .pl-head { display: flex; flex-direction: column; gap: 10px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid var(--border); }
+ @media (min-width: 900px) { .pl-head { flex-direction: row; align-items: center; justify-content: space-between; } }
+ .pl-title { font-size: 19px; font-weight: 800; color: var(--text); margin: 0; letter-spacing: -0.2px; line-height: 1.2; }
+ .pl-subtitle { font-size: 12.5px; color: var(--text-muted); margin-top: 3px; }
+ .pl-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+ @media (max-width: 600px) {
+ .pl-actions { display: grid; grid-template-columns: 1fr 1fr; }
+ .pl-actions > :first-child { grid-column: 1 / -1; }
+ .pl-actions .pselect { width: 100% !important; }
+ }
+ .pbtn {
+ display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 36px; padding: 6px 13px;
+ border: 1px solid var(--border); background: var(--card-bg); color: var(--text); border-radius: 8px;
+ font-size: 13px; font-weight: 650; cursor: pointer; white-space: nowrap; position: relative; transition: background 0.15s, border-color 0.15s;
+ }
+ .pbtn:hover { background: var(--bg-gray); border-color: var(--text-muted); }
+ .pbtn-primary { background: #0f9d58; border-color: #0b8043; color: #fff; }
+ .pbtn-primary:hover { background: #0b8043; border-color: #0b8043; }
+ .pbtn-danger { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, var(--border)); }
+ .pbtn-danger:hover { background: color-mix(in srgb, var(--danger) 8%, var(--card-bg)); border-color: var(--danger); }
+ .pbtn-sm { min-height: 30px; padding: 4px 10px; font-size: 12px; }
+ .pselect { height: 36px !important; width: auto !important; min-width: 160px; font-size: 13px !important; border-radius: 8px !important; text-align: left !important; }
+ .danger-zone { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border); display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; font-size: 12px; color: var(--text-muted); }
+ .config-drawer { border-radius: 10px; border-width: 1px; }
+ .config-item label { font-size: 12px; }
+ .config-item input, .config-item select { font-size: 13px; height: 36px; border-radius: 8px; }
+ .staff-row input { font-size: 13px; height: 36px; border-radius: 8px; }
+
+ .sync-status-bar { border-radius: 10px; padding: 8px 12px; font-size: 12.5px; }
+ .sync-status-bar select { height: 34px !important; font-size: 13px !important; border-radius: 8px !important; padding: 0 8px !important; }
+ #systemTimeDisplay { font-size: 12px !important; }
+
+ .sec-card { border: 1px solid var(--border) !important; border-radius: 10px !important; padding: 12px 14px !important; background: var(--card-bg); margin-bottom: 12px; }
+ .sec-card > h3 { font-size: 14px !important; font-weight: 800; color: var(--text) !important; margin: 0 0 10px 0 !important;
+ display: flex !important; flex-direction: row !important; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; }
+ .sec-card > h3 small { font-size: 12px; font-weight: 500; color: var(--text-muted); margin-left: 4px; }
+ .vehicle-alert-box label { font-size: 12px !important; color: var(--text-muted) !important; }
+ .vehicle-alert-box textarea { font-size: 13px; border-radius: 8px; }
+ .ho-card { font-size: 13px; padding: 8px 0; }
+ .ho-card .btn-action { min-height: 32px; border-radius: 7px; font-size: 12px; padding: 4px 10px; }
+ .o-chip { border-radius: 6px; }
+
+ .mobile-swipe-hint { border-radius: 8px; font-size: 12px; font-weight: 600; }
+ .table-scroll-container { border-radius: 10px; }
+ table.planning-table { font-size: 12.5px; min-width: 1180px; }
+ table.planning-table th, table.planning-table td { border: none; border-bottom: 1px solid var(--border); padding: 7px 6px; }
+ table.planning-table th { font-size: 11.5px; color: var(--text-muted); font-weight: 700; padding: 9px 6px; white-space: nowrap; }
+ table.planning-table tbody tr:last-child td { border-bottom: none; }
+ table.planning-table th:nth-child(1), table.planning-table td:nth-child(1) { width: 42px; min-width: 42px; max-width: 42px; font-size: 12px; }
+ table.planning-table th:nth-child(2), table.planning-table td:nth-child(2) { left: 42px; width: 138px; min-width: 138px; max-width: 138px; }
+ @media (max-width: 600px) {
+ table.planning-table th:nth-child(1), table.planning-table td:nth-child(1) { width: 36px; min-width: 36px; max-width: 36px; }
+ table.planning-table th:nth-child(2), table.planning-table td:nth-child(2) { left: 36px; width: 118px; min-width: 118px; max-width: 118px; }
+ }
+ .cyc-name { font-weight: 800; font-size: 12.5px; color: var(--text); line-height: 1.25; }
+ .cyc-tags { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
+ .cyc-tags .badge { font-size: 10.5px; padding: 1px 6px; border-radius: 5px; font-weight: 600; }
+ .badge-current { font-size: 10.5px !important; margin-left: 0; }
+ .due-date { font-weight: 800; font-size: 13px; color: var(--text); white-space: nowrap; font-variant-numeric: tabular-nums; }
+ .due-wd { display: inline-block; min-width: 22px; color: var(--text-muted); font-weight: 700; }
+ .due-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; line-height: 1.3; }
+ .due-rel { display: inline-block; margin-top: 4px; font-size: 10.5px; font-weight: 800; padding: 1px 7px; border-radius: 999px; background: var(--bg-gray); color: var(--text-muted); white-space: nowrap; }
+ .due-rel.soon { background: color-mix(in srgb, var(--warning) 14%, var(--card-bg)); color: var(--warning); }
+ .due-rel.late { background: color-mix(in srgb, var(--danger) 13%, var(--card-bg)); color: var(--danger); }
+ .due-rel.done { background: color-mix(in srgb, var(--success) 13%, var(--card-bg)); color: var(--success); }
+ .pl-in { width: 100%; height: 34px !important; font-size: 12.5px !important; padding: 2px 6px !important; border-radius: 7px !important; text-align: left !important; }
+ .pl-in.center { text-align: center !important; }
+ .pl-ta { width: 100%; font-size: 12.5px; border-radius: 7px; min-height: 34px; }
+ .pl-chk { width: 20px; height: 20px; cursor: pointer; accent-color: var(--success); }
+ .ord-lbl { font-size: 11px; font-weight: 800; margin-top: 2px; }
+ .row-links { display: flex; flex-direction: column; gap: 3px; margin-top: 5px; align-items: center; }
+ .row-link { font-size: 11px; font-weight: 700; color: var(--primary); background: var(--bg-gray); border: 1px solid var(--border); border-radius: 6px; padding: 1px 7px; cursor: pointer; white-space: nowrap; }
+ .row-link:hover { border-color: var(--primary); }
+ .row-link.ok { color: var(--success); }
+ .st-pill { display: inline-block; font-size: 11px; font-weight: 800; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+ .st-pill.ok { background: color-mix(in srgb, var(--success) 14%, var(--card-bg)); color: var(--success); }
+ .st-pill.open { background: var(--bg-gray); color: var(--text-muted); border: 1px solid var(--border); }
+ .st-pill.late { background: color-mix(in srgb, var(--danger) 13%, var(--card-bg)); color: var(--danger); }
+ .btn-row-reset { display: block; margin: 5px auto 0; font-size: 12px; padding: 2px 7px; border-radius: 6px; opacity: 0.7; }
+ .btn-row-reset:hover { opacity: 1; }
+
+ .kpi { border-radius: 10px; padding: 12px; }
+ .stat-card { border-radius: 10px; padding: 12px 14px; }
+ .stat-card h3 { font-size: 14px; }
+
+ /* Ladeanzeige */
+ .loader-overlay { position: fixed; inset: 0; z-index: 20000; display: flex; align-items: center; justify-content: center;
+ background: rgba(15, 23, 42, 0.4); opacity: 0; pointer-events: none; transition: opacity 0.15s; }
+ .loader-overlay.show { opacity: 1; pointer-events: auto; transition: opacity 0.2s 0.08s; }
+ .loader-box { background: var(--card-bg); color: var(--text); border: 1px solid var(--border); border-radius: 14px; padding: 24px 28px 18px;
+ min-width: 250px; max-width: 86vw; text-align: center; box-shadow: 0 14px 40px rgba(0,0,0,0.28); }
+ .spinner { width: 46px; height: 46px; margin: 0 auto 14px; border-radius: 50%; border: 4px solid var(--border); border-top-color: var(--primary); animation: spin 0.8s linear infinite; }
+ @keyframes spin { to { transform: rotate(360deg); } }
+ #loader-text { font-weight: 800; font-size: 15px; }
+ #loader-sub { font-size: 12.5px; color: var(--text-muted); margin-top: 4px; min-height: 16px; }
+ #loader-skip { margin-top: 14px; visibility: hidden; }
+
+ /* Eigene Fristen-Regeln */
+ .config-item input.rule-custom { display: none !important; margin-top: 6px; font-family: ui-monospace, Menlo, Consolas, monospace; text-align: left !important; }
+ .config-item input.rule-custom.show { display: block !important; }
+ .config-item input.rule-custom.bad { border-color: var(--danger) !important; }
+ .rule-preview { font-size: 11.5px; color: var(--text-muted); margin-top: 4px; min-height: 0; }
+ .rule-preview.bad { color: var(--danger); font-weight: 700; }
+ .rule-help { margin-top: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--card-bg); padding: 8px 12px; font-size: 12.5px; }
+ .rule-help summary { cursor: pointer; font-weight: 800; color: var(--primary); }
+ .rule-help p { margin: 8px 0; line-height: 1.45; }
+ .rule-help table { border-collapse: collapse; width: 100%; max-width: 620px; margin: 6px 0; }
+ .rule-help th, .rule-help td { border-bottom: 1px solid var(--border); padding: 4px 8px; text-align: left; }
+ .rule-help th { color: var(--text-muted); font-size: 11.5px; }
+ .rule-help code { background: var(--bg-gray); border: 1px solid var(--border); border-radius: 5px; padding: 0 5px; font-size: 12px; }
+ .o-chip-btn { cursor: pointer; font-family: inherit; }
+ .o-chip-btn:hover { border-color: var(--text-muted); }
+ .session-box strong { color: var(--text); }
 </style>
 </head>
 <body>
@@ -1096,7 +1215,7 @@
  <div id="draft-box" class="draft-box">
  <span id="draft-text">📝 Ungespeicherter Zwischenstand vorhanden</span>
  <span style="display: flex; gap: 6px;">
- <button type="button" class="btn-action" onclick="discardDraft()">Verwerfen</button>
+ <button type="button" class="btn-action" onclick="discardDraft()">🗑️ Verwerfen</button>
  <button type="button" class="btn-action btn-sync" onclick="restoreDraft()">▶ Fortsetzen</button>
  </span>
  </div>
@@ -1338,22 +1457,17 @@
  <!-- REITER 2: INTERAKTIVE LAGER- & FRISTENPLANUNG -->
  <div id="tab-view-planning" style="display: none;">
  <div class="planning-panel">
- <div class="header-flex">
- <div>
- <h1 class="planning-title">Lager-, Verfalls- & Fristen-Planung</h1>
- <div style="font-size: 8.5pt; color: var(--text-muted);">RW Sassnitz &ndash; Vollständiger Cloud- & SQL-Sync</div>
+ <div class="pl-head">
+ <div class="pl-head-text">
+ <h1 class="pl-title">📅 Fristenplanung</h1>
+ <div class="pl-subtitle">Prüftermine, Zuständige & Bestellstatus · gespeichert in Google Sheets</div>
  </div>
- <div class="btn-group">
- <button class="btn btn-sync" id="btn-plan-sync" onclick="syncPlanningToGoogleSheet(false)">☁️ Plan sichern</button>
- <button class="btn btn-teal" onclick="loadPlanningFromGoogleSheet(false)">☁️ Plan laden</button>
- <button class="btn btn-save" onclick="saveToSqlFile()">💾 SQL Datei</button>
- <button class="btn btn-purple" onclick="toggleIntervalConfig()">⚙️ Intervalle</button>
- <button class="btn btn-teal" onclick="toggleStaffConfig()">👥 Personal</button>
- <input type="file" id="importFileInput" accept=".sql" style="display: none;" onchange="handleFileImport(event)">
- <button class="btn" onclick="document.getElementById('importFileInput').click()">📂 SQL laden</button>
- <button class="btn btn-yellow" onclick="clearActiveVehicleInputs()">🧹 Bedarf leeren</button>
- <button class="btn btn-red" onclick="resetForm()">🔄 Reset</button>
- <button class="btn" onclick="window.print()">🖨️ Druck</button>
+ <div class="pl-actions">
+ <button type="button" class="pbtn pbtn-primary" id="btn-plan-sync" onclick="syncPlanningToGoogleSheet(false)">☁️ Sichern</button>
+ <button type="button" class="pbtn" onclick="refreshPlanningTab(true)">↻ Neu laden</button>
+ <button type="button" class="pbtn" onclick="toggleIntervalConfig()">⚙️ Fristen-Regeln</button>
+ <button type="button" class="pbtn" onclick="toggleStaffConfig()">👥 Personal</button>
+ <button type="button" class="pbtn" onclick="window.print()">🖨️ Drucken</button>
  </div>
  </div>
 
@@ -1365,39 +1479,51 @@
  <div class="config-grid">
  <div class="config-item">
  <label>Nebensaison Stichtag-Regel (Okt &ndash; Apr):</label>
- <select id="cfg_rule_nebensaison">
+ <select id="cfg_rule_nebensaison" onchange="onRuleSelect('nebensaison')">
  <option value="thursday_penultimate">Vorletzter Donnerstag im Monat (Standard)</option>
  <option value="thursday_last">Letzter Donnerstag im Monat</option>
  <option value="fixed_15">Fester 15. des Monats</option>
  <option value="fixed_20">Fester 20. des Monats</option>
  <option value="fixed_25">Fester 25. des Monats</option>
  <option value="end_minus_7">7 Tage vor Monatsende</option>
+  <option value="custom">✏️ Eigene Regel …</option>
  </select>
+ <input type="text" id="cfg_custom_nebensaison" class="rule-custom" placeholder="z. B. Do -2  ·  15  ·  Ende -7" autocomplete="off" oninput="previewCustomRule('nebensaison')">
+ <div class="rule-preview" id="prev_nebensaison"></div>
  </div>
  <div class="config-item">
  <label>Sommersaison T1 (Monatsanfang):</label>
- <select id="cfg_rule_saison_t1">
+ <select id="cfg_rule_saison_t1" onchange="onRuleSelect('saison_t1')">
  <option value="thursday_first">1. Donnerstag im Monat (Standard)</option>
  <option value="fixed_05">Fester 05. des Monats</option>
  <option value="fixed_07">Fester 07. des Monats</option>
+  <option value="custom">✏️ Eigene Regel …</option>
  </select>
+ <input type="text" id="cfg_custom_saison_t1" class="rule-custom" placeholder="z. B. Do -2  ·  15  ·  Ende -7" autocomplete="off" oninput="previewCustomRule('saison_t1')">
+ <div class="rule-preview" id="prev_saison_t1"></div>
  </div>
  <div class="config-item">
  <label>Sommersaison T2 (Monatsmitte):</label>
- <select id="cfg_rule_saison_t2">
+ <select id="cfg_rule_saison_t2" onchange="onRuleSelect('saison_t2')">
  <option value="thursday_penultimate">Vorletzter Donnerstag im Monat (Standard)</option>
  <option value="fixed_20">Fester 20. des Monats</option>
  <option value="end_minus_7">7 Tage vor Monatsende</option>
+  <option value="custom">✏️ Eigene Regel …</option>
  </select>
+ <input type="text" id="cfg_custom_saison_t2" class="rule-custom" placeholder="z. B. Do -2  ·  15  ·  Ende -7" autocomplete="off" oninput="previewCustomRule('saison_t2')">
+ <div class="rule-preview" id="prev_saison_t2"></div>
  </div>
  <div class="config-item">
  <label>Dezember-Sonderregel:</label>
- <select id="cfg_rule_december">
+ <select id="cfg_rule_december" onchange="onRuleSelect('december')">
  <option value="minus_3">Stichtag 3 Tage vorziehen (Standard)</option>
  <option value="minus_5">Stichtag 5 Tage vorziehen</option>
  <option value="fixed_15">Fester Stichtag: 15. Dezember</option>
  <option value="none">Keine Vorziehung</option>
+  <option value="custom">✏️ Eigene Regel …</option>
  </select>
+ <input type="text" id="cfg_custom_december" class="rule-custom" placeholder="z. B. -4  ·  12  ·  Mo 3" autocomplete="off" oninput="previewCustomRule('december')">
+ <div class="rule-preview" id="prev_december"></div>
  </div>
  <div class="config-item">
  <label>Quartals-Audit Rhythmus:</label>
@@ -1411,6 +1537,28 @@
  <label>Vorlaufzeit Verfallskontrolle (Tage):</label>
  <input type="number" id="cfg_vorlauf_tage" value="45">
  </div>
+ </div>
+ <details class="rule-help">
+ <summary>✏️ Wie schreibe ich eine eigene Regel?</summary>
+ <div>
+ <p>Wähle im Feld <strong>„✏️ Eigene Regel …“</strong> und tippe die Regel in das Textfeld darunter. Darunter siehst du sofort, welche Stichtage dabei herauskommen. Mit <strong>„Übernehmen & Aktualisieren“</strong> wird sie aktiv, sie wird dabei gleich in Google gesichert und gilt auf allen Geräten.</p>
+ <table>
+ <tr><th>Du schreibst</th><th>Bedeutung</th></tr>
+ <tr><td><code>15</code></td><td>immer am 15. des Monats</td></tr>
+ <tr><td><code>Do 1</code></td><td>1. Donnerstag im Monat (<code>Do 2</code> = 2. Donnerstag …)</td></tr>
+ <tr><td><code>Do -1</code></td><td>letzter Donnerstag im Monat</td></tr>
+ <tr><td><code>Do -2</code></td><td>vorletzter Donnerstag im Monat</td></tr>
+ <tr><td><code>Ende</code></td><td>letzter Tag des Monats</td></tr>
+ <tr><td><code>Ende -7</code></td><td>7 Tage vor Monatsende</td></tr>
+ <tr><td><code>20 werktags</code></td><td>am 20., fällt er aufs Wochenende → Freitag davor</td></tr>
+ </table>
+ <p>Wochentage: <code>Mo Di Mi Do Fr Sa So</code> (ausgeschrieben geht auch, z. B. <code>letzter Freitag</code>, <code>zweiter Montag</code>).<br>
+ <strong>Dezember-Sonderregel:</strong> <code>-4</code> zieht den normalen Stichtag 4 Tage vor; eine Regel wie <code>12</code> oder <code>Mo 3</code> setzt im Dezember einen eigenen Stichtag.</p>
+ </div>
+ </details>
+ <div class="danger-zone">
+ <span>Alle Fristeinträge auf diesem Gerät leeren (z. B. für ein neues Jahr). Online bleibt alles bis zum nächsten Sichern erhalten.</span>
+ <button type="button" class="pbtn pbtn-danger" onclick="resetForm()">🔄 Alle Einträge zurücksetzen</button>
  </div>
  </div>
 
@@ -1445,27 +1593,27 @@
  <div style="color: var(--text-muted); font-size: 7.5pt;" id="systemTimeDisplay">Erkannte Systemzeit: --</div>
  </div>
 
- <div class="handover-box">
- <h3>📄 Bestellübergaben ans Hauptlager <span style="font-weight: normal; color: var(--text-muted); font-size: 8pt;">– Bestellliste ausfüllen & E-Mail-Liste</span></h3>
+ <div class="handover-box sec-card">
+ <h3>📄 Bestellübergaben ans Hauptlager <small>Bestellliste ausfüllen, E-Mail-Liste, „Bestellung ist raus“</small></h3>
  <div id="name-alert"></div>
  <div id="handover-panel"></div>
  </div>
 
- <div class="vehicle-alert-box">
+ <div class="vehicle-alert-box sec-card">
  <h3>
- <span>🚑 🚐 Schnellerfassung: Akuter Fahrzeugbedarf vor anstehender Bestellung</span>
- <span style="font-size: 8pt; font-weight: normal; color: var(--text-muted);" id="quick-target-label">(Schreibt direkt in aktiven Zyklus)</span>
+ <span>🚑 Fahrzeugbedarf vor der nächsten Bestellung <small id="quick-target-label">(Schreibt direkt in aktiven Zyklus)</small></span>
+ <button type="button" class="pbtn pbtn-sm" onclick="clearActiveVehicleInputs()">🧹 Leeren</button>
  </h3>
  <div class="vehicle-grid">
  <div>
  <label for="quick_rtw" style="display: block; font-weight: 700; font-size: 8.5pt; color: var(--primary); margin-bottom: 3px;">
- Fahrzeug RTW (7SZ) &ndash; Verfallende Artikel OHNE Lagerbestand:
+ RTW (7SZ) – verfallende Artikel ohne Lagerbestand
  </label>
  <textarea id="quick_rtw" class="auto-grow" placeholder="z. B. 2x Heparin 5000 IE (Exp. 30.10.)..." oninput="autoGrow(this); syncQuickToActive();"></textarea>
  </div>
  <div>
  <label for="quick_nef" style="display: block; font-weight: 700; font-size: 8.5pt; color: var(--primary); margin-bottom: 3px;">
- Fahrzeug NEF (NSZ) &ndash; Verfallende Artikel OHNE Lagerbestand:
+ NEF (NSZ) – verfallende Artikel ohne Lagerbestand
  </label>
  <textarea id="quick_nef" class="auto-grow" placeholder="z. B. 1x BTM-Ampulle Fentanyl (Exp. 31.10.)..." oninput="autoGrow(this); syncQuickToActive();"></textarea>
  </div>
@@ -1478,50 +1626,45 @@
  <table class="planning-table" id="matrixTable">
  <thead>
  <tr>
- <th style="width: 36px;">Nr.</th>
- <th style="width: 110px;">Zyklus</th>
- <th style="width: 130px;">Prüfungszeitraum & Stichtag</th>
- <th style="width: 80px;">Typ</th>
- <th style="width: 110px;">Zuständig</th>
- <th style="width: 105px;">Erledigt am</th>
- <th style="width: 38px; text-align: center;">MHD</th>
- <th style="width: 60px; text-align: center;">Bestellt?</th>
- <th style="width: 120px;">RTW-Bedarf</th>
- <th style="width: 120px;">NEF-Bedarf</th>
- <th style="width: 150px;">📝 Notiz</th>
- <th style="width: 50px;">Handz.</th>
- <th style="width: 45px;">Status</th>
+ <th>Nr.</th>
+ <th>Zyklus</th>
+ <th style="width: 150px;">Prüftermin</th>
+ <th style="width: 140px;">Zuständig</th>
+ <th style="width: 128px;">Erledigt am</th>
+ <th style="width: 48px; text-align: center;" title="Verfallsdaten im Lager geprüft">MHD</th>
+ <th style="width: 96px; text-align: center;">Bestellt?</th>
+ <th style="width: 130px;">RTW-Bedarf</th>
+ <th style="width: 130px;">NEF-Bedarf</th>
+ <th style="width: 170px;">📝 Notiz</th>
+ <th style="width: 64px;">Handz.</th>
+ <th style="width: 86px; text-align: center;">Status</th>
  </tr>
  </thead>
  <tbody id="tableBody"></tbody>
  </table>
  </div>
 
- <div style="margin-top: 12px;">
- <h3 style="margin: 0 0 6px 0; color: var(--primary); font-size: 9.5pt;">Live synchronisierter SQLite-Dump:</h3>
- <div class="sql-box" id="sqlOutput">-- SQL Dump wird generiert...</div>
- </div>
  </div>
  </div>
 
  <!-- REITER 3: BESTELLUNGEN & AUSWERTUNG -->
  <div id="tab-view-stats" style="display: none;">
  <div class="planning-panel">
- <div class="header-flex">
- <div>
- <h1 class="planning-title">Bestellhistorie & Auswertung</h1>
- <div style="font-size: 8.5pt; color: var(--text-muted);" id="stats-subtitle">Lokal gespeichert &amp; mit Reiter „Bestellhistorie“ in Google Sheets abgeglichen</div>
+ <div class="pl-head">
+ <div class="pl-head-text">
+ <h1 class="pl-title">📊 Bestellungen & Auswertung</h1>
+ <div class="pl-subtitle" id="stats-subtitle">Lokal gespeichert &amp; mit Reiter „Bestellhistorie“ in Google Sheets abgeglichen</div>
  </div>
- <div class="btn-group">
- <select id="stats-range" onchange="renderStats()" style="height: 30px !important; font-size: 12px; width: auto !important; min-width: 150px;">
+ <div class="pl-actions">
+ <select id="stats-range" class="pselect" onchange="renderStats()">
  <option value="all">Zeitraum: alle</option>
  <option value="90">Letzte 3 Monate</option>
  <option value="180">Letzte 6 Monate</option>
  <option value="365">Letzte 12 Monate</option>
  </select>
- <button class="btn btn-teal" onclick="loadHistoryFromCloud(false)">☁️ Historie laden</button>
- <button class="btn btn-sync" onclick="resendUnsyncedOrders()">☁️ Offene senden</button>
- <button class="btn btn-save" onclick="exportHistoryExcel()">📥 Historie (.xlsx)</button>
+ <button type="button" class="pbtn" onclick="withLoader('Lade Bestellhistorie …', 'aus Google Sheets', () => loadHistoryFromCloud(false)).then(() => { applyHoState(); renderStats(); })">↻ Neu laden</button>
+ <button type="button" class="pbtn" id="btn-resend" onclick="resendUnsyncedOrders()">☁️ Offene senden</button>
+ <button type="button" class="pbtn" onclick="exportHistoryExcel()">📥 Excel</button>
  </div>
  </div>
 
@@ -1683,6 +1826,14 @@
 <div id="print-area"></div>
 
 <div id="toast" class="toast"></div>
+<div id="loader" class="loader-overlay" role="status" aria-live="polite">
+ <div class="loader-box">
+ <div class="spinner"></div>
+ <div id="loader-text">Lade …</div>
+ <div id="loader-sub"></div>
+ <button type="button" id="loader-skip" class="pbtn pbtn-sm" onclick="hideLoader(true)">Im Hintergrund weiterladen</button>
+ </div>
+</div>
 <div id="chart-tip" class="chart-tip"></div>
 
 <script>
@@ -1707,6 +1858,34 @@
  const KEY_PLAN = "rw_sassnitz_planning";
  const KEY_HISTORY = "rw_sassnitz_order_history";
  const KEY_SIGNS = "rw_sassnitz_signs";
+
+ // =========================================================================
+ // LADEANZEIGE (Kreis) – sperrt die Oberfläche, bis die Daten da sind
+ // =========================================================================
+ let loaderCount = 0, loaderSkipTimer = null;
+ function showLoader(text, sub) {
+ const el = document.getElementById("loader");
+ if (!el) return;
+ loaderCount++;
+ document.getElementById("loader-text").textContent = text || "Lade …";
+ document.getElementById("loader-sub").textContent = sub || "";
+ document.getElementById("loader-skip").style.visibility = "hidden";
+ el.classList.add("show");
+ clearTimeout(loaderSkipTimer);
+ loaderSkipTimer = setTimeout(() => { document.getElementById("loader-skip").style.visibility = "visible"; }, 9000);
+ }
+ function hideLoader(force) {
+ loaderCount = force ? 0 : Math.max(0, loaderCount - 1);
+ if (loaderCount) return;
+ clearTimeout(loaderSkipTimer);
+ const el = document.getElementById("loader");
+ if (el) el.classList.remove("show");
+ }
+ async function withLoader(text, sub, fn) {
+ if (!text) return fn();
+ showLoader(text, sub);
+ try { return await fn(); } finally { hideLoader(); }
+ }
 
  function esc(s) {
  return String(s === undefined || s === null ? "" : s)
@@ -1915,11 +2094,14 @@
  });
  if (tab === "planning") {
  initTable();
- if (Date.now() - lastPlanCloudLoad > 60000) loadPlanningFromGoogleSheet(true);
+ refreshPlanningTab(false);
  runNameCheck(false);
  } else if (tab === "stats") {
  renderStats();
- if (Date.now() - lastHistoryCloudLoad > 60000) loadHistoryFromCloud(true);
+ if (Date.now() - lastHistoryCloudLoad > 60000) {
+ withLoader(lastHistoryCloudLoad ? null : "Lade Bestellhistorie …", "aus Google Sheets", () => loadHistoryFromCloud(true))
+ .then(() => { applyHoState(); if (activeTab === "stats") renderStats(); });
+ }
  }
  window.scrollTo({ top: 0 });
  }
@@ -1963,8 +2145,8 @@
  document.getElementById("screen-wizard").style.display = "none";
  document.getElementById("screen-export").style.display = "none";
  document.getElementById("screen-upload").style.display = "block";
- if (allItems.length > 0) document.getElementById("btn-return-wizard").style.display = "inline-flex";
- document.getElementById("sort-box").style.display = allItems.length ? "flex" : "none";
+ document.getElementById("btn-return-wizard").style.display = "none";
+ document.getElementById("sort-box").style.display = "none"; // Sortieren gibt es am Ende der Prüfung
  updateDraftBox();
  }
 
@@ -2194,8 +2376,12 @@
  statusEl.style.display = "block";
  statusEl.innerText = `⏳ Lade "${tabName}"...`;
  btnLoad.disabled = true;
+ showLoader("Lade Tabelle aus Google Sheets …", `„${tabName}“, Fristenplan & Bestellhistorie`);
  try {
- try { await loadPlanningFromGoogleSheet(true); } catch (_) {} // holt u. a. die gespeicherte Prüfreihenfolge
+ // holt u. a. die gespeicherte Prüfreihenfolge und „zuletzt bestellt“
+ await Promise.allSettled([loadPlanningFromGoogleSheet(true), loadHistoryFromCloud(true)]);
+ applyHoState();
+ pushHoIfNeeded();
  const params = (gidMatch && gidMatch[1]) ? `&gid=${gidMatch[1]}` : `&sheet=${encodeURIComponent(tabName)}`;
  const data = await gvizQuery(sheetId, params);
  const matrix = [];
@@ -2221,8 +2407,10 @@
  activeSheet = ws;
  parseUnifiedMatrix(rawMatrix);
  } catch (err) {
+ hideLoader(true);
  alert("Google Sheets Fehler: " + err.message);
  } finally {
+ hideLoader();
  btnLoad.disabled = false;
  statusEl.style.display = "none";
  }
@@ -2245,7 +2433,10 @@
  if (!file) return;
  if (!confirmDiscardUnsaved()) { document.getElementById("file-input").value = ""; return; }
  const reader = new FileReader();
+ showLoader("Lese Datei …", file.name);
+ reader.onerror = () => { hideLoader(); alert("Die Datei konnte nicht gelesen werden."); };
  reader.onload = function (e) {
+ try {
  const data = new Uint8Array(e.target.result);
  workbook = XLSX.read(data, { type: "array", cellDates: true, cellNF: true, cellStyles: true, cellFormula: true });
  const sheetSelect = document.getElementById("sheet-select");
@@ -2260,6 +2451,8 @@
  document.getElementById("sheet-picker-row").style.display = workbook.SheetNames.length > 1 ? "block" : "none";
  switchSheet(activeSheetName);
  document.getElementById("file-input").value = "";
+ } catch (err) { alert("Die Datei konnte nicht gelesen werden: " + err.message); }
+ finally { hideLoader(); }
  };
  reader.readAsArrayBuffer(file);
  }
@@ -2839,12 +3032,19 @@
  function updateDraftBox() {
  const d = LS.get(KEY_DRAFT, null);
  const box = document.getElementById("draft-box");
- if (d && d.items && d.items.length && !allItems.length) {
+ if (allItems.length) {
+ // Prüfung läuft gerade (nur kurz ins Menü gegangen)
+ const cur = currentFilteredList[currentFilteredIndex];
+ const ordered = allItems.filter(i => Number(i.bestellmenge) > 0).length;
+ box.style.display = "flex";
+ document.getElementById("draft-text").innerHTML = `📝 <strong>Begonnene Prüfung</strong> – bei ${cur ? `Pos ${esc(String(cur.pos))} (${currentFilteredIndex + 1}/${currentFilteredList.length})` : "–"}, ${ordered} Artikel mit Bestellmenge${itemsDirty || layoutDirty ? ` · <span style="color: var(--warning); font-weight: 700;">noch nicht gesichert</span>` : ""}.<br><span class="ho-sub">Wieder aufnehmen oder verwerfen?</span>`;
+ } else if (d && d.items && d.items.length) {
  box.style.display = "flex";
  document.getElementById("draft-text").innerHTML = `📝 Zwischenstand vom <strong>${fmtDateTimeDE(d.ts)}</strong> (${d.items.length} Artikel${d.layoutDirty ? ", mit ungesicherter Umsortierung" : ""})`;
  } else box.style.display = "none";
  }
  function restoreDraft() {
+ if (allItems.length) { returnToWizardFromUpload(); return; }
  const d = LS.get(KEY_DRAFT, null);
  if (!d) return;
  rawMatrix = d.rawMatrix || [];
@@ -2868,6 +3068,17 @@
  showToast("▶ Zwischenstand wiederhergestellt", "ok");
  }
  function discardDraft() {
+ if (allItems.length) {
+ const unsaved = itemsDirty || layoutDirty;
+ if (!confirm(`Begonnene Prüfung wirklich verwerfen?${unsaved ? "\n\nAchtung: Es gibt Änderungen, die noch NICHT in Google Sheets gesichert sind – die gehen verloren." : ""}\n\nDanach kannst du die Tabelle neu abrufen.`)) return;
+ allItems = []; currentFilteredList = []; currentFilteredIndex = 0; rawMatrix = [];
+ loadedItemRows = []; deletedOffsets = []; layoutDirty = false;
+ markSynced();
+ clearDraft();
+ updateDraftBox();
+ showToast("🗑️ Begonnene Prüfung verworfen", "ok");
+ return;
+ }
  if (!confirm("Gespeicherten Zwischenstand wirklich verwerfen?")) return;
  clearDraft();
  updateDraftBox();
@@ -3623,7 +3834,8 @@
  else if (cat === "saison_t2") rule = config.rule_saison_t2 || "thursday_penultimate";
 
  let chosenDay = 20;
- if (rule === "thursday_first") chosenDay = thursdays.length > 0 ? thursdays[0] : 7;
+ if (String(rule).startsWith("custom:")) { const r = parseCustomRule(String(rule).slice(7)); chosenDay = r ? r.day(year, monthIdx) : 20; }
+ else if (rule === "thursday_first") chosenDay = thursdays.length > 0 ? thursdays[0] : 7;
  else if (rule === "thursday_last") chosenDay = thursdays.length > 0 ? thursdays[thursdays.length - 1] : 28;
  else if (rule === "thursday_penultimate") chosenDay = thursdays.length >= 2 ? thursdays[thursdays.length - 2] : (thursdays[0] || 20);
  else if (rule === "fixed_05") chosenDay = 5;
@@ -3635,12 +3847,110 @@
 
  if (isSpecialDec) {
  const decRule = config.rule_december || "minus_3";
- if (decRule === "minus_3") chosenDay = Math.max(1, chosenDay - 3);
+ if (String(decRule).startsWith("custom:")) {
+ const txt = String(decRule).slice(7).trim();
+ const mm = txt.match(/^-\s*(\d{1,2})$/);
+ if (mm) chosenDay = Math.max(1, chosenDay - Number(mm[1]));
+ else { const r = parseCustomRule(txt); if (r) chosenDay = r.day(year, monthIdx); }
+ }
+ else if (decRule === "minus_3") chosenDay = Math.max(1, chosenDay - 3);
  else if (decRule === "minus_5") chosenDay = Math.max(1, chosenDay - 5);
  else if (decRule === "fixed_15") chosenDay = 15;
  }
  chosenDay = clamp(chosenDay, 1, daysInMonth);
  return `${String(chosenDay).padStart(2, "0")}.${String(month).padStart(2, "0")}.${year}`;
+ }
+
+ // Eigene Regel: "15", "Do 1", "Do -2", "letzter Fr", "Ende -7", "20 werktags"
+ const RULE_WD = { so: 0, mo: 1, di: 2, mi: 3, do: 4, fr: 5, sa: 6 };
+ const RULE_ORD = { erste: 1, erster: 1, ersten: 1, zweite: 2, zweiter: 2, zweiten: 2, dritte: 3, dritter: 3, dritten: 3, vierte: 4, vierter: 4, vierten: 4,
+ letzte: -1, letzter: -1, letzten: -1, vorletzte: -2, vorletzter: -2, vorletzten: -2 };
+ function parseCustomRule(text) {
+ let t = String(text || "").toLowerCase().replace(/\./g, " ").replace(/\s+/g, " ").trim();
+ if (!t) return null;
+ let workday = false;
+ if (/\bwerktag(s|e)?\b/.test(t)) { workday = true; t = t.replace(/\bwerktag(s|e)?\b/, "").trim(); }
+ const wdOf = w => { const k = (w || "").slice(0, 2); return k in RULE_WD ? RULE_WD[k] : null; };
+ let calc = null, desc = "";
+ let m;
+ if ((m = t.match(/^(\d{1,2})$/)) && +m[1] >= 1 && +m[1] <= 31) {
+ const d = +m[1]; calc = (y, mi, dim) => Math.min(d, dim); desc = `am ${d}.`;
+ } else if ((m = t.match(/^ende(?:\s*-\s*(\d{1,2}))?$/))) {
+ const n = +(m[1] || 0); calc = (y, mi, dim) => Math.max(1, dim - n); desc = n ? `${n} Tage vor Monatsende` : "letzter Tag";
+ } else if ((m = t.match(/^([a-zä]+)\s*(-?\s*[1-5])$/)) && wdOf(m[1]) !== null) {
+ const wd = wdOf(m[1]), n = Number(m[2].replace(/\s/g, "")); calc = nthWeekday(wd, n); desc = ordText(n, wd);
+ } else if ((m = t.match(/^(-?[1-5])\s+([a-zä]+)$/)) && wdOf(m[2]) !== null) {
+ const wd = wdOf(m[2]), n = Number(m[1]); calc = nthWeekday(wd, n); desc = ordText(n, wd);
+ } else if ((m = t.match(/^([a-zä]+)\s+([a-zä]+)$/)) && RULE_ORD[m[1]] && wdOf(m[2]) !== null) {
+ const wd = wdOf(m[2]), n = RULE_ORD[m[1]]; calc = nthWeekday(wd, n); desc = ordText(n, wd);
+ }
+ if (!calc) return null;
+ return {
+ desc: desc + (workday ? ", Wochenende → Freitag davor" : ""),
+ day(year, monthIdx) {
+ const dim = new Date(year, monthIdx + 1, 0).getDate();
+ let d = clamp(calc(year, monthIdx, dim), 1, dim);
+ if (workday) { while (d > 1 && [0, 6].includes(new Date(year, monthIdx, d).getDay())) d--; }
+ return d;
+ }
+ };
+ }
+ function nthWeekday(wd, n) {
+ return (y, mi, dim) => {
+ const days = [];
+ for (let d = 1; d <= dim; d++) if (new Date(y, mi, d).getDay() === wd) days.push(d);
+ if (n > 0) return days[Math.min(n, days.length) - 1];
+ return days[Math.max(0, days.length + n)];
+ };
+ }
+ function ordText(n, wd) {
+ const name = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"][wd];
+ if (n === -1) return `letzter ${name}`;
+ if (n === -2) return `vorletzter ${name}`;
+ if (n < 0) return `${-n}.-letzter ${name}`;
+ return `${n}. ${name}`;
+ }
+ function onRuleSelect(key) {
+ const sel = document.getElementById("cfg_rule_" + key), inp = document.getElementById("cfg_custom_" + key);
+ inp.classList.toggle("show", sel.value === "custom");
+ if (sel.value === "custom") { inp.focus(); previewCustomRule(key); }
+ else document.getElementById("prev_" + key).textContent = "";
+ }
+ function previewCustomRule(key) {
+ const inp = document.getElementById("cfg_custom_" + key), prev = document.getElementById("prev_" + key);
+ const txt = inp.value.trim();
+ const isDec = key === "december";
+ const decMinus = isDec && /^-\s*\d{1,2}$/.test(txt);
+ const r = decMinus ? null : parseCustomRule(txt);
+ const ok = !!txt && (decMinus || !!r);
+ inp.classList.toggle("bad", !!txt && !ok);
+ prev.classList.toggle("bad", !!txt && !ok);
+ if (!txt) { prev.textContent = "Regel eintippen – Beispiele unten unter „Wie schreibe ich eine eigene Regel?“"; return ok; }
+ if (!ok) { prev.textContent = "❌ Nicht verstanden – siehe Beispiele unten"; return false; }
+ const now = new Date();
+ if (decMinus) { prev.textContent = `✓ normaler Dezember-Stichtag ${txt.replace(/\s/g, "")} Tage`; return true; }
+ const months = [];
+ const months2 = key === "saison_t1" || key === "saison_t2" ? [4, 5, 6, 7, 8] : key === "december" ? [11] : [9, 10, 0, 1, 2, 3];
+ for (let i = 0; months.length < 4 && i < 24; i++) {
+ const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+ if (!months2.includes(d.getMonth())) continue;
+ const day = r.day(d.getFullYear(), d.getMonth());
+ const wd = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"][new Date(d.getFullYear(), d.getMonth(), day).getDay()];
+ months.push(`${wd} ${String(day).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getFullYear()).slice(2)}`);
+ }
+ prev.textContent = `✓ ${r.desc} → ${months.join(" · ")}`;
+ return true;
+ }
+ function setRuleField(key, value, fallback) {
+ const sel = document.getElementById("cfg_rule_" + key), inp = document.getElementById("cfg_custom_" + key);
+ const v = value || fallback;
+ if (String(v).startsWith("custom:")) { sel.value = "custom"; inp.value = String(v).slice(7); inp.classList.add("show"); previewCustomRule(key); }
+ else { sel.value = v; if (sel.value !== v) sel.value = fallback; inp.classList.remove("show"); document.getElementById("prev_" + key).textContent = ""; }
+ }
+ function readRuleField(key) {
+ const sel = document.getElementById("cfg_rule_" + key);
+ if (sel.value !== "custom") return sel.value;
+ return "custom:" + document.getElementById("cfg_custom_" + key).value.trim();
  }
 
  function getPeriodText(cat) {
@@ -3694,20 +4004,29 @@
  savePlanningLocal();
  initTable();
  toggleStaffConfig();
- showToast("✅ Zuständigen-Liste aktualisiert – mit ☁️ Plan sichern online speichern", "ok");
+ syncPlanningToGoogleSheet(true).then(() => showToast("✅ Zuständigen-Liste gespeichert – gilt jetzt auf allen Geräten", "ok"))
+ .catch(() => showToast("Zuständige lokal geändert – online nicht erreichbar, bitte später „☁️ Sichern“.", "warn", 5000));
  }
  function saveIntervalConfig() {
- runtimeConfig.rule_nebensaison = document.getElementById("cfg_rule_nebensaison").value;
- runtimeConfig.rule_saison_t1 = document.getElementById("cfg_rule_saison_t1").value;
- runtimeConfig.rule_saison_t2 = document.getElementById("cfg_rule_saison_t2").value;
- runtimeConfig.rule_december = document.getElementById("cfg_rule_december").value;
+ for (const key of ["nebensaison", "saison_t1", "saison_t2", "december"]) {
+ if (document.getElementById("cfg_rule_" + key).value === "custom" && !previewCustomRule(key)) {
+ showToast("❌ Eine eigene Regel ist leer oder wurde nicht verstanden – bitte korrigieren (rot markiert).", "err", 6000);
+ document.getElementById("cfg_custom_" + key).focus();
+ return;
+ }
+ }
+ runtimeConfig.rule_nebensaison = readRuleField("nebensaison");
+ runtimeConfig.rule_saison_t1 = readRuleField("saison_t1");
+ runtimeConfig.rule_saison_t2 = readRuleField("saison_t2");
+ runtimeConfig.rule_december = readRuleField("december");
  runtimeConfig.quartal_tage = document.getElementById("cfg_quartal_intervall").value;
  runtimeConfig.vorlauf_tage = parseInt(document.getElementById("cfg_vorlauf_tage").value) || 45;
  planningConfigDirty = true;
  savePlanningLocal();
  initTable();
  toggleIntervalConfig();
- showToast("✅ Stichtag-Regeln übernommen – mit ☁️ Plan sichern online speichern", "ok");
+ syncPlanningToGoogleSheet(true).then(() => showToast("✅ Stichtag-Regeln gespeichert – gelten jetzt auf allen Geräten", "ok"))
+ .catch(() => showToast("Regeln lokal übernommen – online nicht erreichbar, bitte später „☁️ Sichern“.", "warn", 5000));
  }
  function changeYearSelection() {
  runtimeConfig.selected_year = document.getElementById("yearSelectTrigger").value;
@@ -3734,7 +4053,7 @@
  const timeElem = document.getElementById("systemTimeDisplay");
  if (timeElem) {
  const cycleInfo = (curMonth >= 4 && curMonth <= 8) ? (curDay >= 15 ? " [Zyklus: T2 Monatsmitte]" : " [Zyklus: T1 Monatsanfang]") : " [Zyklus: Monatsmitte]";
- timeElem.textContent = `Erkannte Systemzeit: ${curDay}. ${monthNames[curMonth]} ${curYear} ${cycleInfo}`;
+ timeElem.textContent = `Heute: ${curDay}. ${monthNames[curMonth]} ${curYear}${cycleInfo.replace(" [Zyklus:", " · Zyklus").replace("]", "")}`;
  }
  if (selectedYear === "ALL") return allScheduleData;
  if (selectedYear !== "AUTO") {
@@ -3761,10 +4080,12 @@
 
  const triggerSelect = document.getElementById("yearSelectTrigger");
  if (triggerSelect) triggerSelect.value = runtimeConfig.selected_year || "AUTO";
- document.getElementById("cfg_rule_nebensaison").value = runtimeConfig.rule_nebensaison || "thursday_penultimate";
- document.getElementById("cfg_rule_saison_t1").value = runtimeConfig.rule_saison_t1 || "thursday_first";
- document.getElementById("cfg_rule_saison_t2").value = runtimeConfig.rule_saison_t2 || "thursday_penultimate";
- document.getElementById("cfg_rule_december").value = runtimeConfig.rule_december || "minus_3";
+ if (!document.getElementById("intervalDrawer").classList.contains("active")) {
+ setRuleField("nebensaison", runtimeConfig.rule_nebensaison, "thursday_penultimate");
+ setRuleField("saison_t1", runtimeConfig.rule_saison_t1, "thursday_first");
+ setRuleField("saison_t2", runtimeConfig.rule_saison_t2, "thursday_penultimate");
+ setRuleField("december", runtimeConfig.rule_december, "minus_3");
+ }
  document.getElementById("cfg_quartal_intervall").value = runtimeConfig.quartal_tage || "90";
  document.getElementById("cfg_vorlauf_tage").value = runtimeConfig.vorlauf_tage || 45;
 
@@ -3776,11 +4097,7 @@
  const isDone = state.done_date && state.chk_verfall && state.sign;
  const isCurrent = row.key === curKey;
  const exactDate = calculateExactDeadlineDate(row.year, row.monthIdx, row.cat, row.isSpecialDec, runtimeConfig);
- const periodText = getPeriodText(row.cat);
-
- let intervallDetail = `Frist: ${exactDate}`;
- if (row.isSpecialDec && (runtimeConfig.rule_december || "minus_3") !== "none") intervallDetail += " (Weihnachtsvorziehung)";
- if (row.isQuarterly) intervallDetail = `Quartals-Audit (${runtimeConfig.quartal_tage}d)`;
+ const due = describeDue(exactDate, row, isDone);
 
  let selectedPerson = state.person || row.defaultPerson;
  const staffForRow = runtimeStaffList.includes(selectedPerson) ? runtimeStaffList : [selectedPerson, ...runtimeStaffList];
@@ -3789,61 +4106,42 @@
  const isOrderSent = !!state.order_sent;
  const order = (state.order_id && orderHistory.find(o => o.id === state.order_id)) || orderHistory.find(o => o.cycleKey === row.key) || null;
  const orderLink = order
- ? `<span class="order-link" onclick="showOrder('${esc(order.id)}')">📦 ${order.items.filter(i => i.qty > 0).length} Pos.</span><br>
- <span class="order-link" onclick="openHandover('${esc(order.id)}')">📄 Übergabe${order.handover ? " ✓" : ""}</span>`
+ ? `<div class="row-links"><span class="row-link order-link" title="Bestellung in der Auswertung zeigen" onclick="showOrder('${esc(order.id)}')">📦 ${order.items.filter(i => i.qty > 0).length} Pos.</span>
+ <span class="row-link${order.handover ? " ok" : ""}" title="Übergabe ans Hauptlager öffnen" onclick="openHandover('${esc(order.id)}')">📄 Übergabe${order.handover ? " ✓" : ""}</span></div>`
  : "";
+ const k = row.key;
 
  const tr = document.createElement("tr");
- tr.id = `row_${row.key}`;
+ tr.id = `row_${k}`;
  if (isCurrent) tr.classList.add("current-cycle");
  tr.innerHTML = `
  <td><strong>${row.orderNum}</strong></td>
  <td>
- <strong style="display:block; font-size: 7.5pt; line-height: 1.2;">${row.month}</strong>
- ${isCurrent ? '<span class="badge badge-current">AKTUELL</span>' : ""}
+ <div class="cyc-name">${esc(row.month)}</div>
+ <div class="cyc-tags">${isCurrent ? '<span class="badge badge-current">AKTUELL</span>' : ""}<span class="badge ${row.badge}">${esc(row.type)}</span>${row.isQuarterly ? '<span class="badge badge-quartal" title="Quartals-Audit">Quartal</span>' : ""}</div>
  </td>
- <td>
- <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
- <span style="font-size: 7pt; font-weight: bold; color: var(--text);">${periodText}</span>
- <span class="badge badge-deadline" style="white-space: nowrap;">📅 ${exactDate}</span>
- </div>
- <div style="font-size: 6.5pt; color: var(--text-muted); margin-top: 1px;">${intervallDetail}</div>
+ <td title="Stichtag">
+ <div class="due-date"><span class="due-wd">${due.wd}</span>${exactDate}</div>
+ <div class="due-sub">${due.sub}</div>
+ ${due.rel ? `<span class="due-rel ${due.cls}">${due.rel}</span>` : ""}
  </td>
- <td>
- <span class="badge ${row.badge}" style="display:inline-block; font-size: 6.5pt;">${row.type}</span>
- ${row.isQuarterly ? '<br><span class="badge badge-quartal" style="display:inline-block; margin-top:2px; font-size: 6.5pt;">Quartalsaudit</span>' : ""}
- </td>
- <td>
- <select id="person_${row.key}" onchange="savePlanningData('${row.key}')" style="width: 100%; min-width: 105px; font-size: 7.5pt; padding: 3px; height: 30px !important;">
- ${optionsHtml}
- </select>
- </td>
- <td><input type="date" id="date_${row.key}" value="${esc(state.done_date || "")}" onchange="savePlanningData('${row.key}')" style="font-size: 7.5pt; width: 100%; min-width: 100px; padding: 2px; height: 30px !important;"></td>
- <td style="text-align: center;">
- <input type="checkbox" id="chk_${row.key}" ${state.chk_verfall ? "checked" : ""} onchange="savePlanningData('${row.key}')" style="width: 16px; height: 16px; cursor: pointer;">
- </td>
+ <td><select id="person_${k}" class="pl-in" onchange="savePlanningData('${k}')">${optionsHtml}</select></td>
+ <td><input type="date" id="date_${k}" class="pl-in" value="${esc(state.done_date || "")}" onchange="savePlanningData('${k}')"></td>
+ <td style="text-align: center;"><input type="checkbox" id="chk_${k}" class="pl-chk" title="Verfallsdaten geprüft" ${state.chk_verfall ? "checked" : ""} onchange="savePlanningData('${k}')"></td>
  <td style="text-align: center;">
  <label class="switch switch-order" style="display: inline-block; margin: 0 auto;">
- <input type="checkbox" id="order_${row.key}" ${isOrderSent ? "checked" : ""} onchange="savePlanningData('${row.key}')">
+ <input type="checkbox" id="order_${k}" ${isOrderSent ? "checked" : ""} onchange="savePlanningData('${k}')">
  <span class="slider"></span>
  </label>
- <div id="lbl_order_${row.key}" style="font-size: 6.5pt; font-weight: bold; color: ${isOrderSent ? "var(--success)" : "var(--text-muted)"}; margin-top: 1px;">
- ${isOrderSent ? "Ja" : "Nein"}
- </div>
+ <div id="lbl_order_${k}" class="ord-lbl" style="color: ${isOrderSent ? "var(--success)" : "var(--text-muted)"};">${isOrderSent ? "Ja" : "Nein"}</div>
  ${orderLink}
  </td>
- <td>
- <textarea class="auto-grow" id="rtw_${row.key}" placeholder="RTW-Abläufe..." style="min-width: 115px; font-size: 7.5pt;" oninput="autoGrow(this); savePlanningData('${row.key}')">${esc(state.rtw_exp || "")}</textarea>
- </td>
- <td>
- <textarea class="auto-grow" id="nef_${row.key}" placeholder="NEF-Abläufe..." style="min-width: 115px; font-size: 7.5pt;" oninput="autoGrow(this); savePlanningData('${row.key}')">${esc(state.nef_exp || "")}</textarea>
- </td>
- <td>
- <textarea class="auto-grow" id="note_${row.key}" placeholder="Notiz zu diesem Zyklus…" style="min-width: 140px; font-size: 7.5pt;" oninput="autoGrow(this); savePlanningData('${row.key}')">${esc(state.note || "")}</textarea>
- </td>
- <td><input type="text" id="sign_${row.key}" placeholder="Kürzel" value="${esc(state.sign || "")}" oninput="savePlanningData('${row.key}')" style="width: 100%; min-width: 45px; font-size: 7.5pt; padding: 3px; text-align: center; height: 30px !important;"></td>
- <td style="text-align: center;"><div id="status_${row.key}">${getStatusBadge(isDone)}</div>
- <button type="button" class="btn-row-reset" title="Zyklus komplett zurücksetzen" onclick="resetCycle('${row.key}')">🗑️</button></td>
+ <td><textarea rows="1" class="auto-grow pl-ta" id="rtw_${k}" placeholder="RTW …" oninput="autoGrow(this); savePlanningData('${k}')">${esc(state.rtw_exp || "")}</textarea></td>
+ <td><textarea rows="1" class="auto-grow pl-ta" id="nef_${k}" placeholder="NEF …" oninput="autoGrow(this); savePlanningData('${k}')">${esc(state.nef_exp || "")}</textarea></td>
+ <td><textarea rows="1" class="auto-grow pl-ta" id="note_${k}" placeholder="Notiz …" oninput="autoGrow(this); savePlanningData('${k}')">${esc(state.note || "")}</textarea></td>
+ <td><input type="text" id="sign_${k}" class="pl-in center" placeholder="Kürzel" value="${esc(state.sign || "")}" oninput="savePlanningData('${k}')"></td>
+ <td style="text-align: center;"><div id="status_${k}">${getStatusBadge(isDone, k)}</div>
+ <button type="button" class="btn-row-reset" title="Zyklus komplett zurücksetzen" onclick="resetCycle('${k}')">🗑️</button></td>
  `;
  tbody.appendChild(tr);
  });
@@ -3851,12 +4149,34 @@
  document.querySelectorAll("#tableBody textarea.auto-grow").forEach(t => autoGrow(t));
  refreshQuickFields();
  renderHandoverPanel();
- updateSQL();
  savePlanningLocal();
  }
 
- function getStatusBadge(isDone) {
- return isDone ? '<span class="badge badge-success">OK</span>' : '<span class="badge badge-pending">Offen</span>';
+ function getStatusBadge(isDone, key) {
+ if (isDone) return '<span class="st-pill ok">✓ Erledigt</span>';
+ const row = key && allScheduleData.find(r => r.key === key);
+ if (row && describeDue(calculateExactDeadlineDate(row.year, row.monthIdx, row.cat, row.isSpecialDec, runtimeConfig), row, false).cls === "late")
+ return '<span class="st-pill late">Überfällig</span>';
+ return '<span class="st-pill open">Offen</span>';
+ }
+
+ // Stichtag hübsch: Wochentag, Prüfzeitraum, „in 5 Tagen“ / „3 Tage überfällig“
+ function describeDue(exactDate, row, isDone) {
+ const m = String(exactDate || "").match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+ const d = m ? new Date(+m[3], +m[2] - 1, +m[1]) : null;
+ const wd = d ? ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"][d.getDay()] : "";
+ let sub = getPeriodText(row.cat).replace("Kontrolle: ", "Kontrolle ").replace(/ – /, "–").replace(" d. M.", "");
+ if (row.isSpecialDec && (runtimeConfig.rule_december || "minus_3") !== "none") sub += " · vorgezogen";
+ if (!d) return { wd, sub, rel: "", cls: "" };
+ const t = new Date(); t.setHours(0, 0, 0, 0);
+ const diff = Math.round((d - t) / 86400000);
+ if (isDone) return { wd, sub, rel: "✓ erledigt", cls: "done" };
+ if (diff < -30) return { wd, sub, rel: "", cls: "" };
+ if (diff < 0) return { wd, sub, rel: diff === -1 ? "seit gestern überfällig" : `${-diff} Tage überfällig`, cls: "late" };
+ if (diff === 0) return { wd, sub, rel: "heute fällig", cls: "soon" };
+ if (diff === 1) return { wd, sub, rel: "morgen fällig", cls: "soon" };
+ if (diff <= 14) return { wd, sub, rel: `in ${diff} Tagen`, cls: diff <= 7 ? "soon" : "" };
+ return { wd, sub, rel: "", cls: "" };
  }
 
  function savePlanningData(rowKey) {
@@ -3879,10 +4199,9 @@
  sign: g(`sign_${rowKey}`).value
  });
  const s = runtimeAuditState[rowKey];
- g(`status_${rowKey}`).innerHTML = getStatusBadge(s.done_date && s.chk_verfall && s.sign);
+ g(`status_${rowKey}`).innerHTML = getStatusBadge(s.done_date && s.chk_verfall && s.sign, rowKey);
  planningDirtyKeys.add(rowKey);
  savePlanningLocal();
- updateSQL();
  if (rowKey === getActiveRowKey()) refreshQuickFields();
  }
 
@@ -3906,6 +4225,7 @@
  savePlanningLocal();
  if (removeOrder) {
  orderHistory = orderHistory.filter(o => o.id !== order.id);
+ rememberDeletedOrder(order.id);
  saveHistoryLocal();
  postToScript({ action: "DELETE_ORDER", id: order.id }).catch(() => {});
  }
@@ -3922,7 +4242,7 @@
  }
  planningDirtyKeys.add(rowKey);
  savePlanningLocal();
- if (document.getElementById(`row_${rowKey}`)) initTable(); else updateSQL();
+ if (document.getElementById(`row_${rowKey}`)) initTable();
  }
 
  // Aktiver Zyklus = aktueller Zyklus, oder – falls schon erledigt – der nächste offene
@@ -3963,7 +4283,6 @@
  if (fieldNef) { fieldNef.value = qNef; autoGrow(fieldNef); }
  planningDirtyKeys.add(rowKey);
  savePlanningLocal();
- updateSQL();
  }
 
  function clearActiveVehicleInputs() {
@@ -4003,11 +4322,13 @@
  Object.keys(hlMap).forEach(k => { configToSend["map::" + k] = hlMap[k]; });
  const orders = getSavedOrders();
  Object.keys(orders).forEach(sh => { configToSend["order::" + sh] = JSON.stringify(orders[sh]); });
+ Object.assign(configToSend, hoConfigEntries());
  try {
  const res = await postToScript({ action: "SAVE_PLANNING", cycles: cyclesPayload, config: configToSend, staff: runtimeStaffList });
  planningDirtyKeys.clear();
  planningConfigDirty = false;
  savePlanningLocal();
+ markHoPushed();
  setSyncStatus("blue", `Plan & Einstellungen online gesichert (${new Date().toLocaleTimeString()})${res.confirmed ? "" : " – ohne Bestätigung"}`);
  if (!silent) showToast("✅ Fristenplan in Google Sheets gesichert (Reiter „Kontrollplaner“ & „Terminal_Einstellungen“)", res.confirmed ? "ok" : "warn", 5000);
  return res;
@@ -4064,14 +4385,18 @@
  const newCfg = {};
  const cloudMap = {};
  const cloudOrders = {};
+ const hoRows = {}, delRows = {};
  (cfg.table.rows || []).forEach(r => {
  if (!r || !r.c) return;
  const category = cellStr(r.c[0]).trim(), param = cellStr(r.c[1]).trim(), val = cellStr(r.c[2]).trim();
- if (category === "Regel" && param.startsWith("map::") && val) cloudMap[param.slice(5)] = val;
+ if (category === "Regel" && param.startsWith("ho::") && val) { try { hoRows[param.slice(4)] = JSON.parse(val); } catch (_) {} }
+ else if (category === "Regel" && param.startsWith("del::")) delRows[param.slice(5)] = val || "1";
+ else if (category === "Regel" && param.startsWith("map::") && val) cloudMap[param.slice(5)] = val;
  else if (category === "Regel" && param.startsWith("order::") && val) { try { cloudOrders[param.slice(7)] = JSON.parse(val); } catch (_) {} }
  else if (category === "Regel" && param && val !== "" && param !== "selected_year") newCfg[param] = param === "vorlauf_tage" ? (parseInt(val) || 45) : val;
  else if (category === "Personal" && val && !loadedStaff.includes(val)) loadedStaff.push(val);
  });
+ mergeCloudHo(hoRows, delRows);
  if (!planningConfigDirty) {
  Object.assign(runtimeConfig, newCfg);
  if (Object.keys(cloudMap).length) { hlMap = Object.assign({}, hlMap, cloudMap); saveHlMap(); }
@@ -4087,147 +4412,6 @@
  setSyncStatus(pending ? "orange" : "green", `✅ Live-Daten geladen (${new Date().toLocaleTimeString()})${pending ? ` – ${pending} lokale Änderung(en) noch nicht gesichert` : ""}`);
  if (!silent) showToast(`✅ ${cycleCount} Zyklen, Regeln & ${runtimeStaffList.length} Mitarbeiter geladen`, "ok");
  return true;
- }
-
- function generateSQLText() {
- const q = v => String(v === undefined || v === null ? "" : v).replace(/'/g, "''");
- let sql = `-- ====================================================================\n`;
- sql += `-- SQLite Datenbank: RW Sassnitz Lager- & Audit-Terminal\n`;
- sql += `-- ====================================================================\n\n`;
- sql += `CREATE TABLE IF NOT EXISTS terminal_konfiguration (\n einstellung TEXT PRIMARY KEY,\n wert TEXT NOT NULL\n);\n\n`;
- sql += `INSERT OR REPLACE INTO terminal_konfiguration (einstellung, wert) VALUES\n`;
- sql += ` ('rule_nebensaison', '${q(runtimeConfig.rule_nebensaison)}'),\n`;
- sql += ` ('rule_saison_t1', '${q(runtimeConfig.rule_saison_t1)}'),\n`;
- sql += ` ('rule_saison_t2', '${q(runtimeConfig.rule_saison_t2)}'),\n`;
- sql += ` ('rule_december', '${q(runtimeConfig.rule_december)}'),\n`;
- sql += ` ('quartal_tage', '${q(runtimeConfig.quartal_tage)}'),\n`;
- sql += ` ('vorlauf_tage', '${q(runtimeConfig.vorlauf_tage)}'),\n`;
- sql += ` ('selected_year', '${q(runtimeConfig.selected_year)}');\n\n`;
- sql += `CREATE TABLE IF NOT EXISTS wachen_personal (\n id INTEGER PRIMARY KEY AUTOINCREMENT,\n name TEXT NOT NULL UNIQUE\n);\n\n`;
- runtimeStaffList.forEach(name => { sql += `INSERT OR IGNORE INTO wachen_personal (name) VALUES ('${q(name)}');\n`; });
- sql += `\n`;
- sql += `CREATE TABLE IF NOT EXISTS lager_audit_matrix (\n`;
- sql += ` jahres_zyklus_schluessel TEXT PRIMARY KEY,\n jahr INTEGER NOT NULL,\n bestell_nr TEXT NOT NULL,\n zyklus_name TEXT NOT NULL,\n pruefungszeitraum TEXT NOT NULL,\n stichtag_datum TEXT NOT NULL,\n bestelltyp TEXT NOT NULL,\n quartalspruefung INTEGER DEFAULT 0,\n zustaendig TEXT NOT NULL,\n erledigt_am DATE,\n verfallsdaten_lager_ok INTEGER DEFAULT 0,\n bestellung_erfolgt INTEGER DEFAULT 0,\n fahrzeug_bedarf_rtw TEXT,\n fahrzeug_bedarf_nef TEXT,\n handzeichen TEXT,\n status TEXT NOT NULL,\n notiz TEXT\n);\n\n`;
- allScheduleData.forEach(row => {
- const s = runtimeAuditState[row.key] || {};
- const isDone = s.done_date && s.chk_verfall && s.sign;
- const exactDate = calculateExactDeadlineDate(row.year, row.monthIdx, row.cat, row.isSpecialDec, runtimeConfig);
- const nul = v => v ? `'${q(v)}'` : "NULL";
- sql += `INSERT OR REPLACE INTO lager_audit_matrix (jahres_zyklus_schluessel, jahr, bestell_nr, zyklus_name, pruefungszeitraum, stichtag_datum, bestelltyp, quartalspruefung, zustaendig, erledigt_am, verfallsdaten_lager_ok, bestellung_erfolgt, fahrzeug_bedarf_rtw, fahrzeug_bedarf_nef, handzeichen, status, notiz) VALUES ('${row.key}', ${row.year}, '${row.orderNum}', '${q(row.month)}', '${q(getPeriodText(row.cat))}', '${exactDate}', '${q(row.type)}', ${row.isQuarterly ? 1 : 0}, '${q(s.person || row.defaultPerson)}', ${nul(s.done_date)}, ${s.chk_verfall ? 1 : 0}, ${s.order_sent ? 1 : 0}, ${nul(s.rtw_exp)}, ${nul(s.nef_exp)}, ${nul(s.sign)}, '${isDone ? "ERLEDIGT" : "OFFEN"}', ${nul(s.note)});\n`;
- });
- return sql;
- }
-
- function updateSQL() {
- const el = document.getElementById("sqlOutput");
- if (el && activeTab === "planning") el.textContent = generateSQLText();
- }
-
- function saveToSqlFile() {
- const blob = new Blob([generateSQLText()], { type: "text/plain;charset=utf-8" });
- const a = document.createElement("a");
- a.href = URL.createObjectURL(blob);
- a.download = "Lager_Audit_RW_Sassnitz.sql";
- a.click();
- showToast("✅ Als 'Lager_Audit_RW_Sassnitz.sql' exportiert", "ok");
- }
-
- function handleFileImport(event) {
- const file = event.target.files[0];
- if (file) parseSqlFileContent(file);
- }
-
- function parseSqlFileContent(file) {
- const reader = new FileReader();
- reader.onload = function (e) {
- const statements = splitSqlStatements(e.target.result);
- const loadedStaff = [];
- const importedRows = {};
- let configFound = false;
- for (let stmt of statements) {
- stmt = stmt.trim();
- if (!stmt) continue;
- if (stmt.includes("terminal_konfiguration") && stmt.includes("VALUES")) {
- const valBlock = stmt.substring(stmt.indexOf("VALUES") + 6);
- const rowRegex = /\('([^']+)',\s*'([^']*)'\)/g;
- let m;
- while ((m = rowRegex.exec(valBlock)) !== null) {
- const k = m[1], v = m[2];
- if (k in runtimeConfig) { runtimeConfig[k] = (k === "vorlauf_tage") ? (parseInt(v) || 45) : v; configFound = true; }
- }
- }
- if (stmt.includes("wachen_personal") && stmt.includes("VALUES")) {
- const m = stmt.match(/VALUES\s*\(\s*'((?:[^']|'')+)'\s*\)/i);
- if (m) {
- const name = m[1].replace(/''/g, "'").trim();
- if (!loadedStaff.includes(name)) loadedStaff.push(name);
- }
- }
- if (stmt.includes("lager_audit_matrix") && stmt.includes("VALUES")) {
- const afterVal = stmt.substring(stmt.indexOf("VALUES"));
- const firstParen = afterVal.indexOf("("), lastParen = afterVal.lastIndexOf(")");
- if (firstParen !== -1 && lastParen > firstParen) {
- const tokens = tokenizeSqlValues(afterVal.substring(firstParen + 1, lastParen));
- if (tokens.length >= 10) {
- const key = unquoteSql(tokens[0]);
- const st = { person: unquoteSql(tokens[8]), done_date: tokens[9] === "NULL" ? "" : unquoteSql(tokens[9]), chk_verfall: tokens[10] === "1", order_sent: false, rtw_exp: "", nef_exp: "", sign: "" };
- const val = i => (tokens.length > i && tokens[i] !== "NULL") ? unquoteSql(tokens[i]) : "";
- if (tokens.length >= 15) { st.order_sent = tokens[11] === "1"; st.rtw_exp = val(12); st.nef_exp = val(13); st.sign = val(14); st.note = val(16); }
- else { st.rtw_exp = val(11); st.nef_exp = val(12); st.sign = val(13); }
- if (key) importedRows[key] = st;
- }
- }
- }
- }
- if (loadedStaff.length > 0) runtimeStaffList = loadedStaff;
- const rowCount = Object.keys(importedRows).length;
- if (rowCount > 0 || loadedStaff.length > 0 || configFound) {
- Object.keys(importedRows).forEach(k => {
- runtimeAuditState[k] = Object.assign({}, runtimeAuditState[k] || {}, importedRows[k]);
- planningDirtyKeys.add(k);
- });
- if (configFound || loadedStaff.length) planningConfigDirty = true;
- initTable();
- showToast(`✅ SQL-Datei '${esc(file.name)}' geladen (${rowCount} Zyklen) – mit ☁️ Plan sichern online übernehmen`, "ok", 5000);
- } else alert("⚠️ Die Datei konnte nicht eingelesen werden.");
- document.getElementById("importFileInput").value = "";
- };
- reader.readAsText(file);
- }
-
- function splitSqlStatements(text) {
- const statements = [];
- let cur = "", inQuote = false;
- for (let i = 0; i < text.length; i++) {
- const c = text[i];
- if (c === "'") {
- if (inQuote && text[i + 1] === "'") { cur += "''"; i++; continue; }
- inQuote = !inQuote; cur += c;
- } else if (c === ";" && !inQuote) { statements.push(cur); cur = ""; }
- else cur += c;
- }
- if (cur.trim()) statements.push(cur);
- return statements;
- }
- function tokenizeSqlValues(str) {
- const result = [];
- let cur = "", inQuote = false;
- for (let i = 0; i < str.length; i++) {
- const c = str[i];
- if (c === "'") {
- if (inQuote && str[i + 1] === "'") { cur += "''"; i++; continue; }
- inQuote = !inQuote; cur += c;
- } else if (c === "," && !inQuote) { result.push(cur.trim()); cur = ""; }
- else cur += c;
- }
- if (cur.trim()) result.push(cur.trim());
- return result;
- }
- function unquoteSql(val) {
- if (!val) return "";
- let s = val.trim();
- if (s.startsWith("'") && s.endsWith("'")) s = s.substring(1, s.length - 1);
- return s.replace(/''/g, "'");
  }
 
  function resetForm() {
@@ -4308,9 +4492,12 @@
  const known = new Set(orderHistory.map(o => o.id));
  let added = 0;
  Object.values(byId).forEach(o => {
+ if (deletedOrders[o.id]) return;
  if (!known.has(o.id)) { orderHistory.push(o); added++; }
  else { const loc = orderHistory.find(x => x.id === o.id); if (loc) loc.synced = true; }
  });
+ orderHistory = orderHistory.filter(o => !deletedOrders[o.id]);
+ applyHoState();
  saveHistoryLocal();
  lastHistoryCloudLoad = Date.now();
  if (activeTab === "stats") renderStats();
@@ -4350,6 +4537,7 @@
  const orders = ordersInRange();
  const kpis = document.getElementById("stats-kpis");
  const unsynced = orderHistory.filter(o => !o.synced).length;
+ const rb = document.getElementById("btn-resend"); if (rb) rb.style.display = unsynced ? "" : "none";
  document.getElementById("stats-subtitle").innerHTML = `${orderHistory.length} Bestellung(en) gespeichert` +
  (unsynced ? ` · <span style="color: var(--warning); font-weight: 700;">${unsynced} noch nicht online</span>` : " · alle online gesichert");
 
@@ -4546,6 +4734,7 @@
  const o = orderHistory.find(x => x.id === id);
  if (!o || !confirm(`Bestellung vom ${fmtDateDE(o.date || o.ts.slice(0, 10))} (${o.cycleLabel}) wirklich löschen?\nSie wird auch aus dem Reiter „Bestellhistorie“ in Google Sheets entfernt.`)) return;
  orderHistory = orderHistory.filter(x => x.id !== id);
+ rememberDeletedOrder(id);
  saveHistoryLocal();
  // Verknüpfung im Fristenplan lösen (der Zyklus selbst bleibt – zurücksetzen geht über 🗑️ in der Tabelle)
  Object.keys(runtimeAuditState).forEach(k => {
@@ -4556,7 +4745,7 @@
  if (activeTab === "planning") initTable(); else renderStats();
  nameCheck.at = 0;
  showToast("🗑️ Bestellung gelöscht", "ok");
- try { await postToScript({ action: "DELETE_ORDER", id }); if (planningDirtyKeys.size) syncPlanningToGoogleSheet(true).catch(() => {}); }
+ try { await postToScript({ action: "DELETE_ORDER", id }); syncPlanningToGoogleSheet(true).catch(() => {}); }
  catch (e) { showToast("Lokal gelöscht – online nicht erreichbar, bitte später „☁️ Plan sichern“.", "warn", 6000); }
  }
 
@@ -5199,7 +5388,9 @@
  sheetTitle: ho.model.title, month: ho.month, week: ho.week, col: res.col,
  cells: res.cells, email: emailLines(lines)
  };
+ ho.order.hoU = Date.now();
  saveHistoryLocal();
+ syncPlanningToGoogleSheet(true).catch(() => showToast("Übergabe lokal gespeichert – online nicht erreichbar, bitte später „☁️ Sichern“ im Fristenplan.", "warn", 6000));
  await idbPut("order_" + ho.order.id, { blob: res.blob, name: outName, created: ho.order.handover.createdAt });
  await idbPut("last_template", { blob: res.blob, name: outName, created: ho.order.handover.createdAt });
  downloadBlob(res.blob, outName);
@@ -5255,7 +5446,12 @@
  <div class="order-chips"><span class="o-chip">${o.items.filter(i => i.qty > 0).length} Pos.</span><span class="o-chip">${units} Stk.</span></div>
  </div>`;
 
- if (hd) {
+ if (hd && hd.manual) {
+ html += `<div class="ho-done">
+ <div>✅ <strong>Bestellliste als erstellt abgehakt</strong> am ${fmtDateTimeDE(hd.createdAt)} (ohne Datei – z. B. auf einem anderen Gerät erstellt)</div>
+ <div class="ho-actions"><button type="button" class="btn-action" onclick="markListDone('${esc(o.id)}', false)">Markierung entfernen</button></div>
+ </div>`;
+ } else if (hd) {
  html += `<div class="ho-done">
  <div>✅ <strong>Bestellliste erstellt</strong> am ${fmtDateTimeDE(hd.createdAt)} · ${MONTHS[hd.month]} Woche ${hd.week + 1} (Spalte ${esc(hd.col)}) · ${hd.cells.length} Artikel eingetragen</div>
  <div class="ho-actions"><button type="button" class="btn-action btn-sync" onclick="hoDownloadArchived('${esc(o.id)}')">📥 ${esc(hd.outName)} erneut herunterladen</button></div>
@@ -5276,6 +5472,7 @@
  <input type="file" accept=".xlsx" style="display:none" onchange="hoLoadFile(this.files[0])">
  <div style="font-size:24px;">📄</div><strong>Bestellliste (.xlsx) hierher ziehen oder antippen</strong>
  <div class="ho-sub">Die Datei, die das Hauptlager schickt – z. B. „Bestellliste_Sassnitz_20.08.26.xlsx“</div></label>`;
+ if (!hd) html += `<button type="button" class="mgr-mini wide" style="margin-top:6px;" onclick="markListDone('${esc(o.id)}', true)">✓ Liste wurde schon erstellt – nur abhaken</button>`;
  if (ho.templateInfo) html += `<button type="button" class="mgr-mini wide" style="margin-top:6px;" onclick="hoUseTemplate()">↺ Zuletzt erstellte Liste als Grundlage nehmen (${esc(ho.templateInfo.name)}, ${fmtDateTimeDE(ho.templateInfo.created)})</button>`;
  } else {
  const secs = {};
@@ -5518,12 +5715,139 @@
  if (!o) return;
  if (!val && !confirm("Markierung „Bestellung ist raus“ wirklich zurücknehmen?")) return;
  o.sentAt = val ? new Date().toISOString() : null;
+ o.hoU = Date.now();
  saveHistoryLocal();
  setPlanningFields(o.cycleKey, { order_sent: !!val, order_id: o.id });
  syncPlanningToGoogleSheet(true).catch(() => showToast("Lokal gespeichert – bitte später „☁️ Plan sichern“.", "warn", 5000));
  if (ho && ho.order === o) renderHandover();
  renderHandoverPanel();
  showToast(val ? "📨 Bestellung abgeschlossen – im Fristenplan „Bestellt? = Ja“" : "Markierung zurückgenommen", "ok", 4000);
+ }
+
+ // ---------- Übergabe-Status geräteübergreifend (Reiter Terminal_Einstellungen, Schlüssel ho::<Bestell-ID>) ----------
+ const KEY_HO = "rw_sassnitz_ho_state", KEY_HO_DEL = "rw_sassnitz_deleted_orders";
+ let cloudHo = LS.get(KEY_HO, {}) || {};
+ let deletedOrders = LS.get(KEY_HO_DEL, {}) || {};
+ function packHo(o) {
+ if (!o.handover && !o.sentAt && !o.hoU) return null;
+ const h = o.handover;
+ return {
+ u: o.hoU || Date.parse((h && h.createdAt) || o.sentAt || o.ts) || 1,
+ sent: o.sentAt || null,
+ h: h ? { x: h.manual ? 1 : 0, c: h.createdAt, o: h.outName, t: h.sheetTitle || "", s: h.sourceName || "", m: h.month, w: h.week, col: h.col,
+ cells: (h.cells || []).map(c => [c.ref, c.hlName, c.qty, c.prev, (c.ours || []).join(" | ")]),
+ e: (h.email || []).map(e => [e.name, e.qty, e.reason]) } : null
+ };
+ }
+ function unpackHandover(h) {
+ return { manual: !!h.x, createdAt: h.c, outName: h.o, sheetTitle: h.t, sourceName: h.s, month: h.m, week: h.w, col: h.col,
+ cells: (h.cells || []).map(c => ({ ref: c[0], hlName: c[1], qty: c[2], prev: c[3], ours: c[4] ? String(c[4]).split(" | ") : [] })),
+ email: (h.e || []).map(e => ({ name: e[0], qty: e[1], reason: e[2] })) };
+ }
+ function hoConfigEntries() {
+ const out = {};
+ const ids = new Set();
+ orderHistory.forEach(o => { const p = packHo(o); if (p) { out["ho::" + o.id] = JSON.stringify(p); ids.add(o.id); } });
+ // Stände anderer Geräte behalten, auch wenn die Bestellung hier noch nicht geladen ist
+ Object.keys(cloudHo).forEach(id => { if (!ids.has(id) && !deletedOrders[id]) out["ho::" + id] = JSON.stringify(cloudHo[id]); });
+ Object.keys(deletedOrders).forEach(id => { out["del::" + id] = String(deletedOrders[id]); });
+ return out;
+ }
+ function mergeCloudHo(hoRows, delRows) {
+ Object.keys(delRows || {}).forEach(id => { if (!deletedOrders[id]) deletedOrders[id] = delRows[id]; });
+ Object.keys(hoRows || {}).forEach(id => {
+ const loc = cloudHo[id];
+ if (!loc || (hoRows[id].u || 0) >= (loc.u || 0)) cloudHo[id] = hoRows[id];
+ });
+ Object.keys(deletedOrders).forEach(id => { delete cloudHo[id]; });
+ LS.set(KEY_HO, cloudHo); LS.set(KEY_HO_DEL, deletedOrders);
+ const before = orderHistory.length;
+ orderHistory = orderHistory.filter(o => !deletedOrders[o.id]);
+ if (orderHistory.length !== before) saveHistoryLocal();
+ applyHoState();
+ }
+ // Übernimmt „Liste erstellt“ und „Bestellung ist raus“ von anderen Geräten
+ function applyHoState() {
+ let changed = false;
+ orderHistory.forEach(o => {
+ const st = cloudHo[o.id];
+ if (!st) return;
+ const newer = (st.u || 0) > (o.hoU || 0);
+ if (st.h && (!o.handover || newer)) { o.handover = unpackHandover(st.h); changed = true; }
+ if (newer) { o.sentAt = st.sent || null; o.hoU = st.u; changed = true; }
+ });
+ if (changed) saveHistoryLocal();
+ return changed;
+ }
+ // Gibt es lokale Übergabe-Stände, die in Google noch fehlen? (z. B. vor dem Update erstellt)
+ function hoNeedsPush() {
+ return orderHistory.some(o => {
+ const p = packHo(o);
+ if (!p) return false;
+ const c = cloudHo[o.id];
+ return !c || (p.h && !c.h) || (p.u > (c.u || 0));
+ });
+ }
+ function markHoPushed() {
+ orderHistory.forEach(o => { const p = packHo(o); if (p) cloudHo[o.id] = p; });
+ LS.set(KEY_HO, cloudHo);
+ }
+ async function pushHoIfNeeded() {
+ if (!hoNeedsPush()) return; // sichert erst nach dem Laden des Online-Plans (siehe syncPlanningToGoogleSheet)
+ try { await syncPlanningToGoogleSheet(true); } catch (_) {}
+ }
+ // Liste wurde schon erstellt (z. B. auf einem anderen Gerät, vor dem Update) -> nur abhaken
+ function markListDone(id, val) {
+ const o = orderHistory.find(x => x.id === id);
+ if (!o) return;
+ if (val) {
+ if (!confirm("Bestellliste fürs Hauptlager für diese Bestellung schon erstellt (z. B. auf einem anderen Gerät)?\n\nOK = als „Liste erstellt“ abhaken (ohne Datei).")) return;
+ const dw = defaultWeekFor(o.date || o.ts);
+ o.handover = { manual: true, createdAt: new Date().toISOString(), outName: "", sheetTitle: "", sourceName: "", month: dw.month, week: dw.week, col: "", cells: [], email: [] };
+ } else {
+ if (!confirm("Markierung „Liste erstellt“ wieder entfernen?")) return;
+ o.handover = null;
+ }
+ o.hoU = Date.now();
+ saveHistoryLocal();
+ syncPlanningToGoogleSheet(true).catch(() => showToast("Lokal gespeichert – online nicht erreichbar, bitte später „☁️ Sichern“.", "warn", 5000));
+ if (ho && ho.order === o) renderHandover();
+ renderHandoverPanel();
+ if (activeTab === "planning") initTable();
+ showToast(val ? "📄 Als „Liste erstellt“ abgehakt" : "Markierung entfernt", "ok");
+ }
+ function chipSent(id) {
+ const o = orderHistory.find(x => x.id === id);
+ if (!o) return;
+ if (isOrderSent(o)) { markOrderSent(id, false); return; }
+ if (confirm("Ist diese Bestellung schon raus? Dann wird sie als abgeschlossen markiert (Fristenplan „Bestellt? = Ja“).")) markOrderSent(id, true);
+ }
+
+ function rememberDeletedOrder(id) {
+ deletedOrders[id] = new Date().toISOString().slice(0, 10);
+ delete cloudHo[id];
+ LS.set(KEY_HO, cloudHo); LS.set(KEY_HO_DEL, deletedOrders);
+ }
+
+ // Fristen-Reiter: Plan + Bestellungen holen (beim ersten Mal mit Ladekreis)
+ let planRefreshRunning = null;
+ async function refreshPlanningTab(force) {
+ const stale = Date.now() - lastPlanCloudLoad > 60000 || Date.now() - lastHistoryCloudLoad > 60000;
+ if (!force && !stale) { pushHoIfNeeded().then(() => { if (activeTab === "planning") renderHandoverPanel(); }); return; }
+ if (planRefreshRunning) return planRefreshRunning;
+ const blocking = force || !planCloudLoadedOnce || !lastHistoryCloudLoad;
+ if (!blocking) setSyncStatus("orange", "⏳ Aktualisiere aus Google Sheets …");
+ planRefreshRunning = withLoader(blocking ? "Lade Fristenplan & Bestellungen …" : null, "aus Google Sheets",
+ () => Promise.allSettled([loadHistoryFromCloud(true), loadPlanningFromGoogleSheet(true)]))
+ .then(res => {
+ applyHoState();
+ if (activeTab === "planning") initTable();
+ pushHoIfNeeded().then(() => { if (activeTab === "planning") renderHandoverPanel(); });
+ const ok = res[1].status === "fulfilled" && res[1].value;
+ if (force) showToast(ok ? "✅ Fristenplan & Bestellungen neu geladen" : "⚠️ Google Sheets nicht erreichbar – zeige den Stand dieses Geräts", ok ? "ok" : "warn", 4500);
+ })
+ .finally(() => { planRefreshRunning = null; });
+ return planRefreshRunning;
  }
 
  function renderHandoverPanel() {
@@ -5534,13 +5858,16 @@
  if (!list.length) { el.innerHTML = `<div class="ho-sub">Noch keine abgeschlossene Bestellung. Nach „✅ Bestellung abschließen“ erscheint sie hier.</div>`; return; }
  el.innerHTML = list.map(o => {
  const hd = o.handover;
- const mailN = hd ? hd.email.length : o.items.filter(i => i.qty > 0 && i.exklusiv).length;
+ // Exklusiv-Artikel stehen immer in der Bestellung selbst – die Übergabe kann (z. B. von Hand abgehakt oder alt) leer sein
+ const exclN = (o.items || []).filter(i => Number(i.qty) > 0 && i.exklusiv).length;
+ const mailN = Math.max(exclN, hd && Array.isArray(hd.email) && !hd.manual ? hd.email.length : 0);
  return `<div class="ho-card">
  <div class="ho-card-main"><strong>${fmtDateDE(o.date || o.ts.slice(0, 10))}</strong> · ${esc(o.cycleLabel)} <span class="ho-sub">${esc(o.sign)}</span></div>
  <div class="order-chips">
- ${hd ? `<span class="o-chip" style="color: var(--success);">📄 Liste erstellt</span>` : `<span class="o-chip warn">📄 Liste offen</span>`}
+ ${hd ? `<button type="button" class="o-chip o-chip-btn" style="color: var(--success);" title="${hd.manual ? "Von Hand abgehakt – antippen zum Entfernen" : "Bestellliste wurde erstellt"}" onclick="${hd.manual ? `markListDone('${esc(o.id)}', false)` : `openHandover('${esc(o.id)}')`}">📄 Liste erstellt</button>`
+ : `<button type="button" class="o-chip o-chip-btn warn" title="Antippen, wenn die Liste schon erstellt wurde" onclick="markListDone('${esc(o.id)}', true)">📄 Liste offen</button>`}
  <span class="o-chip">⭐ ${mailN} per E-Mail</span>
- ${isOrderSent(o) ? `<span class="o-chip" style="color: var(--success);">📨 raus</span>` : `<span class="o-chip warn">📨 noch nicht raus</span>`}
+ <button type="button" class="o-chip o-chip-btn${isOrderSent(o) ? "" : " warn"}" ${isOrderSent(o) ? 'style="color: var(--success);"' : ""} title="Antippen zum Ändern" onclick="chipSent('${esc(o.id)}')">${isOrderSent(o) ? "📨 raus" : "📨 noch nicht raus"}</button>
  </div>
  <button type="button" class="btn-action" onclick="openHandover('${esc(o.id)}')">Öffnen</button>
  <button type="button" class="btn-action" style="color: var(--danger);" title="Bestellung löschen" onclick="deleteOrder('${esc(o.id)}')">🗑️</button>
