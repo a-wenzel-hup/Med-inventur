@@ -1287,6 +1287,15 @@
  <div id="api-test-status" style="font-size: 11px; font-weight: 700; margin-top: 4px;"></div>
  </div>
 
+ <div class="form-group-sm" style="margin-bottom: 8px;">
+ <label for="gsheet-api-key" style="color: var(--primary); font-weight: 700;">🔑 Zugangsschlüssel (steht in Code.gs bei API_KEY):</label>
+ <div style="display: flex; gap: 6px; margin-top: 4px;">
+ <input type="password" id="gsheet-api-key" autocomplete="off" placeholder="RWS-…" style="flex: 1; text-align: left !important;">
+ <button type="button" class="btn-action" onclick="const i=document.getElementById('gsheet-api-key'); i.type = i.type === 'password' ? 'text' : 'password';" title="Anzeigen / verbergen">👁</button>
+ </div>
+ <div style="font-size: 11px; color: var(--text-muted); margin-top: 3px;">Wird nur auf diesem Gerät gespeichert. Ohne richtigen Schlüssel nimmt das Google-Skript nichts an.</div>
+ </div>
+
  <div class="form-group-sm" style="margin-bottom: 10px;">
  <label for="gsheet-tab-name" style="font-weight: 700;">Tabellenblatt:</label>
  <input type="text" id="gsheet-tab-name" value="Prüfung Verfallsdatum" style="max-width: 220px;">
@@ -1967,6 +1976,16 @@
  return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }) + " " +
  d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
  }
+ const KEY_APIKEY = "rw_sassnitz_api_key";
+ function getApiKey() {
+ const el = document.getElementById("gsheet-api-key");
+ return ((el && el.value) || LS.getRaw(KEY_APIKEY) || "").trim();
+ }
+ // GET-Adresse ans Skript – immer mit Schlüssel
+ function scriptUrl(query) {
+ const url = getApiUrl();
+ return url + (url.includes("?") ? "&" : "?") + query + "&key=" + encodeURIComponent(getApiKey());
+ }
  function getApiUrl() {
  return (document.getElementById("gsheet-api-url").value || "").trim() || ACTIVE_APP_URL;
  }
@@ -2019,13 +2038,17 @@
  // Alle Aktionen sind so gebaut, dass doppeltes Senden nichts kaputt macht.
  async function postToScript(payload) {
  const apiUrl = getApiUrl();
- const body = JSON.stringify(payload);
+ const body = JSON.stringify(Object.assign({}, payload, { key: getApiKey() }));
  try {
  const res = await fetch(apiUrl, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body, redirect: "follow" });
  const txt = await res.text();
  let data = null;
  try { data = JSON.parse(txt); } catch (e) { return { ok: true, confirmed: false }; }
- if (data && (data.ok === false || data.status === "error")) throw new Error(data.error || data.message || "Fehler im Apps Script");
+ if (data && (data.ok === false || data.status === "error")) {
+ const msg = data.error || data.message || "Fehler im Apps Script";
+ if (/Zugangsschlüssel/.test(msg)) { scriptInfo = null; showToast("🔑 " + esc(msg), "err", 9000); }
+ throw new Error(msg);
+ }
  return Object.assign({ confirmed: true }, data);
  } catch (err) {
  if (err && err.name === "TypeError") {
@@ -2219,7 +2242,10 @@
  LS.setRaw("saved_gsheet_url", document.getElementById("gsheet-url").value.trim());
  LS.setRaw("saved_gsheet_api", document.getElementById("gsheet-api-url").value.trim());
  LS.setRaw("saved_gsheet_tab", document.getElementById("gsheet-tab-name").value.trim());
+ LS.setRaw(KEY_APIKEY, document.getElementById("gsheet-api-key").value.trim());
+ scriptInfo = null; scriptInfoAt = 0;
  showToast("✅ Links & Einstellungen dauerhaft gespeichert", "ok");
+ testConnection();
  }
 
  function testConnection() { return withLoader("Prüfe die Verbindung …", "Google Apps Script", testConnectionNow); }
@@ -2228,15 +2254,17 @@
  const apiUrl = getApiUrl();
  statusEl.innerHTML = "<span style='color: var(--primary);'>⏳ Prüfe Verbindung...</span>";
  try {
- const res = await fetch(apiUrl + (apiUrl.includes("?") ? "&" : "?") + "action=ping", { redirect: "follow" });
+ const res = await fetch(scriptUrl("action=ping"), { redirect: "follow" });
  const txt = await res.text();
  let data = null; try { data = JSON.parse(txt); } catch (e) {}
  if (data && data.ok) {
  const v = parseFloat(data.version) || 0;
- statusEl.innerHTML = v >= 2.2
- ? `<span style='color: var(--success);'>✅ Verbunden – Apps Script Version ${esc(data.version)}. Sicherer Modus aktiv: Zeilen werden nie verschoben.</span>`
+ const keyMsg = data.keyRequired ? (data.keyOk ? " 🔑 Schlüssel richtig." : "") : " ⚠️ Ohne Zugangsschlüssel – bitte Code.gs 2.8 einspielen.";
+ if (data.keyRequired && !data.keyOk) statusEl.innerHTML = `<span style='color: var(--danger);'>⛔ Verbunden (Version ${esc(data.version)}), aber der 🔑 Zugangsschlüssel ${getApiKey() ? "ist falsch" : "fehlt"}. Bitte unten eintragen und „Links dauerhaft speichern“.</span>`;
+ else statusEl.innerHTML = v >= 2.2
+ ? `<span style='color: var(--success);'>✅ Verbunden – Apps Script Version ${esc(data.version)}. Sicherer Modus aktiv: Zeilen werden nie verschoben.${keyMsg}</span>`
  : `<span style='color: var(--danger);'>⛔ Apps Script Version ${esc(data.version)} ist veraltet und würde beim Speichern Zeilen umsortieren. Das Terminal sendet deshalb nichts. Bitte Code.gs 2.2 einspielen.</span>`;
- scriptInfo = { json: true, version: v };
+ scriptInfo = { json: true, version: v, keyRequired: !!data.keyRequired, keyOk: !!data.keyOk }; scriptInfoAt = Date.now();
  } else {
  statusEl.innerHTML = "<span style='color: var(--danger);'>⛔ Web-App erreichbar, aber altes Apps Script. Das Terminal speichert erst, wenn Code.gs 2.2 eingespielt ist.</span>";
  }
@@ -2290,20 +2318,24 @@
  if (scriptInfo && !force) return scriptInfo;
  const url = getApiUrl();
  try {
- const r = await fetch(url + (url.includes("?") ? "&" : "?") + "action=ping", { redirect: "follow" });
+ const r = await fetch(scriptUrl("action=ping"), { redirect: "follow" });
  const t = await r.text();
  let d = null; try { d = JSON.parse(t); } catch (_) {}
- scriptInfo = (d && d.ok) ? { json: true, version: parseFloat(d.version) || 0 } : { json: false, version: 0 };
+ scriptInfo = (d && d.ok) ? { json: true, version: parseFloat(d.version) || 0, keyRequired: !!d.keyRequired, keyOk: !!d.keyOk } : { json: false, version: 0 };
  } catch (_) { scriptInfo = { json: false, version: 0 }; }
  return scriptInfo;
  }
  let scriptInfoAt = 0;
  async function assertSafeScript() {
- const fresh = scriptInfo && scriptInfo.json && scriptInfo.version >= 2.2 && Date.now() - scriptInfoAt < 10 * 60000;
+ const fresh = scriptInfo && scriptInfo.json && scriptInfo.version >= 2.2 && (!scriptInfo.keyRequired || scriptInfo.keyOk) && Date.now() - scriptInfoAt < 10 * 60000;
  const info = fresh ? scriptInfo : await getScriptInfo(true);
  if (!fresh) scriptInfoAt = Date.now();
  if (info.json && info.version < 2.2) {
  throw new Error(`Auf Google läuft noch Apps Script ${info.version}. Diese Version würde beim Speichern Zeilen umsortieren und könnte eure Bestellliste durcheinanderbringen. Bitte zuerst Code.gs 2.2 einspielen. Es wurde NICHTS gespeichert.`);
+ }
+ if (info.json && info.keyRequired && !info.keyOk) {
+ scriptInfo = null;
+ throw new Error("Der 🔑 Zugangsschlüssel fehlt oder ist falsch. Bitte unter „⚙️ Google Sheets & API-Links“ eintragen (steht in Code.gs bei API_KEY). Es wurde NICHTS gespeichert.");
  }
  if (!info.json) {
  // Das alte Script (vor 2.0) ordnet über die Pos-Nummer zu – nach einem Verschieben im Terminal
@@ -5274,7 +5306,7 @@
  try {
  const url = getApiUrl();
  const sheet = activeSheetName || LS.getRaw("saved_gsheet_tab") || "Prüfung Verfallsdatum";
- const r = await fetch(url + (url.includes("?") ? "&" : "?") + "action=mapping&sheet=" + encodeURIComponent(sheet), { redirect: "follow" });
+ const r = await fetch(scriptUrl("action=mapping&sheet=" + encodeURIComponent(sheet)), { redirect: "follow" });
  const d = JSON.parse(await r.text());
  if (d && d.ok && Array.isArray(d.pairs)) {
  sheetMapCache = {};
@@ -5338,7 +5370,7 @@
  } catch (e) { errors.push("CSV: " + e.message); }
  try {
  const url = getApiUrl();
- const r = await fetch(url + (url.includes("?") ? "&" : "?") + "action=bestellliste", { redirect: "follow" });
+ const r = await fetch(scriptUrl("action=bestellliste"), { redirect: "follow" });
  const d = JSON.parse(await r.text());
  if (d && d.ok && Array.isArray(d.rows)) {
  const pairs = pairsFromRows(d.rows);
@@ -6342,7 +6374,7 @@
  // Bei jedem neuen Hochladen auf GitHub wird APP_VERSION erhöht. Das Terminal schaut
  // regelmäßig nach, ob auf dem Server eine neuere index.html liegt, und bietet das Update an.
  // =========================================================================
- const APP_VERSION = "2026.10.26-2";
+ const APP_VERSION = "2026.10.26-3";
  let updateCheckAt = 0, updateFound = null;
  async function checkForUpdate(force) {
  if (!/^https?:$/.test(location.protocol) || updateFound) return;
@@ -6409,6 +6441,7 @@
  const OLD_APP_URLS = ["https://script.google.com/macros/s/AKfycbyLiwmS6SHewkmUOjW6Fgqg8e4p3GIwOTkWeorUaR2ujZJZ1ldQRC0JRah0Z8ziHWzr/exec", "https://script.google.com/macros/s/AKfycbx5SZZQ9TqyjcX3WEdwWv5i9fppDXkCGKKkcWx93Og-SEzm-ATycFkzRaBLI_BGu953/exec"];
  if (OLD_APP_URLS.includes(LS.getRaw("saved_gsheet_api"))) LS.setRaw("saved_gsheet_api", ACTIVE_APP_URL);
  document.getElementById("gsheet-api-url").value = LS.getRaw("saved_gsheet_api") || ACTIVE_APP_URL;
+ document.getElementById("gsheet-api-key").value = LS.getRaw(KEY_APIKEY) || "";
  const savedTab = LS.getRaw("saved_gsheet_tab");
  if (savedTab) document.getElementById("gsheet-tab-name").value = savedTab;
 
