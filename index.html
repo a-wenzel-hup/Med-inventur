@@ -1670,7 +1670,7 @@
  <option value="180">Letzte 6 Monate</option>
  <option value="365">Letzte 12 Monate</option>
  </select>
- <button type="button" class="pbtn" onclick="withLoader('Lade Bestellhistorie …', 'aus Google Sheets', () => loadHistoryFromCloud(false)).then(() => { applyHoState(); renderStats(); })">↻ Neu laden</button>
+ <button type="button" class="pbtn" onclick="withLoader('Lade Bestellhistorie …', 'aus Google Sheets', () => loadHistoryFromCloud(false, true)).then(() => { applyHoState(); renderStats(); })" title="Lädt die komplette Bestellhistorie frisch aus Google">↻ Alles neu laden</button>
  <button type="button" class="pbtn" id="btn-resend" onclick="withLoader('Sende offene Bestellungen …', 'an Google Sheets', resendUnsyncedOrders)">☁️ Offene senden</button>
  <button type="button" class="pbtn" onclick="exportHistoryExcel()">📥 Excel</button>
  </div>
@@ -2247,8 +2247,11 @@
  } catch (_) { scriptInfo = { json: false, version: 0 }; }
  return scriptInfo;
  }
+ let scriptInfoAt = 0;
  async function assertSafeScript() {
- const info = await getScriptInfo(true);
+ const fresh = scriptInfo && scriptInfo.json && scriptInfo.version >= 2.2 && Date.now() - scriptInfoAt < 10 * 60000;
+ const info = fresh ? scriptInfo : await getScriptInfo(true);
+ if (!fresh) scriptInfoAt = Date.now();
  if (info.json && info.version < 2.2) {
  throw new Error(`Auf Google läuft noch Apps Script ${info.version}. Diese Version würde beim Speichern Zeilen umsortieren und könnte eure Bestellliste durcheinanderbringen. Bitte zuerst Code.gs 2.2 einspielen. Es wurde NICHTS gespeichert.`);
  }
@@ -4375,6 +4378,8 @@
  if (!sheetId) { if (!silent) alert("Bitte gib einen gültigen Google Sheets Link ein (Reiter 1 → Konfiguration)."); return false; }
  setSyncStatus("orange", "⏳ Lade Live-Daten aus Google Sheets...");
  let cycleCount = 0;
+ const cfgPromise = gvizQuery(sheetId, "&headers=1&sheet=Terminal_Einstellungen"); // gleichzeitig holen
+ cfgPromise.catch(() => {});
  try {
  const data = await gvizQuery(sheetId, "&headers=1&sheet=Kontrollplaner");
  (data.table.rows || []).forEach(r => {
@@ -4407,7 +4412,7 @@
  }
 
  try {
- const cfg = await gvizQuery(sheetId, "&headers=1&sheet=Terminal_Einstellungen");
+ const cfg = await cfgPromise;
  const loadedStaff = [];
  const newCfg = {};
  const cloudMap = {};
@@ -4489,11 +4494,27 @@
  renderStats();
  }
 
- async function loadHistoryFromCloud(silent) {
+ async function loadHistoryFromCloud(silent, forceFull) {
  const sheetId = getSheetId();
  if (!sheetId) return;
  try {
- const data = await gvizQuery(sheetId, "&headers=1&sheet=Bestellhistorie");
+ // Schnell: nur die Bestellungen der letzten 7 Tage seit dem letzten Laden holen.
+ // Komplett geladen wird beim ersten Mal auf einem Gerät und danach alle 30 Tage.
+ const KEY_HFULL = "rw_sassnitz_hist_full";
+ const lastFull = Date.parse(LS.getRaw(KEY_HFULL) || "") || 0;
+ const full = !!forceFull || !lastFull || Date.now() - lastFull > 30 * 86400000 || !orderHistory.length;
+ let data = null;
+ if (!full) {
+ const since = new Date(Math.max(lastFull, lastHistoryCloudLoad || 0, Date.parse(LS.getRaw("rw_sassnitz_hist_inc") || "") || 0) - 7 * 86400000);
+ const p2 = n => String(n).padStart(2, "0");
+ const lit = `${since.getFullYear()}-${p2(since.getMonth() + 1)}-${p2(since.getDate())} 00:00:00`;
+ try { data = await gvizQuery(sheetId, `&headers=1&sheet=Bestellhistorie&tq=${encodeURIComponent(`select * where B >= datetime '${lit}'`)}`); }
+ catch (_) { data = null; } // Abfrage nicht möglich -> komplett laden
+ }
+ const wasFull = !data;
+ if (!data) data = await gvizQuery(sheetId, "&headers=1&sheet=Bestellhistorie");
+ if (wasFull) LS.setRaw(KEY_HFULL, new Date().toISOString());
+ LS.setRaw("rw_sassnitz_hist_inc", new Date().toISOString());
  const labels = (data.table.cols || []).map(c => String(c.label || "").toLowerCase());
  if (!labels[0] || !labels[0].includes("bestell")) throw new Error("Reiter „Bestellhistorie“ nicht gefunden (wird beim ersten Abschluss angelegt)");
  const byId = {};
@@ -5773,7 +5794,13 @@
  function hoConfigEntries() {
  const out = {};
  const ids = new Set();
- orderHistory.forEach(o => { const p = packHo(o); if (p) { out["ho::" + o.id] = JSON.stringify(p); ids.add(o.id); } });
+ const old = Date.now() - 60 * 86400000;
+ orderHistory.forEach(o => {
+ const p = packHo(o);
+ if (!p) return;
+ if (p.h && o.receivedAt && Date.parse(o.receivedAt) < old) p.h = Object.assign({}, p.h, { cells: [], e: [] }); // klein halten
+ out["ho::" + o.id] = JSON.stringify(p); ids.add(o.id);
+ });
  // Stände anderer Geräte behalten, auch wenn die Bestellung hier noch nicht geladen ist
  Object.keys(cloudHo).forEach(id => { if (!ids.has(id) && !deletedOrders[id]) out["ho::" + id] = JSON.stringify(cloudHo[id]); });
  Object.keys(deletedOrders).forEach(id => { out["del::" + id] = String(deletedOrders[id]); });
