@@ -1220,6 +1220,13 @@
  .mx-new { grid-column: 1 / -1; flex-direction: row; align-items: center; flex-wrap: wrap; }
  .mx-new input { flex: 1; }
  }
+
+ .mx-zero-btn { margin-top: 4px; border: 1px dashed var(--border); background: var(--bg-gray); color: var(--text); border-radius: 8px; font-size: 11.5px; font-weight: 700; padding: 5px 8px; cursor: pointer; text-align: left; }
+ .mx-zero-btn:hover { border-color: var(--danger); color: var(--danger); }
+ .mx-zero { margin-top: 4px; font-size: 11.5px; font-weight: 700; border-radius: 8px; padding: 4px 8px; }
+ .mx-zero.on { background: color-mix(in srgb, var(--primary) 10%, var(--card-bg)); color: var(--primary); }
+ .mx-zero.done { background: color-mix(in srgb, var(--success) 12%, var(--card-bg)); color: var(--success); }
+ .mx-link { border: none; background: none; color: inherit; text-decoration: underline; cursor: pointer; font-size: 11.5px; padding: 0 2px; }
 </style>
 </head>
 <body>
@@ -6154,6 +6161,20 @@
  // ABLAUFENDE ARTIKEL: MHD der nächsten Packung schnell eintragen
  // =========================================================================
  let mhdEdits = new Map(); // Artikel -> neues MHD (yyyy-mm-dd)
+ let zeroEdits = new Set(); // Artikel -> Bestand 0 (alles abgelaufen/entsorgt) -> volle Nachbestellung
+ let mhdTempSession = false; // Liste nur für dieses Fenster geladen (keine Prüfung offen)
+ let mhdCardCounts = null;
+ function mhdEditCount() { return new Set([...mhdEdits.keys(), ...zeroEdits]).size; }
+ function endMhdTempSession() {
+ if (!mhdTempSession) return;
+ mhdTempSession = false;
+ allItems = []; currentFilteredList = []; currentFilteredIndex = 0; rawMatrix = [];
+ loadedItemRows = []; deletedOffsets = []; layoutDirty = false;
+ markSynced();
+ clearDraft();
+ draftSuppressed = false;
+ updateDraftBox();
+ }
  function mhdDiffDays(mhd) {
  if (!mhd) return null;
  const p = String(mhd).split("-").map(Number);
@@ -6185,12 +6206,17 @@
  });
  }
  async function openMhdPanel() {
+ // Läuft gerade keine Prüfung, wird die Liste nur für dieses Fenster geladen –
+ // danach ist alles wieder wie vorher (keine „begonnene Prüfung“, kein Zwischenstand).
+ mhdTempSession = !allItems.length;
+ if (mhdTempSession) draftSuppressed = true;
  try {
  // Ohne offene, ungesicherte Prüfung immer den aktuellen Stand aus Google holen
  if (!allItems.length || !(itemsDirty || layoutDirty)) await reloadItemsHeadless("aktuelle Verfallsdaten");
- } catch (e) { alert("Google-Tabelle konnte nicht gelesen werden: " + e.message); return; }
- if (!allItems.length) return;
- mhdEdits = new Map();
+ } catch (e) { alert("Google-Tabelle konnte nicht gelesen werden: " + e.message); endMhdTempSession(); return; }
+ if (mhdTempSession) { draftSuppressed = true; clearDraft(); }
+ if (!allItems.length) { endMhdTempSession(); return; }
+ mhdEdits = new Map(); zeroEdits = new Set();
  document.getElementById("mx-search").value = "";
  document.getElementById("mx-range").options[0].textContent = `im Warnfenster (≤ ${mhdWindow()} Tage)`;
  document.getElementById("mx-overlay").style.display = "flex";
@@ -6198,11 +6224,12 @@
  renderMhdPanel();
  }
  function closeMhdPanel(force) {
- if (!force && mhdEdits.size && !confirm(`${mhdEdits.size} geänderte Datum(e) noch nicht gespeichert. Trotzdem schließen?`)) return;
- mhdEdits = new Map();
+ if (!force && mhdEditCount() && !confirm(`${mhdEditCount()} Änderung(en) noch nicht gespeichert. Trotzdem schließen?`)) return;
+ mhdEdits = new Map(); zeroEdits = new Set();
  document.getElementById("mx-overlay").style.display = "none";
  document.body.style.overflow = "";
  updateMhdCard();
+ endMhdTempSession();
  }
  function mhdStatus(diff) {
  if (diff === null) return { cls: "", label: "kein MHD" };
@@ -6217,19 +6244,27 @@
  const q = normName(document.getElementById("mx-search").value);
  const limit = range === "win" ? mhdWindow() : range === "90" ? 90 : Infinity;
  const rows = allItems.map((it, idx) => ({ it, idx, diff: mhdDiffDays(it.mhd) }))
- .filter(x => x.diff !== null && (x.diff <= limit || mhdEdits.has(x.it)))
+ .filter(x => x.diff !== null && (x.diff <= limit || mhdEdits.has(x.it) || zeroEdits.has(x.it)))
  .filter(x => !q || normName(x.it.name).includes(q) || normName(x.it.lagerort).includes(q))
  .sort((a, b) => a.diff - b.diff);
  const fmt = iso => { const p = iso.split("-"); return `${p[2]}.${p[1]}.${p[0]}`; };
+ const zeroBox = x => {
+ const it = x.it, soll = Number(it.soll) || 0, bm = Number(it.bestellmenge) || 0;
+ if (zeroEdits.has(it)) return `<div class="mx-zero on">📦 Bestand 0 → Bestellmenge <strong>${soll}</strong> (= Soll) <button type="button" class="mx-link" onclick="toggleZero(${x.idx})">rückgängig</button></div>`;
+ if (soll > 0 && bm >= soll) return `<div class="mx-zero done">📦 Wird nachbestellt: ${bm} Stk.</div>`;
+ if (!soll) return "";
+ return `<button type="button" class="mx-zero-btn" onclick="toggleZero(${x.idx})" title="Alle Packungen sind abgelaufen/entsorgt: Bestand auf 0, die volle Soll-Menge kommt mit der nächsten Bestellung">📦 Bestand 0 – nachbestellen${bm ? ` (statt ${bm})` : ""}</button>`;
+ };
  const row = x => {
  const st = mhdStatus(x.diff), nv = mhdEdits.get(x.it) || "";
  const nst = nv ? mhdStatus(mhdDiffDays(nv)) : null;
- return `<div class="mx-row ${st.cls}${nv ? " changed" : ""}">
+ return `<div class="mx-row ${st.cls}${nv || zeroEdits.has(x.it) ? " changed" : ""}">
  <div><div class="mx-name">${esc(x.it.name)}</div><div class="mx-sub">${esc(x.it.lagerort || "ohne Lagerort")} · Pos ${esc(String(x.it.pos))}${x.it.exklusiv ? " · ⭐ Exklusiv" : ""}</div></div>
  <div class="mx-old"><span class="mx-badge ${st.cls}">${st.label}</span><div>MHD ${fmt(x.it.mhd)}</div></div>
  <div class="mx-new"><label for="mx_${x.idx}">Nächste Packung läuft ab am:</label>
  <input type="date" id="mx_${x.idx}" value="${esc(nv)}" onchange="setMhdEdit(${x.idx}, this.value)">
- <span class="mx-prev">${nst ? `<span class="mx-badge ${nst.cls}">neu: ${nst.label}</span>` : ""}</span></div>
+ <span class="mx-prev">${nst ? `<span class="mx-badge ${nst.cls}">neu: ${nst.label}</span>` : ""}</span>
+ ${zeroBox(x)}</div>
  </div>`;
  };
  const red = rows.filter(x => x.diff < 0), soon = rows.filter(x => x.diff >= 0 && x.diff <= mhdWindow()), later = rows.filter(x => x.diff > mhdWindow());
@@ -6238,8 +6273,14 @@
  if (soon.length) html += `<div class="mx-group">⏰ Läuft in den nächsten ${mhdWindow()} Tagen ab (${soon.length})</div>` + soon.map(row).join("");
  if (later.length) html += `<div class="mx-group">Später (${later.length})</div>` + later.map(row).join("");
  body.innerHTML = html || `<div class="empty-state">👍 Nichts gefunden – ${range === "win" ? "kein Artikel im Warnfenster" : "keine passenden Artikel"}.</div>`;
- body.insertAdjacentHTML("afterbegin", `<div class="ho-sub" style="margin: 2px 0 6px;">Datum der <strong>nächsten</strong> Packung eintragen, die noch im Schrank liegt. Steht auf der Packung nur Monat/Jahr, den <strong>1.</strong> wählen – zählt wie in der Prüfung als Monatsende.</div>`);
+ body.insertAdjacentHTML("afterbegin", `<div class="ho-sub" style="margin: 2px 0 6px;">Datum der <strong>nächsten</strong> Packung eintragen, die noch im Schrank liegt. Steht auf der Packung nur Monat/Jahr, den <strong>1.</strong> wählen – zählt wie in der Prüfung als Monatsende. Ist <strong>nichts mehr da</strong>: „📦 Bestand 0 – nachbestellen“ – dann kommt die volle Soll-Menge mit der nächsten Bestellung.</div>`);
  updateMhdFoot();
+ }
+ function toggleZero(idx) {
+ const it = allItems[idx];
+ if (!it) return;
+ if (zeroEdits.has(it)) zeroEdits.delete(it); else zeroEdits.add(it);
+ renderMhdPanel();
  }
  function setMhdEdit(idx, val) {
  const it = allItems[idx];
@@ -6248,39 +6289,51 @@
  renderMhdPanel();
  }
  function updateMhdFoot() {
- const n = mhdEdits.size;
- document.getElementById("mx-foot-info").textContent = n ? `${n} Datum(e) geändert – noch nicht gespeichert` : "Noch nichts geändert";
+ const n = mhdEditCount();
+ const parts = [];
+ if (mhdEdits.size) parts.push(`${mhdEdits.size} Datum(e)`);
+ if (zeroEdits.size) parts.push(`${zeroEdits.size}× Bestand 0`);
+ document.getElementById("mx-foot-info").textContent = n ? `${parts.join(", ")} geändert – noch nicht gespeichert` : "Noch nichts geändert";
  document.getElementById("mx-save").disabled = !n;
  }
  async function saveMhdEdits() {
- if (!mhdEdits.size) return;
+ const n = mhdEditCount();
+ if (!n) return;
  const otherDirty = itemsDirty || layoutDirty;
  if (otherDirty && !confirm("In der begonnenen Prüfung gibt es weitere, noch nicht gesicherte Änderungen. Die werden jetzt mitgespeichert. Weiter?")) return;
- const prev = new Map();
+ const prev = new Map(), prevBm = new Map();
  mhdEdits.forEach((val, it) => { prev.set(it, it.mhd); it.mhd = val; it.meldetext = computeMeldetext(val).text; });
+ zeroEdits.forEach(it => { prevBm.set(it, it.bestellmenge); it.bestellmenge = Number(it.soll) || 0; });
  markUnsynced();
+ if (mhdTempSession) draftSuppressed = true;
  try {
- await withLoader("Speichere die neuen Verfallsdaten …", `${mhdEdits.size} Artikel in Google Sheets`, () => syncItemsToCloud(), false);
+ await withLoader("Speichere in Google Sheets …", `${n} Artikel`, () => syncItemsToCloud(), false);
  } catch (e) {
  prev.forEach((old, it) => { it.mhd = old; it.meldetext = computeMeldetext(old).text; });
+ prevBm.forEach((old, it) => { it.bestellmenge = old; });
  if (!otherDirty) markSynced();
+ if (mhdTempSession) clearDraft();
  alert("Speichern fehlgeschlagen – es wurde nichts geändert.\n\n" + e.message);
  renderMhdPanel();
  return;
  }
- const n = mhdEdits.size;
- mhdEdits = new Map();
+ if (mhdTempSession) { clearDraft(); draftSuppressed = true; }
+ const nz = zeroEdits.size;
+ mhdEdits = new Map(); zeroEdits = new Set();
  if (currentFilteredList.length) renderStep();
  renderMhdPanel();
  updateMhdCard();
- showToast(`✅ ${n} neue(s) MHD in Google Sheets gespeichert`, "ok", 5000);
+ showToast(`✅ In Google Sheets gespeichert${nz ? ` – ${nz} Artikel kommen mit der nächsten Bestellung` : ""}`, "ok", 5500);
  }
  function updateMhdCard() {
  const el = document.getElementById("mx-card-sub");
  if (!el) return;
- if (!allItems.length) { el.textContent = "MHD der nächsten Packung schnell eintragen"; return; }
+ if (allItems.length) {
  const d = allItems.map(it => mhdDiffDays(it.mhd)).filter(x => x !== null);
- const ex = d.filter(x => x < 0).length, soon = d.filter(x => x >= 0 && x <= mhdWindow()).length;
+ mhdCardCounts = { ex: d.filter(x => x < 0).length, soon: d.filter(x => x >= 0 && x <= mhdWindow()).length };
+ }
+ if (!mhdCardCounts) { el.textContent = "MHD der nächsten Packung schnell eintragen"; return; }
+ const { ex, soon } = mhdCardCounts;
  el.innerHTML = ex || soon ? `<span style="color: var(--danger); font-weight: 700;">${ex ? `${ex} abgelaufen` : ""}</span>${ex && soon ? " · " : ""}${soon ? `<span style="color: var(--warning); font-weight: 700;">${soon} in den nächsten ${mhdWindow()} Tagen</span>` : ""}` : "👍 Gerade nichts im Warnfenster";
  }
 
@@ -6569,7 +6622,7 @@
  // Bei jedem neuen Hochladen auf GitHub wird APP_VERSION erhöht. Das Terminal schaut
  // regelmäßig nach, ob auf dem Server eine neuere index.html liegt, und bietet das Update an.
  // =========================================================================
- const APP_VERSION = "2026.10.27-1";
+ const APP_VERSION = "2026.11.07-1";
  let updateCheckAt = 0, updateFound = null;
  async function checkForUpdate(force) {
  if (!/^https?:$/.test(location.protocol) || updateFound) return;
