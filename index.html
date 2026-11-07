@@ -1903,9 +1903,14 @@
  <button type="button" class="sheet-close" onclick="closeMhdPanel()" aria-label="Schließen">✕</button>
  </div>
  <div class="mx-tools">
- <select id="mx-range" onchange="renderMhdPanel()" style="width: auto !important; height: 36px !important; min-width: 170px;">
+ <select id="mx-range" onchange="try { localStorage.setItem('rw_sassnitz_mx_range', this.value); } catch (_) {} renderMhdPanel()" style="width: auto !important; height: 36px !important; min-width: 170px;">
  <option value="win">im Warnfenster</option>
+ <option value="7">die nächsten 7 Tage</option>
+ <option value="15">die nächsten 15 Tage</option>
+ <option value="30">die nächsten 30 Tage</option>
+ <option value="60">die nächsten 60 Tage</option>
  <option value="90">die nächsten 90 Tage</option>
+ <option value="180">die nächsten 180 Tage</option>
  <option value="all">alle mit MHD</option>
  </select>
  <input type="search" id="mx-search" placeholder="🔍 Artikel suchen …" oninput="renderMhdPanel()" style="flex: 1; min-width: 140px; height: 36px !important; text-align: left !important;">
@@ -2884,13 +2889,13 @@
 
  // Status-Text für ein MHD (wird auch im Export & in der Historie benutzt)
  let mhdWarnDays = 30;
- // Gleiche Regel wie die Meldetext-Formel der Tabelle: Datum am 1. eines Monats = gilt bis Monatsende
+ // Gleiche Regel wie die Meldetext-Formel der Tabelle: es zählt genau der eingetragene Tag
+ // (abgelaufen = vor heute, bald = höchstens „Warnung Ablaufdatum“ Tage)
  function computeMeldetext(mhdVal) {
  if (!mhdVal) return { text: "", cls: "status-none", icon: "ℹ️", label: "Kein Datum", border: "" };
  const today = new Date(); today.setHours(0, 0, 0, 0);
  const p = mhdVal.split("-").map(Number);
- let target = new Date(p[0], p[1] - 1, p[2]);
- if (p[2] === 1) target = new Date(p[0], p[1], 0);
+ const target = new Date(p[0], p[1] - 1, p[2]);
  target.setHours(0, 0, 0, 0);
  const diffDays = Math.round((target - today) / 86400000);
  if (diffDays < 0) return { text: "abgelaufen", cls: "status-red", icon: "⚠️", label: `Abgelaufen (${Math.abs(diffDays)} T)`, border: "border-mhd-red" };
@@ -6179,8 +6184,7 @@
  if (!mhd) return null;
  const p = String(mhd).split("-").map(Number);
  if (p.length < 3 || !p[0]) return null;
- let t = new Date(p[0], p[1] - 1, p[2]);
- if (p[2] === 1) t = new Date(p[0], p[1], 0); // nur Monat/Jahr auf der Packung -> Monatsende (wie in der Prüfung)
+ const t = new Date(p[0], p[1] - 1, p[2]); // genau der eingetragene Tag (wie die Formel in der Tabelle)
  const t0 = new Date(); t0.setHours(0, 0, 0, 0);
  return Math.round((t - t0) / 86400000);
  }
@@ -6219,6 +6223,7 @@
  mhdEdits = new Map(); zeroEdits = new Set();
  document.getElementById("mx-search").value = "";
  document.getElementById("mx-range").options[0].textContent = `im Warnfenster (≤ ${mhdWindow()} Tage)`;
+ try { const r = localStorage.getItem("rw_sassnitz_mx_range"); if (r && document.querySelector(`#mx-range option[value="${r}"]`)) document.getElementById("mx-range").value = r; } catch (_) {}
  document.getElementById("mx-overlay").style.display = "flex";
  document.body.style.overflow = "hidden";
  renderMhdPanel();
@@ -6242,7 +6247,7 @@
  const body = document.getElementById("mx-body");
  const range = document.getElementById("mx-range").value;
  const q = normName(document.getElementById("mx-search").value);
- const limit = range === "win" ? mhdWindow() : range === "90" ? 90 : Infinity;
+ const limit = range === "win" ? mhdWindow() : range === "all" ? Infinity : Number(range) || mhdWindow();
  const rows = allItems.map((it, idx) => ({ it, idx, diff: mhdDiffDays(it.mhd) }))
  .filter(x => x.diff !== null && (x.diff <= limit || mhdEdits.has(x.it) || zeroEdits.has(x.it)))
  .filter(x => !q || normName(x.it.name).includes(q) || normName(x.it.lagerort).includes(q))
@@ -6267,13 +6272,14 @@
  ${zeroBox(x)}</div>
  </div>`;
  };
- const red = rows.filter(x => x.diff < 0), soon = rows.filter(x => x.diff >= 0 && x.diff <= mhdWindow()), later = rows.filter(x => x.diff > mhdWindow());
+ const soonLim = isFinite(limit) ? limit : mhdWindow();
+ const red = rows.filter(x => x.diff < 0), soon = rows.filter(x => x.diff >= 0 && x.diff <= soonLim), later = rows.filter(x => x.diff > soonLim);
  let html = "";
  if (red.length) html += `<div class="mx-group">⚠️ Abgelaufen (${red.length})</div>` + red.map(row).join("");
- if (soon.length) html += `<div class="mx-group">⏰ Läuft in den nächsten ${mhdWindow()} Tagen ab (${soon.length})</div>` + soon.map(row).join("");
+ if (soon.length) html += `<div class="mx-group">⏰ Läuft in den nächsten ${soonLim} Tagen ab (${soon.length})</div>` + soon.map(row).join("");
  if (later.length) html += `<div class="mx-group">Später (${later.length})</div>` + later.map(row).join("");
  body.innerHTML = html || `<div class="empty-state">👍 Nichts gefunden – ${range === "win" ? "kein Artikel im Warnfenster" : "keine passenden Artikel"}.</div>`;
- body.insertAdjacentHTML("afterbegin", `<div class="ho-sub" style="margin: 2px 0 6px;">Datum der <strong>nächsten</strong> Packung eintragen, die noch im Schrank liegt. Steht auf der Packung nur Monat/Jahr, den <strong>1.</strong> wählen – zählt wie in der Prüfung als Monatsende. Ist <strong>nichts mehr da</strong>: „📦 Bestand 0 – nachbestellen“ – dann kommt die volle Soll-Menge mit der nächsten Bestellung.</div>`);
+ body.insertAdjacentHTML("afterbegin", `<div class="ho-sub" style="margin: 2px 0 6px;">Datum der <strong>nächsten</strong> Packung eintragen, die noch im Schrank liegt. Steht auf der Packung nur Monat/Jahr, den <strong>letzten Tag</strong> des Monats eintragen. Ist <strong>nichts mehr da</strong>: „📦 Bestand 0 – nachbestellen“ – dann kommt die volle Soll-Menge mit der nächsten Bestellung.</div>`);
  updateMhdFoot();
  }
  function toggleZero(idx) {
@@ -6622,7 +6628,7 @@
  // Bei jedem neuen Hochladen auf GitHub wird APP_VERSION erhöht. Das Terminal schaut
  // regelmäßig nach, ob auf dem Server eine neuere index.html liegt, und bietet das Update an.
  // =========================================================================
- const APP_VERSION = "2026.11.07-1";
+ const APP_VERSION = "2026.11.07-2";
  let updateCheckAt = 0, updateFound = null;
  async function checkForUpdate(force) {
  if (!/^https?:$/.test(location.protocol) || updateFound) return;
