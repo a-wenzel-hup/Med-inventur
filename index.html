@@ -128,6 +128,11 @@
  .lbl-long { display: none; }
  .lbl-short { display: inline; }
  }
+ /* 4 Reiter auf dem Handy: Symbol über dem Wort, damit nichts abgeschnitten wird */
+ @media (max-width: 520px) {
+ .main-nav-btn:not(.btn-nav-pin) { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 5px 2px !important; font-size: 10.5px !important; line-height: 1.15; min-width: 0; }
+ .main-nav-btn:not(.btn-nav-pin) .lbl-short { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+ }
 
  .main-nav-btn { position: relative; }
  .main-nav-btn.has-alert::after {
@@ -1227,6 +1232,59 @@
  .mx-zero.on { background: color-mix(in srgb, var(--primary) 10%, var(--card-bg)); color: var(--primary); }
  .mx-zero.done { background: color-mix(in srgb, var(--success) 12%, var(--card-bg)); color: var(--success); }
  .mx-link { border: none; background: none; color: inherit; text-decoration: underline; cursor: pointer; font-size: 11.5px; padding: 0 2px; }
+
+ /* Zwischenbestellung */
+ .zw-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 10px 12px; margin-bottom: 6px; border: 1px solid var(--border); border-radius: 10px; background: var(--card-bg); color: var(--text); cursor: pointer; font-size: 13.5px; }
+ .zw-row:hover { border-color: var(--primary); }
+ .zw-tag { font-size: 11.5px; font-weight: 800; white-space: nowrap; color: var(--text-muted); }
+ .zw-open { color: var(--primary) !important; }
+ .zw-card { border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; background: var(--card-bg); }
+ .zw-nums { display: flex; gap: 14px; flex-wrap: wrap; margin: 10px 0 4px; font-size: 13px; }
+ .zw-nums strong { font-size: 16px; }
+ .zw-sec { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border); }
+ .zw-h { display: block; font-weight: 800; font-size: 13px; margin-bottom: 8px; }
+ .zw-line { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+ .zw-line input[type=number] { width: 90px !important; height: 38px !important; font-size: 15px !important; }
+ .zw-or { font-size: 12px; color: var(--text-muted); }
+ /* Fahrzeugkontrolle */
+ .fz-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+ .fz-card { border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; background: var(--card-bg); display: flex; flex-direction: column; gap: 8px; }
+ .fz-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 15px; }
+ .fz-watch { font-size: 11.5px; font-weight: 600; color: var(--text-muted); display: flex; align-items: center; gap: 4px; cursor: pointer; }
+ .fz-watch input { width: 16px; height: 16px; }
+ .fz-badges { display: flex; gap: 6px; flex-wrap: wrap; min-height: 22px; }
+ .fz-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+ .fz-sheet { max-width: 900px; }
+ .fz-bar { height: 6px; border-radius: 99px; background: var(--bg-gray); overflow: hidden; width: 100%; }
+ .fz-bar span { display: block; height: 100%; background: var(--success); transition: width 0.2s; }
+ .fz-fach { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 4px 0 10px; }
+ .fz-fach-name { font-size: 15px; font-weight: 800; }
+ .fz-item { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; padding: 8px 10px; border: 1px solid var(--border); border-left-width: 4px; border-left-color: var(--success); border-radius: 10px; margin-bottom: 6px; background: var(--card-bg); }
+ .fz-item.miss { border-left-color: var(--warning); }
+ .fz-item.changed { background: color-mix(in srgb, var(--primary) 6%, var(--card-bg)); }
+ .fz-iname { font-weight: 700; font-size: 13.5px; word-break: break-word; }
+ .fz-qty { display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+ .fz-soll { font-size: 11.5px; color: var(--text-muted); font-weight: 700; margin-right: 4px; }
+ .fz-qty input { width: 56px !important; height: 38px !important; font-size: 16px !important; font-weight: 800; text-align: center !important; padding: 0 !important; }
+ .fz-pm { width: 38px; height: 38px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-gray); color: var(--text); font-size: 20px; font-weight: 800; cursor: pointer; line-height: 1; }
+ .fz-miss { font-size: 11.5px; font-weight: 800; color: var(--warning); min-width: 46px; }
+ .fz-ok { font-size: 15px; font-weight: 800; color: var(--success); min-width: 46px; text-align: center; }
+ .fz-mhd { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+ .fz-mhd input { height: 34px !important; font-size: 13px !important; width: 150px !important; }
+ .fz-foot { min-height: 58px; }
+ .fz-tab { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+ .fz-tab th, .fz-tab td { border-bottom: 1px solid var(--border); padding: 5px 6px; text-align: left; }
+ .fz-tab th { color: var(--text-muted); font-size: 11.5px; }
+ @media (max-width: 600px) {
+ .fz-item { grid-template-columns: 1fr; gap: 6px; }
+ .fz-mhd { flex-direction: row; justify-content: space-between; align-items: center; }
+ .fz-mhd input { width: 165px !important; }
+ .fz-grid { grid-template-columns: 1fr; }
+ }
+
+ .zw-browse-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 14px 0 6px; flex-wrap: wrap; }
+ .zw-ort { position: sticky; top: 0; z-index: 1; background: var(--bg-gray); color: var(--text); font-size: 12px; font-weight: 800; padding: 5px 8px; border-radius: 6px; margin: 10px 0 6px; }
+ .zw-ort span { color: var(--text-muted); font-weight: 600; }
 </style>
 </head>
 <body>
@@ -1250,11 +1308,14 @@
  <button type="button" class="main-nav-btn active" id="btn-tab-wizard" onclick="switchTab('wizard')">
  📦 <span class="lbl-long">1. Bestandsprüfung</span><span class="lbl-short">Prüfung</span>
  </button>
+ <button type="button" class="main-nav-btn" id="btn-tab-vehicles" onclick="switchTab('vehicles')">
+ 🚑 <span class="lbl-long">2. Fahrzeugkontrolle</span><span class="lbl-short">Fahrzeuge</span>
+ </button>
  <button type="button" class="main-nav-btn" id="btn-tab-planning" onclick="switchTab('planning')">
- 📅 <span class="lbl-long">2. Fristenplanung</span><span class="lbl-short">Fristen</span>
+ 📅 <span class="lbl-long">3. Fristenplanung</span><span class="lbl-short">Fristen</span>
  </button>
  <button type="button" class="main-nav-btn" id="btn-tab-stats" onclick="switchTab('stats')">
- 📊 <span class="lbl-long">3. Bestellungen & Auswertung</span><span class="lbl-short">Auswertung</span>
+ 📊 <span class="lbl-long">4. Bestellungen & Auswertung</span><span class="lbl-short">Historie</span>
  </button>
  <button type="button" class="main-nav-btn btn-nav-pin" id="dark-toggle-btn" onclick="toggleDarkTheme()" title="Hell/Dunkel">
  🌙
@@ -1294,8 +1355,9 @@
  </p>
 
  <button type="button" class="btn-main" id="btn-load-gsheet" onclick="loadFromGoogleSheet()" style="width: 100%; min-height: 44px; font-size: 15px; margin-bottom: 10px; display: flex; justify-content: center; align-items: center; gap: 8px;">
- 📊 Tabelle aus Google Sheets abrufen
+ 📋 Vollständige Lagerkontrolle
  </button>
+ <button type="button" class="btn-action" onclick="openZwPanel()" style="width: 100%; min-height: 38px; justify-content: center; font-size: 13px; margin-bottom: 8px;">🛒 Zwischenbestellung / einzelner Artikel</button>
  <button type="button" class="btn-action" onclick="openMhdPanel()" style="width: 100%; min-height: 38px; justify-content: center; font-size: 13px; margin-bottom: 10px;">⏳ Ablaufende Artikel ansehen & Datum ändern</button>
 
  <div class="options-box" style="margin-bottom: 12px;">
@@ -1320,7 +1382,7 @@
  <label for="gsheet-api-url" style="color: var(--primary); font-weight: 700;">Apps Script Web-App URL:</label>
  <a href="javascript:void(0)" onclick="testConnection()" style="font-size: 11px; text-decoration: underline; color: var(--primary);">🔍 Verbindung testen</a>
  </div>
- <input type="text" id="gsheet-api-url" value="https://script.google.com/macros/s/AKfycbxq9Hm6n2bRndCEraX4lMIAR_CaGNGzNquIJ7xjly-9ZgulGunPg2LCi5_juAmy6Jw/exec" style="margin-top: 4px;">
+ <input type="text" id="gsheet-api-url" value="https://script.google.com/macros/s/AKfycbxEvdXgZTFucpSQfDF83JFLEQ3zyteAOypn0ZPynOrz4jxwaKw-4ziKXCXgsrnU2__x/exec" style="margin-top: 4px;">
  <div id="api-test-status" style="font-size: 11px; font-weight: 700; margin-top: 4px;"></div>
  </div>
 
@@ -1530,6 +1592,32 @@
  </div>
 
  <!-- REITER 2: INTERAKTIVE LAGER- & FRISTENPLANUNG -->
+ <div id="tab-view-vehicles" style="display: none;">
+ <div class="planning-panel">
+ <div class="pl-head">
+ <div class="pl-head-text">
+ <h1 class="pl-title">🚑 Fahrzeugkontrolle</h1>
+ <div class="pl-subtitle">Fach für Fach: Menge wie Soll? Abgelaufen? · nur Reiter mit „FAHRZEUG“ in Zelle A1</div>
+ </div>
+ <div class="pl-actions">
+ <button type="button" class="pbtn" onclick="loadVehicles(true)">↻ Neu laden</button>
+ <button type="button" class="pbtn" onclick="fzNewOpen()">➕ Fahrzeug anlegen</button>
+ </div>
+ </div>
+ <div id="fz-new" class="sec-card" style="display: none;">
+ <h3>➕ Neues Fahrzeug (z. B. Reservefahrzeug) <small>wird als Kopie einer Schablone in der Google-Tabelle angelegt</small></h3>
+ <div class="zw-line">
+ <label class="zw-h" for="fz-new-tpl" style="margin:0;">Was für ein Fahrzeug?</label>
+ <select id="fz-new-tpl" style="width: auto !important; min-width: 240px; height: 36px !important;"></select>
+ <input type="text" id="fz-new-name" placeholder="Name, z. B. RTW 31" style="width: 180px !important; text-align: left !important;">
+ <button type="button" class="pbtn pbtn-primary" onclick="fzCreate()">Anlegen</button>
+ </div>
+ <div class="ho-sub" id="fz-new-hint" style="margin-top: 6px;"></div>
+ </div>
+ <div id="fz-list" class="fz-grid"><div class="empty-state">Fahrzeuge werden geladen …</div></div>
+ </div>
+ </div>
+
  <div id="tab-view-planning" style="display: none;">
  <div class="planning-panel">
  <div class="pl-head">
@@ -1896,6 +1984,34 @@
 </div>
 
 <!-- BESTELLÜBERGABE HAUPTLAGER -->
+<div id="fz-overlay" class="sheet-overlay" style="display: none;">
+ <div class="sheet mx-sheet fz-sheet" role="dialog" aria-label="Fahrzeugkontrolle">
+ <div class="sheet-head">
+ <strong id="fz-title">🚑 Fahrzeugkontrolle</strong>
+ <button type="button" class="sheet-close" onclick="fzClose()" aria-label="Schließen">✕</button>
+ </div>
+ <div class="mx-tools">
+ <div class="fz-bar"><span id="fz-bar-fill"></span></div>
+ <select id="fz-jump" onchange="fzJump(this.value)" style="width: 100% !important; height: 36px !important; text-align: left !important;"></select>
+ </div>
+ <div class="mx-body" id="fz-body"></div>
+ <div class="mx-foot fz-foot" id="fz-foot"></div>
+ </div>
+</div>
+<div id="zw-overlay" class="sheet-overlay" style="display: none;" onclick="if (event.target === this) closeZwPanel()">
+ <div class="sheet mx-sheet" role="dialog" aria-label="Zwischenbestellung">
+ <div class="sheet-head">
+ <strong>🛒 Zwischenbestellung / einzelner Artikel</strong>
+ <button type="button" class="sheet-close" onclick="closeZwPanel()" aria-label="Schließen">✕</button>
+ </div>
+ <div class="mx-tools">
+ <input type="search" id="zw-search" placeholder="🔍 Medikament oder Produkt suchen …" oninput="zwSel = null; renderZw()" style="flex: 1; height: 40px !important; text-align: left !important;">
+ </div>
+ <div class="mx-body" id="zw-body"></div>
+ <div class="mx-foot"><span class="ho-sub">Jede Eingabe wird sofort in Google Sheets gespeichert.</span>
+ <button type="button" class="pbtn" onclick="closeZwPanel()">Schließen</button></div>
+ </div>
+</div>
 <div id="mx-overlay" class="sheet-overlay" style="display: none;" onclick="if (event.target === this) closeMhdPanel()">
  <div class="sheet mx-sheet" role="dialog" aria-label="Ablaufende Artikel">
  <div class="sheet-head">
@@ -1979,7 +2095,7 @@
  // GRUNDLAGEN: Speicher, Hilfsfunktionen, Toast
  // =========================================================================
  const AUTH_HASH = "4cf902947292a75664d9a6769017372f5d2d161501c869c33aa6ddae21a2be83";
- const ACTIVE_APP_URL = "https://script.google.com/macros/s/AKfycbxq9Hm6n2bRndCEraX4lMIAR_CaGNGzNquIJ7xjly-9ZgulGunPg2LCi5_juAmy6Jw/exec";
+ const ACTIVE_APP_URL = "https://script.google.com/macros/s/AKfycbxEvdXgZTFucpSQfDF83JFLEQ3zyteAOypn0ZPynOrz4jxwaKw-4ziKXCXgsrnU2__x/exec";
 
  const LS = {
  get(key, fallback) {
@@ -2242,11 +2358,13 @@
  let activeTab = "wizard";
  function switchTab(tab) {
  activeTab = tab;
- ["wizard", "planning", "stats"].forEach(t => {
+ ["wizard", "vehicles", "planning", "stats"].forEach(t => {
  document.getElementById("btn-tab-" + t).classList.toggle("active", t === tab);
  document.getElementById("tab-view-" + t).style.display = t === tab ? "block" : "none";
  });
- if (tab === "planning") {
+ if (tab === "vehicles") {
+ loadVehicles(false);
+ } else if (tab === "planning") {
  initTable();
  refreshPlanningTab(false);
  runNameCheck(false);
@@ -6343,6 +6461,388 @@
  el.innerHTML = ex || soon ? `<span style="color: var(--danger); font-weight: 700;">${ex ? `${ex} abgelaufen` : ""}</span>${ex && soon ? " · " : ""}${soon ? `<span style="color: var(--warning); font-weight: 700;">${soon} in den nächsten ${mhdWindow()} Tagen</span>` : ""}` : "👍 Gerade nichts im Warnfenster";
  }
 
+
+ // =========================================================================
+ // ZWISCHENBESTELLUNG / EINZELARTIKEL (Startmenü)
+ // Artikel suchen -> "leer" (Bestellmenge = Soll) oder "es fehlen n" -> später "Ware gekommen: n"
+ // =========================================================================
+ let zwSel = null, zwOrt = "", zwOpenShown = false;
+ async function openZwPanel() {
+ mhdTempSession = !allItems.length;
+ if (mhdTempSession) draftSuppressed = true;
+ try {
+ if (!allItems.length || !(itemsDirty || layoutDirty)) await reloadItemsHeadless("aktuelle Bestände");
+ } catch (e) { alert("Google-Tabelle konnte nicht gelesen werden: " + e.message); endMhdTempSession(); return; }
+ if (mhdTempSession) { draftSuppressed = true; clearDraft(); }
+ if (!allItems.length) { endMhdTempSession(); return; }
+ zwSel = null;
+ document.getElementById("zw-search").value = "";
+ document.getElementById("zw-overlay").style.display = "flex";
+ document.body.style.overflow = "hidden";
+ renderZw();
+ setTimeout(() => document.getElementById("zw-search").focus(), 50);
+ }
+ function closeZwPanel() {
+ document.getElementById("zw-overlay").style.display = "none";
+ document.body.style.overflow = "";
+ zwSel = null;
+ endMhdTempSession();
+ }
+ function zwBm(it) { const n = Number(it.bestellmenge); return isNaN(n) ? 0 : n; }
+ function renderZw() {
+ const body = document.getElementById("zw-body");
+ const q = normName(document.getElementById("zw-search").value);
+ let html = "";
+ if (zwSel) {
+ const it = zwSel, soll = Number(it.soll) || 0, bm = zwBm(it), ist = Math.max(0, soll - bm);
+ html += `<div class="zw-card">
+ <div class="mx-name">${esc(it.name)}</div>
+ <div class="mx-sub">${esc(it.lagerort || "ohne Lagerort")} · Pos ${esc(String(it.pos))}${it.exklusiv ? " · ⭐ Exklusiv" : ""}</div>
+ <div class="zw-nums"><span>Soll <strong>${soll}</strong></span><span>Bestand <strong>${ist}</strong></span><span class="${bm ? "zw-open" : ""}">offen bestellt <strong>${bm}</strong></span></div>
+ <div class="zw-sec"><div class="zw-h">🛒 Nachbestellen – es ist zu wenig da</div>
+ <div class="zw-line">
+ <button type="button" class="pbtn pbtn-primary" onclick="zwSet(${soll})" ${soll ? "" : "disabled"}>📦 Leer – volle Menge (${soll})</button>
+ <span class="zw-or">oder es fehlen</span>
+ <input type="number" id="zw-need" min="1" max="${soll || 999}" value="${bm || ""}" placeholder="Anzahl" inputmode="numeric">
+ <button type="button" class="pbtn" onclick="zwSet(Number(document.getElementById('zw-need').value))">Stück nachbestellen</button>
+ </div></div>
+ <div class="zw-sec"><div class="zw-h">📥 Ware ist gekommen</div>
+ <div class="zw-line">
+ <input type="number" id="zw-got" min="1" value="${bm || ""}" placeholder="Anzahl" inputmode="numeric" ${bm ? "" : "disabled"}>
+ <button type="button" class="pbtn pbtn-primary" onclick="zwGot(Number(document.getElementById('zw-got').value))" ${bm ? "" : "disabled"}>Stück eingetroffen</button>
+ <span class="ho-sub">${bm ? "Kam weniger als bestellt, einfach die gelieferte Zahl eintragen – der Rest bleibt offen." : "Für diesen Artikel ist nichts offen bestellt."}</span>
+ </div></div>
+ <button type="button" class="mx-link" style="margin-top:8px;" onclick="zwSel=null; renderZw()">← andere Suche</button>
+ </div>`;
+ } else if (q) {
+ const hits = allItems.filter(it => normName(it.name).includes(q) || normName(it.lagerort).includes(q)).slice(0, 12);
+ html += hits.length ? hits.map(it => zwRow(it)).join("") : `<div class="empty-state">Kein Artikel gefunden.</div>`;
+ } else {
+ const open = allItems.filter(it => zwBm(it) > 0);
+ if (open.length) html += `<details class="zw-open-box"${open.length <= 5 || zwOpenShown ? " open" : ""} ontoggle="zwOpenShown = this.open"><summary class="mx-group" style="cursor:pointer;">Offen bestellt (${open.length}) – antippen zum ${open.length <= 5 ? "Einklappen" : "Aufklappen"}</summary>${open.map(it => zwRow(it)).join("")}</details>`;
+ // Zum Durchblättern, falls einem der Name nicht einfällt: alle Artikel nach Lagerort
+ const orte = [];
+ allItems.forEach(it => { const o = String(it.lagerort || "").trim() || "ohne Lagerort"; if (!orte.includes(o)) orte.push(o); });
+ const f = orte.includes(zwOrt) ? zwOrt : "";
+ html += `<div class="zw-browse-head"><span class="mx-group" style="margin:0;">Alle Artikel durchblättern (${allItems.length})</span>
+ <select onchange="zwOrt = this.value; renderZw()" style="width: auto !important; max-width: 60%; height: 34px !important; text-align: left !important;">
+ <option value="">alle Lagerorte</option>${orte.map(o => `<option value="${esc(o)}" ${o === f ? "selected" : ""}>${esc(o)}</option>`).join("")}
+ </select></div>`;
+ (f ? [f] : orte).forEach(o => {
+ const list = allItems.filter(it => (String(it.lagerort || "").trim() || "ohne Lagerort") === o);
+ html += `<div class="zw-ort">${esc(o)} <span>(${list.length})</span></div>` + list.map(it => zwRow(it)).join("");
+ });
+ }
+ body.innerHTML = html;
+ }
+ function zwRow(it) {
+ const idx = allItems.indexOf(it), bm = zwBm(it);
+ return `<button type="button" class="zw-row" onclick="zwPick(${idx})"><span><strong>${esc(it.name)}</strong><br><span class="mx-sub">${esc(it.lagerort || "")}</span></span>
+ <span class="zw-tag ${bm ? "zw-open" : ""}">${bm ? `offen: ${bm}` : `Soll ${Number(it.soll) || 0}`}</span></button>`;
+ }
+ function zwPick(idx) { zwSel = allItems[idx] || null; renderZw(); }
+ async function zwSave(it, newBm, msg) {
+ const old = it.bestellmenge;
+ it.bestellmenge = newBm;
+ markUnsynced();
+ if (mhdTempSession) draftSuppressed = true;
+ try {
+ await withLoader("Speichere in Google Sheets …", it.name, () => syncItemsToCloud(), false);
+ } catch (e) {
+ it.bestellmenge = old;
+ if (mhdTempSession) clearDraft();
+ alert("Speichern fehlgeschlagen – nichts geändert.\n\n" + e.message);
+ renderZw(); return;
+ }
+ if (mhdTempSession) { clearDraft(); draftSuppressed = true; }
+ if (currentFilteredList.length) renderStep();
+ showToast(msg, "ok", 5000);
+ renderZw();
+ }
+ function zwSet(n) {
+ const it = zwSel; if (!it) return;
+ const soll = Number(it.soll) || 0;
+ if (!(n > 0)) { alert("Bitte eine Anzahl eintragen."); return; }
+ if (soll && n > soll && !confirm(`Mehr als die Soll-Menge (${soll}) nachbestellen?`)) return;
+ zwSave(it, n, `🛒 ${it.name}: ${n} Stück kommen mit der nächsten Bestellung`);
+ }
+ function zwGot(n) {
+ const it = zwSel; if (!it) return;
+ const bm = zwBm(it);
+ if (!(n > 0)) { alert("Bitte eintragen, wie viele gekommen sind."); return; }
+ const rest = Math.max(0, bm - n);
+ zwSave(it, rest, `📥 ${it.name}: ${n} eingetroffen${rest ? ` – noch ${rest} offen` : " – wieder auf Soll"}`);
+ }
+
+ // =========================================================================
+ // FAHRZEUGKONTROLLE (Apps Script ab 3.1)
+ // Pro Artikel nur zwei Fragen: Menge wie Soll? Abgelaufen? – Fach für Fach.
+ // =========================================================================
+ let fzData = null, fzLoadedAt = 0, fz = null, fzDraftTimer = null;
+ const FZ_DRAFT = n => "rw_sassnitz_fz_" + n;
+ function fzNum(v) { const n = Number(v); return isNaN(n) || v === "" || v === null ? 0 : n; }
+ async function loadVehicles(force) {
+ if (!force && fzData && Date.now() - fzLoadedAt < 60000) { renderVehicles(); return; }
+ const info = await getScriptInfo(false).catch(() => null);
+ if (info && info.json && info.version < 3.1) {
+ document.getElementById("fz-list").innerHTML = `<div class="empty-state">Für die Fahrzeugkontrolle wird das Google-Skript <strong>3.1</strong> benötigt (installiert: ${info.version}). Bitte Code.gs einspielen und neu bereitstellen.</div>`;
+ return;
+ }
+ try {
+ const res = await withLoader("Lade die Fahrzeuge …", "aus Google Sheets", () => postToScript({ action: "LIST_VEHICLES" }));
+ fzData = res.vehicles || []; fzLoadedAt = Date.now();
+ } catch (e) {
+ document.getElementById("fz-list").innerHTML = `<div class="empty-state">⚠️ Fahrzeuge konnten nicht geladen werden: ${esc(e.message)}</div>`;
+ return;
+ }
+ renderVehicles();
+ }
+ function fzStats(v) {
+ let ex = 0, soon = 0, miss = 0;
+ v.items.forEach(it => {
+ const d = it.mhd ? mhdDiffDays(it.mhd) : null;
+ if (d !== null && d < 0) ex++; else if (d !== null && d <= v.warnDays) soon++;
+ if (fzNum(it.bestand) < fzNum(it.max)) miss++;
+ });
+ return { ex, soon, miss };
+ }
+ function fzGroups(v) {
+ const groups = [];
+ v.items.forEach((it, i) => {
+ const ort = String(it.ort || "").trim() || "ohne Fach";
+ const g = groups[groups.length - 1];
+ if (g && g.ort === ort) g.items.push(i); else groups.push({ ort, items: [i] });
+ });
+ return groups;
+ }
+ function fzWatched(name) { return String(runtimeConfig["fzwatch::" + name] || "ja").toLowerCase() !== "nein"; }
+ function renderVehicles() {
+ const el = document.getElementById("fz-list");
+ if (!fzData) return;
+ const veh = fzData.filter(v => !v.template), tpl = fzData.filter(v => v.template);
+ if (!veh.length) { el.innerHTML = `<div class="empty-state">Noch kein Fahrzeug markiert.<br>In der Google-Tabelle in jedem Fahrzeug-Reiter (z. B. RTW 808, NEF) in <strong>Zelle A1</strong> das Wort <strong>FAHRZEUG</strong> eintragen, Vorlagen bekommen <strong>SCHABLONE</strong>. Danach „↻ Neu laden“.</div>`; return; }
+ el.innerHTML = veh.map(v => {
+ const s = fzStats(v), g = fzGroups(v);
+ let last = null; try { last = JSON.parse(runtimeConfig["fzcheck::" + v.name] || "null"); } catch (_) {}
+ const draft = LS.get(FZ_DRAFT(v.name), null);
+ const vi = fzData.indexOf(v);
+ return `<div class="fz-card">
+ <div class="fz-head"><strong>🚑 ${esc(v.name)}</strong>
+ <label class="fz-watch" title="Ablaufende Artikel dieses Fahrzeugs in der Verfalls-Mail melden"><input type="checkbox" ${fzWatched(v.name) ? "checked" : ""} onchange="fzSetWatch(${vi}, this.checked)"> Verfall-Mail</label></div>
+ <div class="mx-sub">${v.items.length} Artikel · ${g.length} Fächer${last ? ` · zuletzt kontrolliert ${fmtDateDE(String(last.at).slice(0, 10))}${last.by ? ` (${esc(last.by)})` : ""}` : " · noch nicht im Terminal kontrolliert"}</div>
+ <div class="fz-badges">
+ ${s.ex ? `<span class="mx-badge st-red">⚠️ ${s.ex} abgelaufen</span>` : ""}
+ ${s.soon ? `<span class="mx-badge st-orange">⏰ ${s.soon} in ${v.warnDays} Tagen</span>` : ""}
+ ${s.miss ? `<span class="mx-badge st-orange">📦 ${s.miss} nicht vollständig</span>` : ""}
+ ${!s.ex && !s.soon && !s.miss ? `<span class="mx-badge st-ok">✓ alles in Ordnung</span>` : ""}
+ </div>
+ <div class="fz-actions">
+ <button type="button" class="pbtn pbtn-primary" onclick="fzStart(${vi}, 'full')">${draft && draft.mode === "full" ? `▶ Fortsetzen (Fach ${Math.min(draft.gi + 1, g.length)}/${g.length})` : "▶ Kontrolle starten"}</button>
+ <button type="button" class="pbtn" onclick="fzStart(${vi}, 'mhd')" ${s.ex + s.soon ? "" : "disabled"}>⏳ Nur Ablaufende (${s.ex + s.soon})</button>
+ </div>
+ </div>`;
+ }).join("") + (tpl.length ? `<div class="ho-sub" style="grid-column: 1 / -1;">Schablonen für neue Fahrzeuge: ${tpl.map(t => esc(t.name)).join(", ")}</div>` : "");
+ }
+ function fzSetWatch(vi, on) {
+ const v = fzData[vi]; if (!v) return;
+ runtimeConfig["fzwatch::" + v.name] = on ? "ja" : "nein";
+ planningConfigDirty = true; savePlanningLocal();
+ syncPlanningToGoogleSheet(true).then(() => showToast(on ? `📧 Verfall-Mail für ${v.name} an` : `Verfall-Mail für ${v.name} aus`, "ok")).catch(() => showToast("Lokal gespeichert – online nicht erreichbar.", "warn"));
+ }
+ function fzStart(vi, mode) {
+ const v = fzData[vi]; if (!v) return;
+ let groups;
+ if (mode === "mhd") {
+ const idx = v.items.map((it, i) => ({ i, d: it.mhd ? mhdDiffDays(it.mhd) : null })).filter(x => x.d !== null && x.d <= v.warnDays).sort((a, b) => a.d - b.d).map(x => x.i);
+ groups = [{ ort: `Ablaufende Artikel (≤ ${v.warnDays} Tage)`, items: idx, mixed: true }];
+ } else groups = fzGroups(v);
+ fz = { v, mode, groups, gi: 0, edits: new Map() };
+ const d = LS.get(FZ_DRAFT(v.name), null);
+ if (d && d.mode === mode && Array.isArray(d.edits)) {
+ if (confirm(`Für ${v.name} gibt es einen Zwischenstand vom ${fmtDateTimeDE(d.at)}. Fortsetzen?\n\n(Abbrechen = neu anfangen)`)) {
+ d.edits.forEach(([row, e]) => fz.edits.set(row, e));
+ fz.gi = Math.min(d.gi || 0, groups.length);
+ } else LS.remove(FZ_DRAFT(v.name));
+ }
+ document.getElementById("fz-overlay").style.display = "flex";
+ document.body.style.overflow = "hidden";
+ fzRender();
+ }
+ function fzSaveDraft() {
+ if (!fz) return;
+ clearTimeout(fzDraftTimer);
+ fzDraftTimer = setTimeout(() => {
+ if (!fz) return;
+ if (!fz.edits.size && fz.gi === 0) { LS.remove(FZ_DRAFT(fz.v.name)); return; }
+ LS.set(FZ_DRAFT(fz.v.name), { mode: fz.mode, gi: fz.gi, at: new Date().toISOString(), edits: [...fz.edits.entries()] });
+ }, 250);
+ }
+ function fzClose() {
+ if (fz && (fz.edits.size || fz.gi > 0)) { fzSaveDraft(); showToast("Zwischenstand gemerkt – „▶ Fortsetzen“ macht dort weiter.", "ok"); }
+ document.getElementById("fz-overlay").style.display = "none";
+ document.body.style.overflow = "";
+ fz = null;
+ renderVehicles();
+ }
+ function fzCur(it) {
+ const e = fz.edits.get(it.row) || {};
+ return { bestand: e.bestand !== undefined ? e.bestand : fzNum(it.bestand), mhd: e.mhd !== undefined ? e.mhd : (it.mhd || "") };
+ }
+ function fzSetVal(i, field, val) {
+ const it = fz.v.items[i]; if (!it) return;
+ const e = Object.assign({}, fz.edits.get(it.row) || {});
+ if (field === "bestand") { val = Math.max(0, Math.round(Number(val) || 0)); if (val === fzNum(it.bestand)) delete e.bestand; else e.bestand = val; }
+ else { if (val === (it.mhd || "")) delete e.mhd; else e.mhd = val; }
+ if (Object.keys(e).length) fz.edits.set(it.row, e); else fz.edits.delete(it.row);
+ fzSaveDraft();
+ fzRender(true);
+ }
+ function fzStep(i, d) { const it = fz.v.items[i]; fzSetVal(i, "bestand", fzCur(it).bestand + d); }
+ function fzAllFull() { fz.groups[fz.gi].items.forEach(i => { const it = fz.v.items[i]; if (fzCur(it).bestand < fzNum(it.max)) fzSetValQuiet(i, fzNum(it.max)); }); fzSaveDraft(); fzRender(true); }
+ function fzSetValQuiet(i, val) {
+ const it = fz.v.items[i];
+ const e = Object.assign({}, fz.edits.get(it.row) || {});
+ if (val === fzNum(it.bestand)) delete e.bestand; else e.bestand = val;
+ if (Object.keys(e).length) fz.edits.set(it.row, e); else fz.edits.delete(it.row);
+ }
+ function fzMhdBadge(mhd, warn) {
+ const d = mhd ? mhdDiffDays(mhd) : null;
+ if (d === null) return "";
+ if (d < 0) return `<span class="mx-badge st-red">abgelaufen (${-d} T)</span>`;
+ if (d <= warn) return `<span class="mx-badge st-orange">in ${d} Tagen</span>`;
+ return `<span class="mx-badge st-ok">gültig</span>`;
+ }
+ function fzRender(keepScroll) {
+ if (!fz) return;
+ const body = document.getElementById("fz-body"), foot = document.getElementById("fz-foot");
+ const st = keepScroll ? body.scrollTop : 0;
+ const n = fz.groups.length, v = fz.v;
+ document.getElementById("fz-title").textContent = `🚑 ${v.name} – ${fz.mode === "mhd" ? "Ablaufende Artikel" : "Fahrzeugkontrolle"}`;
+ document.getElementById("fz-bar-fill").style.width = `${Math.round(Math.min(fz.gi, n) / Math.max(1, n) * 100)}%`;
+ const jump = document.getElementById("fz-jump");
+ jump.innerHTML = fz.groups.map((g, i) => `<option value="${i}">${i + 1}/${n} · ${esc(g.ort)}</option>`).join("") + `<option value="${n}">✔ Zusammenfassung</option>`;
+ jump.value = String(fz.gi);
+ if (fz.gi >= n) { fzSummary(); return; }
+ const g = fz.groups[fz.gi];
+ body.innerHTML = `<div class="fz-fach"><div><div class="fz-fach-name">${esc(g.ort)}</div><div class="mx-sub">${g.items.length} Artikel · Menge wie Soll? Abgelaufen?</div></div>
+ ${fz.mode === "full" ? `<button type="button" class="pbtn pbtn-sm" onclick="fzAllFull()">✓ Alles vollständig</button>` : ""}</div>` +
+ (g.items.length ? g.items.map(i => {
+ const it = v.items[i], c = fzCur(it), max = fzNum(it.max), miss = c.bestand < max, chg = fz.edits.has(it.row);
+ return `<div class="fz-item${miss ? " miss" : ""}${chg ? " changed" : ""}">
+ <div class="fz-iname">${esc(it.name)}${it.bem ? `<span class="mx-sub"> · ${esc(it.bem)}</span>` : ""}${g.mixed ? `<div class="mx-sub">${esc(it.ort)}</div>` : ""}</div>
+ <div class="fz-qty"><span class="fz-soll">Soll ${max}</span>
+ <button type="button" class="fz-pm" onclick="fzStep(${i}, -1)" aria-label="weniger">−</button>
+ <input type="number" inputmode="numeric" value="${c.bestand}" onchange="fzSetVal(${i}, 'bestand', this.value)" aria-label="Ist-Menge">
+ <button type="button" class="fz-pm" onclick="fzStep(${i}, 1)" aria-label="mehr">+</button>
+ ${miss ? `<span class="fz-miss">fehlt ${max - c.bestand}</span>` : `<span class="fz-ok">✓</span>`}</div>
+ ${v.hasMhd ? `<div class="fz-mhd">${fzMhdBadge(c.mhd, v.warnDays)}<input type="date" value="${esc(c.mhd)}" onchange="fzSetVal(${i}, 'mhd', this.value)" aria-label="MHD"></div>` : ""}
+ </div>`;
+ }).join("") : `<div class="empty-state">👍 Nichts läuft ab.</div>`);
+ body.scrollTop = st;
+ foot.innerHTML = `<button type="button" class="pbtn" onclick="fzGo(-1)" ${fz.gi === 0 ? "disabled" : ""}>◀ Zurück</button>
+ <span class="ho-sub">${fz.edits.size ? `${fz.edits.size} geändert` : ""}</span>
+ <button type="button" class="pbtn pbtn-primary" onclick="fzGo(1)">${fz.gi === n - 1 ? "Zur Zusammenfassung ▶" : "Fach ok – weiter ▶"}</button>`;
+ }
+ function fzGo(d) { if (!fz) return; fz.gi = Math.max(0, Math.min(fz.groups.length, fz.gi + d)); fzSaveDraft(); fzRender(); document.getElementById("fz-body").scrollTop = 0; }
+ function fzJump(val) { if (!fz) return; fz.gi = Number(val) || 0; fzSaveDraft(); fzRender(); }
+ function fzReport() {
+ const v = fz.v, seen = new Set(fz.groups.flatMap(g => g.items));
+ const rows = [...seen].map(i => ({ it: v.items[i], c: fzCur(v.items[i]) }));
+ const miss = rows.filter(x => x.c.bestand < fzNum(x.it.max));
+ const mhd = rows.map(x => ({ ...x, d: x.c.mhd ? mhdDiffDays(x.c.mhd) : null })).filter(x => x.d !== null && x.d <= v.warnDays).sort((a, b) => a.d - b.d);
+ return { miss, mhd };
+ }
+ function fzSummary() {
+ const body = document.getElementById("fz-body"), foot = document.getElementById("fz-foot"), v = fz.v;
+ const { miss, mhd } = fzReport();
+ const signs = LS.get(KEY_SIGNS, {}); const lastBy = LS.getRaw("rw_sassnitz_fz_by") || "";
+ const fmt = iso => iso ? iso.split("-").reverse().join(".") : "–";
+ body.innerHTML = `<div class="fz-fach"><div><div class="fz-fach-name">✔ Zusammenfassung ${esc(v.name)}</div><div class="mx-sub">${fz.edits.size} Änderung(en) · ${miss.length} nicht vollständig · ${mhd.length} ablaufend</div></div></div>
+ <div class="zw-sec"><div class="zw-h">📦 Aus dem Lager nachfüllen (${miss.length})</div>
+ ${miss.length ? `<table class="fz-tab"><tr><th>Fach</th><th>Artikel</th><th>Soll</th><th>Ist</th><th>fehlt</th></tr>${miss.map(x => `<tr><td>${esc(x.it.ort)}</td><td>${esc(x.it.name)}</td><td>${fzNum(x.it.max)}</td><td>${x.c.bestand}</td><td><strong>${fzNum(x.it.max) - x.c.bestand}</strong></td></tr>`).join("")}</table>` : `<div class="ho-sub">Alles vollständig 👍</div>`}</div>
+ ${v.hasMhd ? `<div class="zw-sec"><div class="zw-h">⏳ Abgelaufen / läuft in ${v.warnDays} Tagen ab (${mhd.length})</div>
+ ${mhd.length ? `<table class="fz-tab"><tr><th>Fach</th><th>Artikel</th><th>MHD</th><th>Status</th></tr>${mhd.map(x => `<tr><td>${esc(x.it.ort)}</td><td>${esc(x.it.name)}</td><td>${fmt(x.c.mhd)}</td><td>${x.d < 0 ? `<strong style="color:var(--danger)">abgelaufen</strong>` : `in ${x.d} T`}</td></tr>`).join("")}</table>` : `<div class="ho-sub">Nichts läuft ab 👍</div>`}</div>` : ""}
+ <div class="zw-sec"><label class="zw-h" for="fz-by">✍️ Kontrolliert von (Name/Kürzel)</label>
+ <input type="text" id="fz-by" value="${esc(lastBy)}" placeholder="z. B. AW" style="max-width: 220px; text-align: left !important;"></div>`;
+ foot.innerHTML = `<button type="button" class="pbtn" onclick="fzGo(-1)">◀ Zurück</button>
+ <button type="button" class="pbtn" onclick="fzPrint()">🖨️ Drucken / PDF</button>
+ <button type="button" class="pbtn pbtn-primary" onclick="fzFinish()">💾 Speichern & abschließen</button>`;
+ }
+ function fzPrint() {
+ if (!fz) return;
+ const v = fz.v, { miss, mhd } = fzReport();
+ const by = (document.getElementById("fz-by") || {}).value || "";
+ const fmt = iso => iso ? iso.split("-").reverse().join(".") : "–";
+ const now = new Date();
+ document.getElementById("print-area").innerHTML = `
+ <div class="pl-section"><h1>Fahrzeugkontrolle ${esc(v.name)}</h1>
+ <div class="pl-meta"><span>RW Sassnitz · ${fz.mode === "mhd" ? "nur ablaufende Artikel" : "vollständige Kontrolle"}</span><span>${now.toLocaleDateString("de-DE")} ${now.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}${by ? ` · ${esc(by)}` : ""}</span></div>
+ <h2>Aus dem Lager nachfüllen (${miss.length})</h2>
+ ${miss.length ? `<table><thead><tr><th style="width:32%">Fach</th><th>Artikel</th><th class="c" style="width:12mm">Soll</th><th class="c" style="width:12mm">Ist</th><th class="c" style="width:14mm">fehlt</th><th class="c" style="width:16mm">✓</th></tr></thead><tbody>
+ ${miss.map(x => `<tr><td>${esc(x.it.ort)}</td><td>${esc(x.it.name)}</td><td class="num">${fzNum(x.it.max)}</td><td class="num">${x.c.bestand}</td><td class="num">${fzNum(x.it.max) - x.c.bestand}</td><td class="chk"></td></tr>`).join("")}</tbody></table>` : "<p>Alles vollständig.</p>"}
+ ${v.hasMhd ? `<h2>Abgelaufen / läuft in ${v.warnDays} Tagen ab (${mhd.length})</h2>
+ ${mhd.length ? `<table><thead><tr><th style="width:32%">Fach</th><th>Artikel</th><th class="c" style="width:24mm">MHD</th><th class="c" style="width:26mm">Status</th><th class="c" style="width:16mm">✓</th></tr></thead><tbody>
+ ${mhd.map(x => `<tr><td>${esc(x.it.ort)}</td><td>${esc(x.it.name)}</td><td class="c">${fmt(x.c.mhd)}</td><td class="c ${x.d < 0 ? "warn" : ""}">${x.d < 0 ? "ABGELAUFEN" : `in ${x.d} Tagen`}</td><td class="chk"></td></tr>`).join("")}</tbody></table>` : "<p>Nichts läuft ab.</p>"}` : ""}
+ <div class="pl-foot">Erstellt mit dem Lager-, Verfalls- & Fristen-Terminal · Unterschrift: ______________________</div></div>`;
+ document.body.classList.add("printing-list");
+ const done = () => { document.body.classList.remove("printing-list"); window.removeEventListener("afterprint", done); };
+ window.addEventListener("afterprint", done);
+ setTimeout(() => window.print(), 60);
+ }
+ async function fzFinish() {
+ if (!fz) return;
+ const v = fz.v, by = (document.getElementById("fz-by").value || "").trim();
+ if (!by) { alert("Bitte eintragen, wer kontrolliert hat (Name oder Kürzel)."); document.getElementById("fz-by").focus(); return; }
+ LS.setRaw("rw_sassnitz_fz_by", by);
+ const rows = [...fz.edits.entries()].map(([row, e]) => { const it = v.items.find(x => x.row === row); return Object.assign({ row, name: it ? it.name : "" }, e); }).filter(x => x.name);
+ const { miss, mhd } = fzReport();
+ try {
+ if (rows.length) {
+ const res = await withLoader("Speichere die Fahrzeugkontrolle …", `${v.name} · ${rows.length} Änderung(en)`, () => postToScript({ action: "SAVE_VEHICLE", sheet: v.name, rows }), false);
+ if (res.skipped && res.skipped.length) alert(`Achtung: ${res.skipped.length} Zeile(n) wurden in Google inzwischen verändert und NICHT überschrieben:\n${res.skipped.join(", ")}\n\nBitte die Fahrzeuge neu laden und diese Artikel nochmal prüfen.`);
+ }
+ } catch (e) { alert("Speichern fehlgeschlagen – nichts geändert. Der Zwischenstand bleibt erhalten.\n\n" + e.message); return; }
+ rows.forEach(r => { const it = v.items.find(x => x.row === r.row); if (it) { if (r.bestand !== undefined) it.bestand = r.bestand; if (r.mhd !== undefined) it.mhd = r.mhd; } });
+ if (fz.mode === "full") {
+ runtimeConfig["fzcheck::" + v.name] = JSON.stringify({ at: new Date().toISOString(), by, fehlt: miss.length, ablaufend: mhd.length });
+ planningConfigDirty = true; savePlanningLocal();
+ syncPlanningToGoogleSheet(true).catch(() => {});
+ }
+ LS.remove(FZ_DRAFT(v.name));
+ const n = rows.length;
+ fz.edits = new Map();
+ showToast(`✅ ${v.name}: Kontrolle gespeichert${n ? ` (${n} Änderung(en))` : ""}${miss.length ? ` · ${miss.length} Artikel nachfüllen` : ""}`, "ok", 6000);
+ document.getElementById("fz-overlay").style.display = "none";
+ document.body.style.overflow = "";
+ fz = null;
+ renderVehicles();
+ }
+ // ---------- neues Fahrzeug aus Schablone ----------
+ function fzNewOpen() {
+ const box = document.getElementById("fz-new");
+ const tpl = (fzData || []).filter(v => v.template);
+ box.style.display = box.style.display === "block" ? "none" : "block";
+ if (box.style.display !== "block") return;
+ document.getElementById("fz-new-tpl").innerHTML = tpl.length
+ ? tpl.map(t => `<option value="${esc(t.name)}">${/nef/i.test(t.name) ? "Reserve-NEF" : /rtw/i.test(t.name) ? "Reserve-RTW" : esc(t.name)} – Schablone „${esc(t.name)}“</option>`).join("")
+ : `<option value="">– keine Schablone gefunden –</option>`;
+ document.getElementById("fz-new-hint").innerHTML = tpl.length ? "" : `Lege in Google einen Reiter an, z. B. <strong>„RTW-Reserve“</strong> oder <strong>„NEF-Reserve“</strong> (Kopie von RTW 808 mit der Reserve-Bestückung), und trage in <strong>Zelle A1</strong> das Wort <strong>SCHABLONE</strong> ein. Danach „↻ Neu laden“ – dann erscheint sie hier.`;
+ }
+ async function fzCreate() {
+ const tpl = document.getElementById("fz-new-tpl").value, name = document.getElementById("fz-new-name").value.trim();
+ if (!tpl) { alert("Es gibt noch keine Schablone."); return; }
+ if (!name) { alert("Bitte einen Namen für das Fahrzeug eintragen, z. B. „RTW 31“."); return; }
+ if ((fzData || []).some(v => v.name.toLowerCase() === name.toLowerCase())) { alert("Ein Fahrzeug mit diesem Namen gibt es schon."); return; }
+ if (!confirm(`Neues Fahrzeug „${name}“ als Kopie von „${tpl}“ in der Google-Tabelle anlegen?`)) return;
+ try { await withLoader("Lege das Fahrzeug an …", `„${name}“ aus „${tpl}“`, () => postToScript({ action: "CREATE_VEHICLE", template: tpl, name }), false); }
+ catch (e) { alert("Anlegen fehlgeschlagen:\n\n" + e.message); return; }
+ document.getElementById("fz-new").style.display = "none";
+ document.getElementById("fz-new-name").value = "";
+ showToast(`🚑 ${name} angelegt`, "ok");
+ loadVehicles(true);
+ }
+
+
  async function markOrderReceived(id) {
  const o = orderHistory.find(x => x.id === id);
  if (!o) return;
@@ -6628,7 +7128,7 @@
  // Bei jedem neuen Hochladen auf GitHub wird APP_VERSION erhöht. Das Terminal schaut
  // regelmäßig nach, ob auf dem Server eine neuere index.html liegt, und bietet das Update an.
  // =========================================================================
- const APP_VERSION = "2026.11.07-2";
+ const APP_VERSION = "2026.11.09-4";
  let updateCheckAt = 0, updateFound = null;
  async function checkForUpdate(force) {
  if (!/^https?:$/.test(location.protocol) || updateFound) return;
@@ -6692,7 +7192,7 @@
  const savedUrl = LS.getRaw("saved_gsheet_url");
  if (savedUrl) document.getElementById("gsheet-url").value = savedUrl;
  // Alte, gespeicherte Web-App-Adresse automatisch auf die neue umstellen
- const OLD_APP_URLS = ["https://script.google.com/macros/s/AKfycbyLiwmS6SHewkmUOjW6Fgqg8e4p3GIwOTkWeorUaR2ujZJZ1ldQRC0JRah0Z8ziHWzr/exec", "https://script.google.com/macros/s/AKfycbx5SZZQ9TqyjcX3WEdwWv5i9fppDXkCGKKkcWx93Og-SEzm-ATycFkzRaBLI_BGu953/exec", "https://script.google.com/macros/s/AKfycbxiuQxlI3HCCL85BpSAxnNR7xZx9c15ajJH2D_KX6SXN1F0dZUzEcGUg-94SFwlT6u7/exec"];
+ const OLD_APP_URLS = ["https://script.google.com/macros/s/AKfycbyLiwmS6SHewkmUOjW6Fgqg8e4p3GIwOTkWeorUaR2ujZJZ1ldQRC0JRah0Z8ziHWzr/exec", "https://script.google.com/macros/s/AKfycbx5SZZQ9TqyjcX3WEdwWv5i9fppDXkCGKKkcWx93Og-SEzm-ATycFkzRaBLI_BGu953/exec", "https://script.google.com/macros/s/AKfycbxiuQxlI3HCCL85BpSAxnNR7xZx9c15ajJH2D_KX6SXN1F0dZUzEcGUg-94SFwlT6u7/exec", "https://script.google.com/macros/s/AKfycbxq9Hm6n2bRndCEraX4lMIAR_CaGNGzNquIJ7xjly-9ZgulGunPg2LCi5_juAmy6Jw/exec"];
  if (OLD_APP_URLS.includes(LS.getRaw("saved_gsheet_api"))) LS.setRaw("saved_gsheet_api", ACTIVE_APP_URL);
  document.getElementById("gsheet-api-url").value = LS.getRaw("saved_gsheet_api") || ACTIVE_APP_URL;
  document.getElementById("gsheet-api-key").value = LS.getRaw(KEY_APIKEY) || "";
