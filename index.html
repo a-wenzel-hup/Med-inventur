@@ -1048,6 +1048,10 @@
  #print-area td.chk { width: 16mm; }
  #print-area .warn { font-weight: bold; }
  #print-area .pl-foot { font-size: 7.5pt; color: #444; margin-top: 2mm; }
+ #print-area table.fz-full { font-size: 8.5pt; }
+ #print-area table.fz-full th, #print-area table.fz-full td { padding: 0.9mm 1.4mm; }
+ #print-area tr.fach td { background: #e8eef5 !important; font-weight: bold; border-left: 3px solid #1F4E79; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+ #print-area tr.bad td { background: #eeeeee !important; font-weight: bold; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
  }
 
  /* =========================================================================
@@ -1285,6 +1289,8 @@
  .zw-browse-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 14px 0 6px; flex-wrap: wrap; }
  .zw-ort { position: sticky; top: 0; z-index: 1; background: var(--bg-gray); color: var(--text); font-size: 12px; font-weight: 800; padding: 5px 8px; border-radius: 6px; margin: 10px 0 6px; }
  .zw-ort span { color: var(--text-muted); font-weight: 600; }
+ .fz-badge-btn { border: none; cursor: pointer; font-family: inherit; }
+ .fz-badge-btn:hover { filter: brightness(0.95); text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -1600,7 +1606,7 @@
  <div class="pl-subtitle">Fach für Fach: Menge wie Soll? Abgelaufen? · nur Reiter mit „FAHRZEUG“ in Zelle A1</div>
  </div>
  <div class="pl-actions">
- <button type="button" class="pbtn" onclick="loadVehicles(true)">↻ Neu laden</button>
+ <button type="button" class="pbtn" onclick="loadVehicles(true)" title="Sucht alle Reiter mit FAHRZEUG/SCHABLONE in A1 neu">↻ Neu laden</button>
  <button type="button" class="pbtn" onclick="fzNewOpen()">➕ Fahrzeug anlegen</button>
  </div>
  </div>
@@ -6581,21 +6587,102 @@
  let fzData = null, fzLoadedAt = 0, fz = null, fzDraftTimer = null;
  const FZ_DRAFT = n => "rw_sassnitz_fz_" + n;
  function fzNum(v) { const n = Number(v); return isNaN(n) || v === "" || v === null ? 0 : n; }
- async function loadVehicles(force) {
- if (!force && fzData && Date.now() - fzLoadedAt < 60000) { renderVehicles(); return; }
+ // Schnell laden: die bekannten Fahrzeug-Reiter direkt aus Google Sheets lesen (parallel, ohne Apps Script).
+ // Nur „↻ Neu laden“ (oder beim ersten Mal) durchsucht das Skript alle Reiter nach der Markierung in A1.
+ const KEY_FZLIST = "rw_sassnitz_fz_list";
+ function fzKnownList() {
+ try { const l = JSON.parse(runtimeConfig.fzlist || "null"); if (Array.isArray(l) && l.length) return l; } catch (_) {}
+ const l = LS.get(KEY_FZLIST, null);
+ return Array.isArray(l) ? l : [];
+ }
+ function fzRememberList(vehicles) {
+ const list = vehicles.map(v => ({ name: v.name, template: !!v.template }));
+ LS.set(KEY_FZLIST, list);
+ const js = JSON.stringify(list);
+ if (runtimeConfig.fzlist !== js) { runtimeConfig.fzlist = js; planningConfigDirty = true; savePlanningLocal(); syncPlanningToGoogleSheet(true).catch(() => {}); }
+ }
+ function fzDate(t) {
+ t = String(t || "").trim();
+ let m = t.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/);
+ if (m) { const y = m[3].length === 2 ? 2000 + Number(m[3]) : Number(m[3]); return `${y}-${String(m[2]).padStart(2, "0")}-${String(m[1]).padStart(2, "0")}`; }
+ m = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
+ return m ? `${m[1]}-${m[2]}-${m[3]}` : "";
+ }
+ function fzParseCsv(name, text) {
+ const rows = parseCsv(text);
+ const mark = String((rows[0] || [])[0] || "").trim().toUpperCase();
+ if (mark !== "FAHRZEUG" && mark !== "SCHABLONE") return null; // nicht (mehr) markiert
+ let hdr = -1;
+ for (let r = 0; r < Math.min(15, rows.length); r++) {
+ const low = rows[r].map(c => String(c).toLowerCase().trim());
+ if (low.includes("pos") && low.some(c => c.includes("material") || c.includes("produkt"))) { hdr = r; break; }
+ }
+ if (hdr < 0) return null;
+ const c = {};
+ rows[hdr].forEach((raw, i) => {
+ const v = String(raw).toLowerCase().trim();
+ if (!v || v.includes("liste")) return;
+ if (v.includes("material") || v.includes("produkt") || v.includes("artikel")) { if (c.name === undefined) c.name = i; }
+ else if (v === "min") c.min = i;
+ else if (v === "max" || v === "soll") c.max = i;
+ else if (v === "bestand") c.bestand = i;
+ else if (v.includes("lager") || v.includes("ort")) c.ort = i;
+ else if (v.includes("bemerk")) c.bem = i;
+ else if (v.includes("mhd") || v.includes("verfall")) c.mhd = i;
+ });
+ if (c.name === undefined || c.max === undefined || c.bestand === undefined) return null;
+ let warn = 30;
+ rows.slice(0, hdr).forEach(r => { const wi = r.findIndex(x => /warnung/i.test(x)); if (wi >= 0) { const n = r.slice(wi + 1).map(numDE).find(x => x !== null); if (n !== undefined) warn = n; } });
+ const items = [];
+ for (let r = hdr + 1; r < rows.length; r++) {
+ const row = rows[r], nm = String(row[c.name] || "").trim();
+ if (!nm) continue;
+ items.push({ row: r + 1, name: nm, min: numDE(row[c.min]) ?? "", max: numDE(row[c.max]) ?? 0, bestand: numDE(row[c.bestand]) ?? 0,
+ ort: c.ort !== undefined ? String(row[c.ort] || "") : "", bem: c.bem !== undefined ? String(row[c.bem] || "") : "",
+ mhd: c.mhd !== undefined ? fzDate(row[c.mhd]) : "" });
+ }
+ return { name, template: mark === "SCHABLONE", hasMhd: c.mhd !== undefined, warnDays: warn, items };
+ }
+ async function loadVehiclesFast(list) {
+ const sheetId = getSheetId();
+ if (!sheetId) throw new Error("Kein Google-Sheets-Link eingestellt.");
+ const res = await Promise.all(list.map(async x => {
+ const r = await fetch(`https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&headers=0&sheet=${encodeURIComponent(x.name)}&_=${Date.now()}`);
+ if (!r.ok) throw new Error("HTTP " + r.status);
+ const v = fzParseCsv(x.name, await r.text());
+ if (!v) throw new Error("„" + x.name + "“ ist nicht mehr markiert");
+ return v;
+ }));
+ return res;
+ }
+ async function loadVehiclesFull() {
  let info = await getScriptInfo(false).catch(() => null);
  if (info && info.json && info.version < 3.2) info = await getScriptInfo(true).catch(() => info); // nach neuem Bereitstellen nicht den alten Stand merken
  if (info && info.json && info.version < 3.2) {
- document.getElementById("fz-list").innerHTML = `<div class="empty-state">⛔ Das Google-Skript hinter dem eingestellten App-Link ist noch <strong>Version ${esc(String(info.version))}</strong> – die Fahrzeugkontrolle braucht <strong>3.2</strong>.<br><br>
- In Apps Script prüfen, dass oben im Code <code>var SCRIPT_VERSION = '3.2';</code> steht (sonst die neue Code.gs einfügen und speichern), dann <strong>Bereitstellen → Bereitstellungen verwalten</strong> → die Bereitstellung mit <em>genau diesem</em> Link → Stift → Version <strong>„Neue Version“</strong> → Bereitstellen. Danach hier „↻ Neu laden“.<br><br>
- <span class="mx-sub">Eingestellter Link: …${esc(getApiUrl().slice(-22))}</span></div>`;
- return;
+ const e = new Error("OLD_SCRIPT"); e.version = info.version; throw e;
  }
+ const res = await postToScript({ action: "LIST_VEHICLES" });
+ return res.vehicles || [];
+ }
+ async function loadVehicles(force) {
+ if (!force && fzData && Date.now() - fzLoadedAt < 120000) { renderVehicles(); return; }
+ const known = fzKnownList();
  try {
- const res = await withLoader("Lade die Fahrzeuge …", "aus Google Sheets", () => postToScript({ action: "LIST_VEHICLES" }));
- fzData = res.vehicles || []; fzLoadedAt = Date.now();
+ fzData = await withLoader("Lade die Fahrzeuge …", force || !known.length ? "suche alle markierten Reiter (Google-Skript)" : known.filter(x => !x.template).map(x => x.name).join(", "), async () => {
+ if (!force && known.length) {
+ try { return await loadVehiclesFast(known); } catch (_) { /* Liste veraltet -> einmal komplett suchen */ }
+ }
+ const full = await loadVehiclesFull();
+ fzRememberList(full);
+ return full;
+ });
+ fzLoadedAt = Date.now();
  } catch (e) {
- document.getElementById("fz-list").innerHTML = `<div class="empty-state">⚠️ Fahrzeuge konnten nicht geladen werden: ${esc(e.message)}</div>`;
+ document.getElementById("fz-list").innerHTML = e.message === "OLD_SCRIPT"
+ ? `<div class="empty-state">⛔ Das Google-Skript hinter dem eingestellten App-Link ist noch <strong>Version ${esc(String(e.version))}</strong> – die Fahrzeugkontrolle braucht <strong>3.2</strong>.<br><br>
+ In Apps Script prüfen, dass oben im Code <code>var SCRIPT_VERSION = '3.2';</code> steht (sonst die neue Code.gs einfügen und speichern), dann <strong>Bereitstellen → Bereitstellungen verwalten</strong> → die Bereitstellung mit <em>genau diesem</em> Link → Stift → Version <strong>„Neue Version“</strong> → Bereitstellen. Danach hier „↻ Neu laden“.<br><br>
+ <span class="mx-sub">Eingestellter Link: …${esc(getApiUrl().slice(-22))}</span></div>`
+ : `<div class="empty-state">⚠️ Fahrzeuge konnten nicht geladen werden: ${esc(e.message)}</div>`;
  return;
  }
  renderVehicles();
@@ -6634,14 +6721,15 @@
  <label class="fz-watch" title="Ablaufende Artikel dieses Fahrzeugs in der Verfalls-Mail melden"><input type="checkbox" ${fzWatched(v.name) ? "checked" : ""} onchange="fzSetWatch(${vi}, this.checked)"> Verfall-Mail</label></div>
  <div class="mx-sub">${v.items.length} Artikel · ${g.length} Fächer${last ? ` · zuletzt kontrolliert ${fmtDateDE(String(last.at).slice(0, 10))}${last.by ? ` (${esc(last.by)})` : ""}` : " · noch nicht im Terminal kontrolliert"}</div>
  <div class="fz-badges">
- ${s.ex ? `<span class="mx-badge st-red">⚠️ ${s.ex} abgelaufen</span>` : ""}
- ${s.soon ? `<span class="mx-badge st-orange">⏰ ${s.soon} in ${v.warnDays} Tagen</span>` : ""}
- ${s.miss ? `<span class="mx-badge st-orange">📦 ${s.miss} nicht vollständig</span>` : ""}
+ ${s.ex ? `<button type="button" class="mx-badge st-red fz-badge-btn" onclick="fzStart(${vi}, 'mhd')" title="Anzeigen">⚠️ ${s.ex} abgelaufen ›</button>` : ""}
+ ${s.soon ? `<button type="button" class="mx-badge st-orange fz-badge-btn" onclick="fzStart(${vi}, 'mhd')" title="Anzeigen">⏰ ${s.soon} in ${v.warnDays} Tagen ›</button>` : ""}
+ ${s.miss ? `<button type="button" class="mx-badge st-orange fz-badge-btn" onclick="fzStart(${vi}, 'miss')" title="Anzeigen">📦 ${s.miss} nicht vollständig ›</button>` : ""}
  ${!s.ex && !s.soon && !s.miss ? `<span class="mx-badge st-ok">✓ alles in Ordnung</span>` : ""}
  </div>
  <div class="fz-actions">
  <button type="button" class="pbtn pbtn-primary" onclick="fzStart(${vi}, 'full')">${draft && draft.mode === "full" ? `▶ Fortsetzen (Fach ${Math.min(draft.gi + 1, g.length)}/${g.length})` : "▶ Kontrolle starten"}</button>
  <button type="button" class="pbtn" onclick="fzStart(${vi}, 'mhd')" ${s.ex + s.soon ? "" : "disabled"}>⏳ Nur Ablaufende (${s.ex + s.soon})</button>
+ <button type="button" class="pbtn" onclick="fzPrintFull(${vi})" title="Kompletter aktueller Stand des Fahrzeugs als PDF / zum Drucken">📄 Komplettliste</button>
  </div>
  </div>`;
  }).join("") + (tpl.length ? `<div class="ho-sub" style="grid-column: 1 / -1;">Schablonen für neue Fahrzeuge: ${tpl.map(t => esc(t.name)).join(", ")}</div>` : "");
@@ -6658,6 +6746,9 @@
  if (mode === "mhd") {
  const idx = v.items.map((it, i) => ({ i, d: it.mhd ? mhdDiffDays(it.mhd) : null })).filter(x => x.d !== null && x.d <= v.warnDays).sort((a, b) => a.d - b.d).map(x => x.i);
  groups = [{ ort: `Ablaufende Artikel (≤ ${v.warnDays} Tage)`, items: idx, mixed: true }];
+ } else if (mode === "miss") {
+ const idx = v.items.map((it, i) => i).filter(i => fzNum(v.items[i].bestand) < fzNum(v.items[i].max));
+ groups = [{ ort: "Nicht vollständig – fehlt im Fahrzeug", items: idx, mixed: true }];
  } else groups = fzGroups(v);
  fz = { v, mode, groups, gi: 0, edits: new Map() };
  const d = LS.get(FZ_DRAFT(v.name), null);
@@ -6720,7 +6811,7 @@
  const body = document.getElementById("fz-body"), foot = document.getElementById("fz-foot");
  const st = keepScroll ? body.scrollTop : 0;
  const n = fz.groups.length, v = fz.v;
- document.getElementById("fz-title").textContent = `🚑 ${v.name} – ${fz.mode === "mhd" ? "Ablaufende Artikel" : "Fahrzeugkontrolle"}`;
+ document.getElementById("fz-title").textContent = `🚑 ${v.name} – ${fz.mode === "mhd" ? "Ablaufende Artikel" : fz.mode === "miss" ? "Nicht vollständig" : "Fahrzeugkontrolle"}`;
  document.getElementById("fz-bar-fill").style.width = `${Math.round(Math.min(fz.gi, n) / Math.max(1, n) * 100)}%`;
  const jump = document.getElementById("fz-jump");
  jump.innerHTML = fz.groups.map((g, i) => `<option value="${i}">${i + 1}/${n} · ${esc(g.ort)}</option>`).join("") + `<option value="${n}">✔ Zusammenfassung</option>`;
@@ -6728,7 +6819,7 @@
  if (fz.gi >= n) { fzSummary(); return; }
  const g = fz.groups[fz.gi];
  body.innerHTML = `<div class="fz-fach"><div><div class="fz-fach-name">${esc(g.ort)}</div><div class="mx-sub">${g.items.length} Artikel · Menge wie Soll? Abgelaufen?</div></div>
- ${fz.mode === "full" ? `<button type="button" class="pbtn pbtn-sm" onclick="fzAllFull()">✓ Alles vollständig</button>` : ""}</div>` +
+ ${fz.mode !== "mhd" ? `<button type="button" class="pbtn pbtn-sm" onclick="fzAllFull()">✓ Alles vollständig</button>` : ""}</div>` +
  (g.items.length ? g.items.map(i => {
  const it = v.items[i], c = fzCur(it), max = fzNum(it.max), miss = c.bestand < max, chg = fz.edits.has(it.row);
  return `<div class="fz-item${miss ? " miss" : ""}${chg ? " changed" : ""}">
@@ -6768,7 +6859,8 @@
  <div class="zw-sec"><label class="zw-h" for="fz-by">✍️ Kontrolliert von (Name/Kürzel)</label>
  <input type="text" id="fz-by" value="${esc(lastBy)}" placeholder="z. B. AW" style="max-width: 220px; text-align: left !important;"></div>`;
  foot.innerHTML = `<button type="button" class="pbtn" onclick="fzGo(-1)">◀ Zurück</button>
- <button type="button" class="pbtn" onclick="fzPrint()">🖨️ Drucken / PDF</button>
+ <button type="button" class="pbtn" onclick="fzPrint()">🖨️ Nachfüll-Liste</button>
+ <button type="button" class="pbtn" onclick="fzPrintFull()">📄 Komplettliste</button>
  <button type="button" class="pbtn pbtn-primary" onclick="fzFinish()">💾 Speichern & abschließen</button>`;
  }
  function fzPrint() {
@@ -6779,7 +6871,7 @@
  const now = new Date();
  document.getElementById("print-area").innerHTML = `
  <div class="pl-section"><h1>Fahrzeugkontrolle ${esc(v.name)}</h1>
- <div class="pl-meta"><span>RW Sassnitz · ${fz.mode === "mhd" ? "nur ablaufende Artikel" : "vollständige Kontrolle"}</span><span>${now.toLocaleDateString("de-DE")} ${now.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}${by ? ` · ${esc(by)}` : ""}</span></div>
+ <div class="pl-meta"><span>RW Sassnitz · ${fz.mode === "mhd" ? "nur ablaufende Artikel" : fz.mode === "miss" ? "nur nicht vollständige Artikel" : "vollständige Kontrolle"}</span><span>${now.toLocaleDateString("de-DE")} ${now.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}${by ? ` · ${esc(by)}` : ""}</span></div>
  <h2>Aus dem Lager nachfüllen (${miss.length})</h2>
  ${miss.length ? `<table><thead><tr><th style="width:32%">Fach</th><th>Artikel</th><th class="c" style="width:12mm">Soll</th><th class="c" style="width:12mm">Ist</th><th class="c" style="width:14mm">fehlt</th><th class="c" style="width:16mm">✓</th></tr></thead><tbody>
  ${miss.map(x => `<tr><td>${esc(x.it.ort)}</td><td>${esc(x.it.name)}</td><td class="num">${fzNum(x.it.max)}</td><td class="num">${x.c.bestand}</td><td class="num">${fzNum(x.it.max) - x.c.bestand}</td><td class="chk"></td></tr>`).join("")}</tbody></table>` : "<p>Alles vollständig.</p>"}
@@ -6787,6 +6879,41 @@
  ${mhd.length ? `<table><thead><tr><th style="width:32%">Fach</th><th>Artikel</th><th class="c" style="width:24mm">MHD</th><th class="c" style="width:26mm">Status</th><th class="c" style="width:16mm">✓</th></tr></thead><tbody>
  ${mhd.map(x => `<tr><td>${esc(x.it.ort)}</td><td>${esc(x.it.name)}</td><td class="c">${fmt(x.c.mhd)}</td><td class="c ${x.d < 0 ? "warn" : ""}">${x.d < 0 ? "ABGELAUFEN" : `in ${x.d} Tagen`}</td><td class="chk"></td></tr>`).join("")}</tbody></table>` : "<p>Nichts läuft ab.</p>"}` : ""}
  <div class="pl-foot">Erstellt mit dem Lager-, Verfalls- & Fristen-Terminal · Unterschrift: ______________________</div></div>`;
+ document.body.classList.add("printing-list");
+ const done = () => { document.body.classList.remove("printing-list"); window.removeEventListener("afterprint", done); };
+ window.addEventListener("afterprint", done);
+ setTimeout(() => window.print(), 60);
+ }
+ // Kompletter Zustand eines Fahrzeugs: jedes Fach, jeder Artikel mit Soll, Ist, MHD und Status
+ function fzPrintFull(vi) {
+ const live = vi === undefined && fz; // aus der laufenden Kontrolle (mit Änderungen) oder vom Stand in Google
+ const v = live ? fz.v : (fzData || [])[vi];
+ if (!v) return;
+ const cur = it => live ? fzCur(it) : { bestand: fzNum(it.bestand), mhd: it.mhd || "" };
+ const fmt = iso => iso ? iso.split("-").reverse().join(".") : "";
+ const by = live ? ((document.getElementById("fz-by") || {}).value || "") : "";
+ let last = null; try { last = JSON.parse(runtimeConfig["fzcheck::" + v.name] || "null"); } catch (_) {}
+ let nMiss = 0, nEx = 0, nSoon = 0;
+ const body = fzGroups(v).map(g => {
+ const rows = g.items.map(i => {
+ const it = v.items[i], c = cur(it), max = fzNum(it.max), fehlt = Math.max(0, max - c.bestand);
+ const d = c.mhd ? mhdDiffDays(c.mhd) : null;
+ if (fehlt) nMiss++;
+ let st = "";
+ if (d !== null && d < 0) { st = "ABGELAUFEN"; nEx++; } else if (d !== null && d <= v.warnDays) { st = `in ${d} T`; nSoon++; }
+ const bad = fehlt || st;
+ return `<tr${bad ? ' class="bad"' : ""}><td>${esc(it.name)}${it.bem ? ` <span style="color:#555">(${esc(it.bem)})</span>` : ""}</td><td class="num">${max}</td><td class="num">${c.bestand}</td><td class="num">${fehlt || ""}</td>${v.hasMhd ? `<td class="c">${fmt(c.mhd)}</td><td class="c ${st ? "warn" : ""}">${st || (c.mhd ? "ok" : "")}</td>` : ""}</tr>`;
+ }).join("");
+ return `<tr class="fach"><td colspan="${v.hasMhd ? 6 : 4}">${esc(g.ort)}</td></tr>${rows}`;
+ }).join("");
+ const now = new Date();
+ document.getElementById("print-area").innerHTML = `
+ <div class="pl-section"><h1>Komplettliste ${esc(v.name)}</h1>
+ <div class="pl-meta"><span>RW Sassnitz · ${v.items.length} Artikel · ${nMiss} nicht vollständig${v.hasMhd ? ` · ${nEx} abgelaufen · ${nSoon} in ${v.warnDays} Tagen` : ""}</span>
+ <span>Stand ${now.toLocaleDateString("de-DE")} ${now.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}${live ? (by ? ` · kontrolliert von ${esc(by)}` : " · während der Kontrolle") : (last ? ` · letzte Kontrolle ${fmtDateDE(String(last.at).slice(0, 10))}${last.by ? ` (${esc(last.by)})` : ""}` : "")}</span></div>
+ <table class="fz-full"><thead><tr><th>Artikel</th><th class="c" style="width:12mm">Soll</th><th class="c" style="width:12mm">Ist</th><th class="c" style="width:12mm">fehlt</th>${v.hasMhd ? `<th class="c" style="width:22mm">MHD</th><th class="c" style="width:24mm">Status</th>` : ""}</tr></thead>
+ <tbody>${body}</tbody></table>
+ <div class="pl-foot">Erstellt mit dem Lager-, Verfalls- & Fristen-Terminal · grau hinterlegt = fehlt oder läuft ab</div></div>`;
  document.body.classList.add("printing-list");
  const done = () => { document.body.classList.remove("printing-list"); window.removeEventListener("afterprint", done); };
  window.addEventListener("afterprint", done);
@@ -7131,7 +7258,7 @@
  // Bei jedem neuen Hochladen auf GitHub wird APP_VERSION erhöht. Das Terminal schaut
  // regelmäßig nach, ob auf dem Server eine neuere index.html liegt, und bietet das Update an.
  // =========================================================================
- const APP_VERSION = "2026.11.09-5";
+ const APP_VERSION = "2026.11.09-8";
  let updateCheckAt = 0, updateFound = null;
  async function checkForUpdate(force) {
  if (!/^https?:$/.test(location.protocol) || updateFound) return;
