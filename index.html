@@ -6583,9 +6583,12 @@
  function fzNum(v) { const n = Number(v); return isNaN(n) || v === "" || v === null ? 0 : n; }
  async function loadVehicles(force) {
  if (!force && fzData && Date.now() - fzLoadedAt < 60000) { renderVehicles(); return; }
- const info = await getScriptInfo(false).catch(() => null);
- if (info && info.json && info.version < 3.1) {
- document.getElementById("fz-list").innerHTML = `<div class="empty-state">Für die Fahrzeugkontrolle wird das Google-Skript <strong>3.1</strong> benötigt (installiert: ${info.version}). Bitte Code.gs einspielen und neu bereitstellen.</div>`;
+ let info = await getScriptInfo(false).catch(() => null);
+ if (info && info.json && info.version < 3.2) info = await getScriptInfo(true).catch(() => info); // nach neuem Bereitstellen nicht den alten Stand merken
+ if (info && info.json && info.version < 3.2) {
+ document.getElementById("fz-list").innerHTML = `<div class="empty-state">⛔ Das Google-Skript hinter dem eingestellten App-Link ist noch <strong>Version ${esc(String(info.version))}</strong> – die Fahrzeugkontrolle braucht <strong>3.2</strong>.<br><br>
+ In Apps Script prüfen, dass oben im Code <code>var SCRIPT_VERSION = '3.2';</code> steht (sonst die neue Code.gs einfügen und speichern), dann <strong>Bereitstellen → Bereitstellungen verwalten</strong> → die Bereitstellung mit <em>genau diesem</em> Link → Stift → Version <strong>„Neue Version“</strong> → Bereitstellen. Danach hier „↻ Neu laden“.<br><br>
+ <span class="mx-sub">Eingestellter Link: …${esc(getApiUrl().slice(-22))}</span></div>`;
  return;
  }
  try {
@@ -7128,7 +7131,7 @@
  // Bei jedem neuen Hochladen auf GitHub wird APP_VERSION erhöht. Das Terminal schaut
  // regelmäßig nach, ob auf dem Server eine neuere index.html liegt, und bietet das Update an.
  // =========================================================================
- const APP_VERSION = "2026.11.09-4";
+ const APP_VERSION = "2026.11.09-5";
  let updateCheckAt = 0, updateFound = null;
  async function checkForUpdate(force) {
  if (!/^https?:$/.test(location.protocol) || updateFound) return;
